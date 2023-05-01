@@ -5,8 +5,15 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
+import classes.QueryHandler;
 
 /**
  * Servlet implementation class RegistrazioneUtenti
@@ -21,6 +28,14 @@ public class RegistrazioneUtenti extends HttpServlet {
 	String email;
 	String password;
 	String confirm_password;
+	String nome;
+	String cognome;
+	String data_nascita;
+	int classe;
+	String indirizzo_scolastico;
+	String sezione_scolastica;
+	String localita;
+	
 	//altro
 	
 	//***CAMPI FACOLTATIVI***
@@ -73,13 +88,26 @@ public class RegistrazioneUtenti extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		//input - output 
-		
-		
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		//output writer
+		PrintWriter out = response.getWriter(); 
+		//input reader
+		BufferedReader in_body = request.getReader();
 		//stringBuilder per costruire una stringa dal messaggio in formato json
-		
+		StringBuilder sb = new StringBuilder();
+		String line;
+		String body;
 		
 		//acquisizione stringa dal body
+		while((line = in_body.readLine()) != null) {
+			sb.append(line);
+		}
+		
+		body = sb.toString();
+		//trsformazione stringa in oggetto json
+		Gson g = new Gson();
+		JsonObject user = g.fromJson(body, JsonObject.class);
 		
 		//acquisizione valore delle chiavi
 		email = user.get("Email").getAsString();
@@ -106,7 +134,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 								risposta = "utente gia registrato";
 								break;
 							case 0:
-								int inserted = queryForThis.inserisciUtente(email, password, nome, cognome, data_nascita, classe, indirizzo_scolastico, sezione_scolastica, paese);
+								int inserted = queryForThis.inserisciUtente(email, password, nome, cognome, data_nascita, classe, indirizzo_scolastico, sezione_scolastica, localita);
 								if(inserted != -1) {
 									risposta = "utente registrato";
 								}else {

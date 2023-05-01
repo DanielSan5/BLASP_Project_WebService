@@ -137,10 +137,10 @@ public class QueryHandler {
 	
 	
 	
-	public int inserisciUtente(String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, char sezione_scolastica, String paese) {
+	public int inserisciUtente(String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String sezione_scolastica, String localita) {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO soggetti (UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_sezione_scolastica, UT_paese) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		String prepared_query = "INSERT INTO utenti (UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_sezione_scolastica, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		
 		try(
 				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -153,10 +153,10 @@ public class QueryHandler {
 				pr.setString(5, data_nascita);
 				pr.setInt(6, classe);
 				pr.setString(7, indirizzo_scolastico);
-				pr.setLong(8, sezione_scolastica);
-				pr.setString(9, paese);
+				pr.setString(8, sezione_scolastica);
+				pr.setString(9, localita);
 				
-				//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
+				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
 				int check = pr.executeUpdate();
 				
 				conn.close();
@@ -172,7 +172,7 @@ public class QueryHandler {
 		
 	}
 	
-	//***DESCRIZIONE UTENTE è un campo facoltativo***
+	//***DESCRIZIONE UTENTE campo facoltativo***
 	public int inserisciDescrizioneUtente(int user_id, String descrizione) {
 		
 		establishConnection();
