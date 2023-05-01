@@ -6,7 +6,6 @@
     <servlet-name>Auth_info</servlet-name>
     <servlet-class>auth.Auth_info</servlet-class>
   </servlet>
- 
   <display-name>BLASP</display-name>
   <welcome-file-list>
     <welcome-file>index.html</welcome-file>
@@ -16,15 +15,23 @@
     <welcome-file>default.htm</welcome-file>
     <welcome-file>default.jsp</welcome-file>
   </welcome-file-list>
-
-	<security-constraint>
-	    <web-resource-collection>
-	        <web-resource-name>securedapp</web-resource-name>
-	        <url-pattern>/*</url-pattern>
-	    </web-resource-collection>
-	    <user-data-constraint>
-	        <transport-guarantee>CONFIDENTIAL</transport-guarantee>
-	    </user-data-constraint>
-	</security-constraint>  
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>securedapp</web-resource-name>
+      <url-pattern>/*</url-pattern>
+    </web-resource-collection>
+    <user-data-constraint>
+      <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+    </user-data-constraint>
+  </security-constraint>
+  <servlet>
+    <description></description>
+    <display-name>RegistrazioneUtente</display-name>
+    <servlet-name>RegistrazioneUtente</servlet-name>
+    <servlet-class>container.RegistrazioneUtente</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>RegistrazioneUtente</servlet-name>
+    <url-pattern>/RegistrazioneUtente</url-pattern>
+  </servlet-mapping>
 </web-app>
-
