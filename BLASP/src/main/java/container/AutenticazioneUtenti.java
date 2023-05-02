@@ -6,22 +6,18 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-
+import classes.JwtGen;
 import classes.QueryHandler;
 
-/**
- * Servlet implementation class AutenticazioneUtenti
- */
+@WebServlet("/AutenticazioneUtenti")
 public class AutenticazioneUtenti extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -30,12 +26,9 @@ public class AutenticazioneUtenti extends HttpServlet {
 	String password;
 	String risposta;
 	
-	//jwt token
 	
        
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
+ 
     public AutenticazioneUtenti() {
         super();
        
@@ -66,20 +59,14 @@ public class AutenticazioneUtenti extends HttpServlet {
     //Password check
     
     
-    
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
+   
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		/*
-		response.getWriter().append("Served at: ").append(request.getContextPath());
-		*/
+
+		response.setStatus(405);
 	}
 
 	
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
+
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		
@@ -117,6 +104,61 @@ public class AutenticazioneUtenti extends HttpServlet {
 		//controlli input
 		if(/*isNotBlank() &&*/ isValidUsername() && isValidEmail() /*&& isValidPassword()*/) {
 			
+			QueryHandler queryForThis = new QueryHandler();
+			
+			int hasUsername = queryForThis.hasUsername(username);
+			
+			int user_id = queryForThis.getUserId(username);
+			
+			switch(hasUsername) {
+			
+				case 1:
+					
+					int checkPass = queryForThis.checkPass(user_id, password);
+					
+					if(checkPass == 1) {
+							
+						risposta = "password corretta";
+						
+						//generazione jwt per la sessione
+						try {
+							
+							JwtGen generator = new JwtGen();
+							Map<String, String> claims = new HashMap<>();
+							
+							jwtFormat.keySet().forEach(keyStr ->
+						    {
+						        String keyvalue = jwtFormat.get(keyStr).getAsString();
+						        claims.put(keyStr, keyvalue);
+						      
+						    });
+							
+							String token = generator.generateJwt(claims);
+							risposta = token;
+							
+						} catch (Exception e) {
+							
+							e.printStackTrace();
+						}
+					
+					}else if (checkPass == 0){
+						
+						risposta = "password errata";
+						
+					}else {
+						risposta = "errore con il database (controllo password)";
+					}
+					break;
+					
+				case 0:
+					risposta = "utente inesistente";
+					break;
+					
+				default:
+					risposta = "errore del database (presenza username)";
+					break;
+			}
+			
 			
 		}else {
 			risposta = "errore nell'input";
@@ -129,6 +171,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 		 * descrizione
 		 * eventuali dati
 		 */
+		out.println(risposta);
 		
 		
 	}
