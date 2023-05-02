@@ -25,7 +25,8 @@ import classes.QueryHandler;
 public class AutenticazioneUtenti extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	String username;
+	String username;	//ancora da definire
+	String email; 		//ancora da definire
 	String password;
 	String risposta;
 	
@@ -48,6 +49,24 @@ public class AutenticazioneUtenti extends HttpServlet {
     		return true;
     }
     
+    //Email check (Aldini email)
+    public boolean isValidEmail() {
+     	
+     	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
+     	
+     	if((email == null) || (email.matches(regexPattern) == false))
+     		return false;
+     	else 	
+     		return true;
+     }
+    
+    
+    //Empty input check
+    
+    //Password check
+    
+    
+    
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -62,8 +81,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		doGet(request, response);
+		
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
@@ -84,9 +102,36 @@ public class AutenticazioneUtenti extends HttpServlet {
 		Gson g = new Gson();
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
-		username = user.get("Username").getAsString();
+		username = user.get("Username").getAsString();		//ancora da definire
+		email = user.get("Email").getAsString();			//ancora da definire	
 		password = user.get("Password").getAsString();
 		
+		JsonObject jwtFormat = new JsonObject();
+		jwtFormat.addProperty("sub", username);
+		jwtFormat.addProperty("aud", "*");
+		
+		/*
+		 * valida del JWT
+		 */
+		
+		//controlli input
+		if(/*isNotBlank() &&*/ isValidUsername() && isValidEmail() /*&& isValidPassword()*/) {
+			
+			
+		}else {
+			risposta = "errore nell'input";
+		}
+
+		//da trasformare in formato json
+		/*
+		 * le risposte in formato json conterranno:
+		 * stati (verifica dell'email, andatura della richiesta, correttezza password, controlli sugli input...)
+		 * descrizione
+		 * eventuali dati
+		 */
+		
+		
 	}
+
 
 }
