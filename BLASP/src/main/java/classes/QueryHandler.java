@@ -164,10 +164,10 @@ public class QueryHandler {
 	
 	
 	
-	public int inserisciUtente(String username, String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String sezione_scolastica, String localita) {
+	public int inserisciUtente(String username, String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO utenti (UT_username, UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_sezione_scolastica, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		String prepared_query = "INSERT INTO utenti (UT_username, UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		
 		try(
 				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -181,8 +181,7 @@ public class QueryHandler {
 				pr.setString(6, data_nascita);
 				pr.setInt(7, classe);
 				pr.setString(8, indirizzo_scolastico);
-				pr.setString(9, sezione_scolastica);
-				pr.setString(10, localita);
+				pr.setString(9, localita);
 				
 				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
 				int check = pr.executeUpdate();

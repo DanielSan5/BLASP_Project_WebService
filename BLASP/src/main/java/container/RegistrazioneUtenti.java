@@ -34,7 +34,6 @@ public class RegistrazioneUtenti extends HttpServlet {
 	String data_nascita;
 	int classe;
 	String indirizzo_scolastico;
-	String sezione_scolastica;
 	String localita;
 	
 	//altro
@@ -54,7 +53,6 @@ public class RegistrazioneUtenti extends HttpServlet {
     }
     
     
-  //***CONTROLLI NUOVI (BLASP)***
     //Email check (Aldini email)
     public boolean isValidEmail() {
      	
@@ -81,6 +79,12 @@ public class RegistrazioneUtenti extends HttpServlet {
     		return false;
     	else
     		return true;
+    }
+    
+    //Section check
+    public boolean isValidSection() {
+    	
+    	return true;
     }
     
     //Empty input check
@@ -149,7 +153,6 @@ public class RegistrazioneUtenti extends HttpServlet {
 		data_nascita = user.get("Data_Nascita").getAsString();
 		classe = user.get("Classe").getAsInt();
 		indirizzo_scolastico = user.get("Indirizzo_Scolastico").getAsString();
-		sezione_scolastica = user.get("Sezione_Scolastica").getAsString();
 		localita = user.get("Localita").getAsString();
 		
 		
@@ -159,6 +162,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 		
 		//controlli lato server e CREAZIONE UTENTE NEL DB
 		//controlli lato server
+		
 		if(/*isNotBlank && */ isValidUsername() /*&& isValidPassword()*/ && isValidEmail() && isConfirmedPassword()) {
 			
 				
@@ -177,7 +181,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 						if(hasEmail != -1) {
 							if(hasEmail == 0) {
 							
-								int inserted = queryForThis.inserisciUtente(username ,email, password, nome, cognome, data_nascita, classe, indirizzo_scolastico, sezione_scolastica, localita);
+								int inserted = queryForThis.inserisciUtente(username ,email, password, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
 								
 								if(inserted != -1) {
 									risposta = "utente registrato";
