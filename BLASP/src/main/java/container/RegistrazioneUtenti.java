@@ -9,6 +9,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.Duration;
+import java.time.Instant;
+import de.mkammerer.argon2.Argon2;
+import de.mkammerer.argon2.Argon2Factory;
+import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -52,6 +57,16 @@ public class RegistrazioneUtenti extends HttpServlet {
         // TODO Auto-generated constructor stub
     }
     
+    public String passEncr() {
+    	
+    	Argon2 argon2 = Argon2Factory.create(Argon2Types.ARGON2id);
+    	String hash = argon2.hash(4, 1024 * 1024, 8, password);
+
+    	return hash;
+  
+    	
+    	
+    }
     
     //Email check (Aldini email)
     public boolean isValidEmail() {
@@ -81,33 +96,19 @@ public class RegistrazioneUtenti extends HttpServlet {
     		return true;
     }
     
-    //Section check
-    public boolean isValidSection() {
+    //Class check
+    public boolean isValidClass() {
     	
-    	return true;
+    	if(classe == 1 || classe == 2 || classe == 3 || classe == 4 || classe == 5) {
+    		return true;
+    	}else
+    		return false;
     }
     
     //Empty input check
     
     //Password check
     
-    
-    
-    /*
-    //Name check (nome.cognome@aldini.istruzioneer.it\avbo.it)
-    public boolean isValidName() {
- 	   String nomeCorretto;
- 	   int index = email.indexOf('.');
- 	   if(index > 0) {
- 		   nomeCorretto = email.substring(0, index);
- 		   if(nomeCorretto == nome)
- 			   return true;
- 		   else
- 			   return false;
- 	   }
- 	   return false;    	
-    }
-    */
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -156,16 +157,13 @@ public class RegistrazioneUtenti extends HttpServlet {
 		localita = user.get("Localita").getAsString();
 		
 		
-		/*
-		 * psw encription
-		 */
 		
-		//controlli lato server e CREAZIONE UTENTE NEL DB
-		//controlli lato server
-		
-		if(/*isNotBlank && */ isValidUsername() /*&& isValidPassword()*/ && isValidEmail() && isConfirmedPassword()) {
+		if(/*isNotBlank() && */ isValidUsername() /*&& isValidPassword()*/ && isValidEmail() && isValidClass() && isConfirmedPassword()) {
 			
-				
+				/*
+				 * psw encryption
+				 */
+				passEncr();
 				QueryHandler queryForThis = new QueryHandler();
 				
 				int hasUsername = queryForThis.hasUsername(username);
