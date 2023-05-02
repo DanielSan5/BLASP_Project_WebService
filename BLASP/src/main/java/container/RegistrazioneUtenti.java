@@ -25,6 +25,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 	private static final long serialVersionUID = 1L;
     
 	//***CAMPI OBBLIGATORI***
+	String username;		//ancora da discutere
 	String email;
 	String password;
 	String confirm_password;
@@ -74,6 +75,35 @@ public class RegistrazioneUtenti extends HttpServlet {
  	   return true;
     }
     
+    //Username check
+    public boolean isValidUsername() {
+    	if((username == null) || username.contains(" "))
+    		return false;
+    	else
+    		return true;
+    }
+    
+    //Empty input check
+    
+    //Password check
+    
+    
+    
+    /*
+    //Name check (nome.cognome@aldini.istruzioneer.it\avbo.it)
+    public boolean isValidName() {
+ 	   String nomeCorretto;
+ 	   int index = email.indexOf('.');
+ 	   if(index > 0) {
+ 		   nomeCorretto = email.substring(0, index);
+ 		   if(nomeCorretto == nome)
+ 			   return true;
+ 		   else
+ 			   return false;
+ 	   }
+ 	   return false;    	
+    }
+    */
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -110,54 +140,68 @@ public class RegistrazioneUtenti extends HttpServlet {
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
 		//acquisizione valore delle chiavi
+		username = user.get("Username").getAsString();
 		email = user.get("Email").getAsString();
 		password = user.get("Password").getAsString();
 		confirm_password = user.get("Confirm_Password").getAsString();
-		//altro
+		nome = user.get("Nome").getAsString();
+		cognome = user.get("Cognome").getAsString();
+		data_nascita = user.get("Data_Nascita").getAsString();
+		classe = user.get("Classe").getAsInt();
+		indirizzo_scolastico = user.get("Indirizzo_Scolastico").getAsString();
+		sezione_scolastica = user.get("Sezione_Scolastica").getAsString();
+		localita = user.get("Localita").getAsString();
 		
 		
-		//psw encription
+		/*
+		 * psw encription
+		 */
 		
 		//controlli lato server e CREAZIONE UTENTE NEL DB
-				if(isValidEmail()) {
-					
-					if(isConfirmedPassword()) {
-					
+		//controlli lato server
+		if(/*isNotBlank && */ isValidUsername() /*&& isValidPassword()*/ && isValidEmail() && isConfirmedPassword()) {
+			
+				
+				QueryHandler queryForThis = new QueryHandler();
+				
+				int hasUsername = queryForThis.hasUsername(username);
+				int hasEmail = queryForThis.hasEmail(email); 
+				
+				switch(hasUsername) {
+				
+					case 1:
+						risposta = "username gia esistente";
+						break;
+					case 0:
 						
-						QueryHandler queryForThis = new QueryHandler();
-						
-						int hasEmail = queryForThis.hasEmail(email); 
-						
-						switch(hasEmail) {
-						
-							case 1:
-								risposta = "utente gia registrato";
-								break;
-							case 0:
-								int inserted = queryForThis.inserisciUtente(email, password, nome, cognome, data_nascita, classe, indirizzo_scolastico, sezione_scolastica, localita);
+						if(hasEmail != -1) {
+							if(hasEmail == 0) {
+							
+								int inserted = queryForThis.inserisciUtente(username ,email, password, nome, cognome, data_nascita, classe, indirizzo_scolastico, sezione_scolastica, localita);
+								
 								if(inserted != -1) {
 									risposta = "utente registrato";
 								}else {
 									risposta = "errore del database (inserimento utente)";
 								}
-								break;
-								
-							default:
-								risposta = "errore del database (presenza email)";
-								break;
+							}else {
+								risposta = "email gia esistente";
+							}
+						}else {
+							risposta = "errore del database (presenza email)";
 						}
+						break;
 						
-						//else del controllo password
-					}else{
-						risposta = "le password inserite non coincidono";
-					}
-					
-					//else del controllo mail
-				}else {
-					risposta = "Errore nell'inserimento della mail";
+					default:
+						risposta = "errore del database (presenza username)";
+						break;
 				}
-				
-				
+		}else {
+			risposta = "errore nell'input";
+		}
+		
+		
+		
 				response.addHeader("Access-Control-Allow-Origin", "*");
 				response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
 				//da trasformare in formato json
@@ -168,6 +212,8 @@ public class RegistrazioneUtenti extends HttpServlet {
 				 * eventuali dati
 				 */
 				out.println(risposta);
+				
+				
 				
 		}
 		
