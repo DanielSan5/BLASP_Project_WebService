@@ -36,6 +36,33 @@ public class QueryHandler {
 	}
 	
 	
+	public int hasUsername(String username) {
+		
+		establishConnection();
+		String prepared_query = "SELECT * FROM utenti WHERE UT_username = ?";
+		
+		try(
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			){
+			
+			pr.setString(1, username);
+			ResultSet res = pr.executeQuery();
+			//per controllare se l'username esiste basta vedere il risultato di next(), sarà false se non esistono righe
+			boolean check = res.next();
+			
+			conn.close();
+			return check ? 1 : 0; //se check true returna 1 altrimenti 0
+		
+		}catch(SQLException e){
+			
+			System.out.println(e.getLocalizedMessage());
+			return -1;
+		
+		}
+		
+	}
+	
+	
 	public int hasEmail(String email) {
 		
 		establishConnection();
@@ -137,24 +164,25 @@ public class QueryHandler {
 	
 	
 	
-	public int inserisciUtente(String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String sezione_scolastica, String localita) {
+	public int inserisciUtente(String username, String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String sezione_scolastica, String localita) {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO utenti (UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_sezione_scolastica, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		String prepared_query = "INSERT INTO utenti (UT_username, UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_sezione_scolastica, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		
 		try(
 				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 				){
 				
-				pr.setString(1, email);
-				pr.setString(2, password);
-				pr.setString(3, nome);
-				pr.setString(4, cognome);
-				pr.setString(5, data_nascita);
-				pr.setInt(6, classe);
-				pr.setString(7, indirizzo_scolastico);
-				pr.setString(8, sezione_scolastica);
-				pr.setString(9, localita);
+				pr.setString(1, username);
+				pr.setString(2, email);
+				pr.setString(3, password);
+				pr.setString(4, nome);
+				pr.setString(5, cognome);
+				pr.setString(6, data_nascita);
+				pr.setInt(7, classe);
+				pr.setString(8, indirizzo_scolastico);
+				pr.setString(9, sezione_scolastica);
+				pr.setString(10, localita);
 				
 				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
 				int check = pr.executeUpdate();
@@ -171,6 +199,7 @@ public class QueryHandler {
 			}
 		
 	}
+	
 	
 	//***DESCRIZIONE UTENTE campo facoltativo***
 	public int inserisciDescrizioneUtente(int user_id, String descrizione) {
