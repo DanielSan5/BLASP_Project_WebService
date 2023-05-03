@@ -13,6 +13,7 @@ import classes.QueryHandler;
 /**
  * Servlet implementation class RicercaFiltrataTickets
  */
+@WebServlet("/Get_tickets")
 public class RicercaFiltrataTickets extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -34,7 +35,7 @@ public class RicercaFiltrataTickets extends HttpServlet {
 			if (filter.isBlank())
 				return false;
 			else {
-				if (filter == "localit√†" || filter == "stato" || filter == "classe")
+				if (filter == "localita†" || filter == "stato" || filter == "classe")
 					return true;
 				else
 					return false;
@@ -43,11 +44,13 @@ public class RicercaFiltrataTickets extends HttpServlet {
 	
 	//Value check
 	public boolean isValidValue() {
+		
 		boolean checkResult = false;
 		
 		if (value.isBlank()) {
-			checkResult = false;
-			return checkResult;
+			
+			return false;
+			
 		}else {
 			
 			switch(filter) {
@@ -56,22 +59,24 @@ public class RicercaFiltrataTickets extends HttpServlet {
 					
 					int hasLocalita = queryForThis.hasLocalita(value);
 					if(hasLocalita == 0 || hasLocalita == -1) {
-						checkResult = false;
-						break;
+						return false;
+						
 					}else {
-						checkResult = true;
-						break;
+						return true;
+						
 					}
+					
 					
 				case "stato":
 					
 					if (value == "libero" || value == "occupato") {
-						checkResult = true;
-						break;
+						return true;
+						
 					}else {
-						checkResult = false;
-						break;
+						return false;
+						
 					}
+					
 					
 				/*case "classe":
 					
@@ -82,10 +87,12 @@ public class RicercaFiltrataTickets extends HttpServlet {
 					}else {
 						checkResult = false;
 						break;
-					}*/
+					}*/	
+				default:
+					return false;
 					
 			}
-			return checkResult;
+			
 		}
 		
 	}
