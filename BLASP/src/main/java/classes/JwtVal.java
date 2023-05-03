@@ -2,8 +2,6 @@ package classes;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.System.Logger;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.security.InvalidParameterException;
@@ -15,10 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
-
 import com.auth0.jwk.JwkException;
-import com.auth0.jwk.JwkProvider;
-import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -59,6 +54,9 @@ public class JwtVal {
 			if (!allowedIsses.contains(decodedjwt.getIssuer())) {
                 throw new InvalidParameterException(String.format("Unknown Issuer %s", decodedjwt.getIssuer()));
             }
+			if(!decodedjwt.getAlgorithm().equalsIgnoreCase("RS256")) {
+				 throw new InvalidParameterException(String.format("Invalid Algorithm %s", decodedjwt.getAlgorithm()));
+			}
 
             RSAPublicKey publicKey = loadPublicKey();
 
