@@ -105,9 +105,40 @@ public class RegistrazioneUtenti extends HttpServlet {
     		return false;
     }
     
-    //Empty input check
+  //Empty input check
+    public boolean isNotBlank() {
+  	   if(username.isBlank() || password.isBlank()) {
+  		   return false;
+  	   }
+  	   return true;	   
+     }
     
     //Password check
+    public boolean isValidPassword() {
+    	
+    	boolean hasLowerCase = false;
+    	boolean hasUpperCase = false;
+    	boolean hasDigit = false;
+    	boolean hasSpecialChar = false;
+    	String specialChars = "!?&$";
+    	
+    	for(int i=0; i < password.length(); i++) {
+    		char passwordChar = password.charAt(i);
+    		if(Character.isLowerCase(passwordChar))
+    			hasLowerCase = true;
+    		else if (Character.isUpperCase(passwordChar))
+    			hasUpperCase = true;
+    		else if(Character.isDigit(passwordChar)) 
+                hasDigit = true;
+            else if(specialChars.indexOf(passwordChar) != -1)
+                hasSpecialChar = true;
+      }
+    	
+    	if(password.length() > 8 && hasLowerCase && hasUpperCase && hasDigit && hasSpecialChar) 
+    		return true;
+    	else 
+    		return false;
+    }
     
 
 	/**
@@ -159,7 +190,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 		
 		
 		
-		if(/*isNotBlank() && */ isValidUsername(username) /*&& isValidPassword()*/ && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
+		if(isNotBlank() && isValidUsername(username) && isValidPassword() && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
 			
 				/*
 				 * psw encryption
