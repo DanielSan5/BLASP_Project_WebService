@@ -172,7 +172,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 		 * descrizione
 		 * eventuali dati
 		 */
-		response.addHeader("set-cookie", cookieForClient);
+		response.addHeader("Set-cookie","__refresh__token=" + cookieForClient + "; HttpOnly; Secure");
 		out.println(risposta);
 		
 		
