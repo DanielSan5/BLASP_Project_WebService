@@ -7,8 +7,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.InvalidParameterException;
+import java.util.ArrayList;
 
+import com.auth0.jwt.interfaces.Claim;
+import com.auth0.jwt.interfaces.DecodedJWT;
+
+import classes.JwtVal;
 import classes.QueryHandler;
+import classes.Ticket;
 
 /**
  * Servlet implementation class RicercaFiltrataTickets
@@ -19,12 +26,15 @@ public class RicercaFiltrataTickets extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	String filter;
 	String value;
-	String authorizationHeader;
+	String jwtToken;
 	QueryHandler queryForThis = new QueryHandler();
+	String risposta;
+	ArrayList<Ticket> tickets = new ArrayList<Ticket>();
+	
 	
 	//Authorization empty check
 	public boolean isValidAuthorization() {
-		if(authorizationHeader == null || authorizationHeader.isBlank())
+		if(jwtToken == null || jwtToken.isBlank())
 			return false;
 		else 
 			return true;
@@ -103,6 +113,7 @@ public class RicercaFiltrataTickets extends HttpServlet {
      */
     public RicercaFiltrataTickets() {
         super();
+        
         // TODO Auto-generated constructor stub
     }
 
@@ -111,15 +122,55 @@ public class RicercaFiltrataTickets extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
+		
+		PrintWriter out = response.getWriter();
 		//Estrazione dei parametri dalla richiesta GET
 		filter = request.getParameter("filter");
 		value = request.getParameter("value");
 		
 		//Estrazione del token dall'header
-		authorizationHeader = request.getHeader("Authorization");
+		jwtToken = request.getHeader("Authorization");
 		
-		//output writer
-		PrintWriter out = response.getWriter();
+		if(isValidValue() && isValidFilter() && isValidAuthorization() ) {
+			
+			
+			final JwtVal validator = new JwtVal();
+			
+			try{
+				
+				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
+				
+				String username = jwtDecoded.getClaim("sub").asString();
+				
+				tickets = queryForThis.getTickets(filter, value);
+				
+				risposta = tickets.toString();
+				
+			}catch(InvalidParameterException e) {
+				
+				response.setStatus(401);
+				risposta = "non autorizzato";
+				System.out.println("not authorized token");
+				e.printStackTrace();
+				
+			}
+			
+		}else {
+			response.setStatus(400);
+			risposta = "bad request";
+		}
+		
+		
+		
+		
+		//da trasformare in formato json
+		/*
+		 * le risposte in formato json conterranno:
+		 * stati (andatura della richiesta, coincidenza password, controlli sugli input...)
+		 * descrizione
+		 * eventuali dati
+		 */
+		out.println(risposta);
 		
 	}
 

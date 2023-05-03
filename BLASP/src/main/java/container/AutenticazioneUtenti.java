@@ -25,6 +25,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 	String email; 		//ancora da definire
 	String password;
 	String risposta;
+	String cookieForClient;
 	
 	
        
@@ -95,6 +96,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 		
 		JsonObject jwtFormat = new JsonObject();
 		jwtFormat.addProperty("sub", username);
+		jwtFormat.addProperty("sub-email", email);
 		jwtFormat.addProperty("aud", "*");
 		
 		/*
@@ -134,7 +136,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 						    });
 							
 							String token = generator.generateJwt(claims);
-							risposta = token;
+							cookieForClient = token;
 							
 						} catch (Exception e) {
 							
@@ -171,6 +173,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 		 * descrizione
 		 * eventuali dati
 		 */
+		response.addHeader("set-cookie", cookieForClient);
 		out.println(risposta);
 		
 		
