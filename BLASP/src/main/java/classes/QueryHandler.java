@@ -227,6 +227,35 @@ public class QueryHandler {
 			}
 		
 	}
+	
+	//Controllo se la località inserita esiste
+	public int hasLocalita(String localita) {
+		
+		establishConnection();
+		String prepared_query = "SELECT * FROM localita WHERE LC_nome = ?";
+		
+		try(
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			){
+			
+			pr.setString(1, localita);
+			
+			ResultSet res = pr.executeQuery();
+			//per controllare se la località esiste basta vedere il risultato di next(), sar� false se non esistono righe
+			boolean check = res.next();
+			
+			conn.close();
+			return check ? 1 : 0; //se check true returna 1 altrimenti 0
+		
+		}catch(SQLException e){
+			
+			System.out.println(e.getLocalizedMessage());
+			return -1;
+		
+		}
+		
+	}
+	
 	/*
 	 * Metodo per la query di modifica password
 	 * Metodo per la query di modifica data di nascita
