@@ -99,9 +99,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 		jwtFormat.addProperty("sub-email", email);
 		jwtFormat.addProperty("aud", "*");
 		
-		/*
-		 * valida del JWT
-		 */
+		
 		
 		//controlli input
 		if(/*isNotBlank() &&*/ isValidUsername() && isValidEmail() /*&& isValidPassword()*/) {
@@ -115,6 +113,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 			switch(hasUsername) {
 			
 				case 1:
+					
 					
 					int checkPass = queryForThis.checkPass(user_id, password);
 					

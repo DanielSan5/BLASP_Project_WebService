@@ -7,6 +7,10 @@ import java.util.ArrayList;
 
 import com.mysql.jdbc.Connection;
 
+import de.mkammerer.argon2.Argon2;
+import de.mkammerer.argon2.Argon2Factory;
+import de.mkammerer.argon2.Argon2Factory.Argon2Types;
+
 public class QueryHandler {
 	
 	private static String db_url = "jdbc:mysql://localhost:3306/utenti";
@@ -95,6 +99,7 @@ public class QueryHandler {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_password FROM utenti WHERE UT_id = ?";
+		Argon2 argon2 = Argon2Factory.create(Argon2Types.ARGON2id);
 		
 		try(
 				
@@ -107,13 +112,11 @@ public class QueryHandler {
 				ResultSet res = pr.executeQuery();
 				if(res.next()) {
 					
-					String pass = res.getString("UT_password");
+					String hashedPass = res.getString("UT_password");
 					conn.close();
 					
-					if(password.equals(pass)){
-						
+					if(argon2.verify(hashedPass, password)){
 						return 1;
-						
 					}else {
 						return 0;
 					}

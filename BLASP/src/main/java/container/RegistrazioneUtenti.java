@@ -57,7 +57,7 @@ public class RegistrazioneUtenti extends HttpServlet {
         // TODO Auto-generated constructor stub
     }
     
-    public String passEncr() {
+    private String passEncr(String password) {
     	
     	Argon2 argon2 = Argon2Factory.create(Argon2Types.ARGON2id);
     	String hash = argon2.hash(4, 1024 * 1024, 8, password);
@@ -69,7 +69,7 @@ public class RegistrazioneUtenti extends HttpServlet {
     }
     
     //Email check (Aldini email)
-    public boolean isValidEmail() {
+    private boolean isValidEmail(String email) {
      	
      	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
      	
@@ -80,7 +80,7 @@ public class RegistrazioneUtenti extends HttpServlet {
      }
     
     //Confirm password check
-    public boolean isConfirmedPassword() {
+    private boolean isConfirmedPassword(String password, String confirm_password) {
  	   if(!password.equals(confirm_password)) {
  		   return false;
     	   }
@@ -89,7 +89,7 @@ public class RegistrazioneUtenti extends HttpServlet {
     }
     
     //Username check
-    public boolean isValidUsername() {
+    private boolean isValidUsername(String username) {
     	if((username == null) || username.contains(" "))
     		return false;
     	else
@@ -97,7 +97,7 @@ public class RegistrazioneUtenti extends HttpServlet {
     }
     
     //Class check
-    public boolean isValidClass() {
+    private boolean isValidClass(int classe) {
     	
     	if(classe == 1 || classe == 2 || classe == 3 || classe == 4 || classe == 5) {
     		return true;
@@ -115,6 +115,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
+		response.setStatus(405);
 		response.getWriter().append("Served at: ").append(request.getContextPath());
 	}
 
@@ -158,12 +159,12 @@ public class RegistrazioneUtenti extends HttpServlet {
 		
 		
 		
-		if(/*isNotBlank() && */ isValidUsername() /*&& isValidPassword()*/ && isValidEmail() && isValidClass() && isConfirmedPassword()) {
+		if(/*isNotBlank() && */ isValidUsername(username) /*&& isValidPassword()*/ && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
 			
 				/*
 				 * psw encryption
 				 */
-				passEncr();
+				String encryptedPass = passEncr(password);
 				QueryHandler queryForThis = new QueryHandler();
 				
 				int hasUsername = queryForThis.hasUsername(username);
@@ -179,7 +180,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 						if(hasEmail != -1) {
 							if(hasEmail == 0) {
 							
-								int inserted = queryForThis.inserisciUtente(username ,email, password, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+								int inserted = queryForThis.inserisciUtente(username ,email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
 								
 								if(inserted != -1) {
 									risposta = "utente registrato";
@@ -204,20 +205,20 @@ public class RegistrazioneUtenti extends HttpServlet {
 		
 		
 		
-				response.addHeader("Access-Control-Allow-Origin", "*");
-				response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
-				//da trasformare in formato json
-				/*
-				 * le risposte in formato json conterranno:
-				 * stati (andatura della richiesta, coincidenza password, controlli sugli input...)
-				 * descrizione
-				 * eventuali dati
-				 */
-				out.println(risposta);
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		//da trasformare in formato json
+		/*
+		 * le risposte in formato json conterranno:
+		 * stati (andatura della richiesta, coincidenza password, controlli sugli input...)
+		 * descrizione
+		 * eventuali dati
+		 */
+		out.println(risposta);
 				
 				
 				
-		}
+	}
 		
 }
 
