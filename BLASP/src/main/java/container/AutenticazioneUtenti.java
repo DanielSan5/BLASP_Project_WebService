@@ -138,14 +138,19 @@ public class AutenticazioneUtenti extends HttpServlet {
 			QueryHandler queryForThis = new QueryHandler();
 			
 			int hasUsername = queryForThis.hasUsername(username);
-			
+		
 			int user_id = queryForThis.getUserId(username);
+			
+			int hasUserStatus =  queryForThis.hasUserStatus(user_id);
 			
 			switch(hasUsername) {
 			
 				case 1:
 					
-					
+					//pezzo da confermare
+					if(hasUserStatus == 0) {
+						
+						
 					int checkPass = queryForThis.checkPass(user_id, password);
 					
 					if(checkPass == 1) {
@@ -181,6 +186,13 @@ public class AutenticazioneUtenti extends HttpServlet {
 						risposta = "errore con il database (controllo password)";
 					}
 					break;
+					
+					//pezzo nuovo da confermare
+					}else if (hasUserStatus == -1) {
+						risposta = "L'utente è disabilitato";
+					}else if (hasUserStatus == -2) {
+						risposta = "L'utente è stato bloccato";
+					}
 					
 				case 0:
 					risposta = "utente inesistente";

@@ -261,6 +261,40 @@ public class QueryHandler {
 		
 	}
 	
+	//Controllo lo stato dell'utente --> DA CONFERMARE
+	public int hasUserStatus(int user_id) {
+		
+		establishConnection();
+		String prepared_query = "SELECT * FROM utenti WHERE UT_id = ?";
+		
+		try(
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			){
+			
+			pr.setInt(1, user_id);
+			
+			ResultSet res = pr.executeQuery();
+			//per controllare se la località esiste basta vedere il risultato di next(), sar� false se non esistono righe
+			
+			String user_status = res.getString("UT_status");
+			conn.close();
+			
+			if(user_status == "ban")
+				return 0;					//se l'utente è stato bannato
+			else if(user_status == "unable")
+				return -1;					//se l'utente è stato disabilitato
+			else
+				return 1;					//se l'utente ha lo stato abilitato
+		
+		}catch(SQLException e){
+			
+			System.out.println(e.getLocalizedMessage());
+			return -2;
+		
+		}
+		
+	}
+	
 	/*
 	 * returna null se non esistono ticket con quei filtri oppure se ci sono stati errori
 	 */
