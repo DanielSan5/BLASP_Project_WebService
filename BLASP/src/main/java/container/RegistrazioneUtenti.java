@@ -9,8 +9,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
+
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
@@ -113,6 +116,21 @@ public class RegistrazioneUtenti extends HttpServlet {
   	   }
   	   return true;	   
      }
+   
+	
+   //Date of birth check --> da testare
+   public boolean isValidDateOfBirth(String data_nascita) {
+	
+	   SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+	   dateFormat.setLenient(false);
+   
+	   try {
+		   dateFormat.parse(data_nascita);
+		   return true;
+	   } catch (Exception e) {
+		   return false;
+	   }
+   }
     
     //Password check
     public boolean isValidPassword(String password) {
