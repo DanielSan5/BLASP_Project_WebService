@@ -146,20 +146,20 @@ public class RegistrazioneUtenti extends HttpServlet {
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
 		//acquisizione valore delle chiavi
-		username = user.get("Username").getAsString();
-		email = user.get("Email").getAsString();
-		password = user.get("Password").getAsString();
-		confirm_password = user.get("Confirm_Password").getAsString();
-		nome = user.get("Nome").getAsString();
-		cognome = user.get("Cognome").getAsString();
-		data_nascita = user.get("Data_Nascita").getAsString();
-		classe = user.get("Classe").getAsInt();
-		indirizzo_scolastico = user.get("Indirizzo_Scolastico").getAsString();
-		localita = user.get("Localita").getAsString();
+		//username = user.get("Username").getAsString();
+		email = user.get("email").getAsString();
+		password = user.get("password").getAsString();
+		confirm_password = user.get("conferma_pass").getAsString();
+		nome = user.get("nome").getAsString();
+		cognome = user.get("cognome").getAsString();
+		data_nascita = user.get("data_nascita").getAsString();
+		classe = user.get("classe").getAsInt();
+		indirizzo_scolastico = user.get("indirizzo").getAsString();
+		localita = user.get("localita").getAsString();
 		
 		
 		
-		if(/*isNotBlank() && */ isValidUsername(username) /*&& isValidPassword()*/ && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
+		if(/*isNotBlank() && */ /*isValidUsername(username)*/ /*&& isValidPassword()*/  isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
 			
 				/*
 				 * psw encryption
@@ -167,18 +167,18 @@ public class RegistrazioneUtenti extends HttpServlet {
 				String encryptedPass = passEncr(password);
 				QueryHandler queryForThis = new QueryHandler();
 				
-				int hasUsername = queryForThis.hasUsername(username);
+				//int hasUsername = queryForThis.hasUsername(username);
 				int hasEmail = queryForThis.hasEmail(email); 
 				
-				switch(hasUsername) {
+				switch(hasEmail) {
 				
 					case 1:
 						risposta = "username gia esistente";
 						break;
 					case 0:
 						
-						if(hasEmail != -1) {
-							if(hasEmail == 0) {
+						//if(hasEmail != -1) {
+							//if(hasEmail == 0) {
 							
 								int inserted = queryForThis.inserisciUtente(username ,email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
 								
@@ -187,12 +187,12 @@ public class RegistrazioneUtenti extends HttpServlet {
 								}else {
 									risposta = "errore del database (inserimento utente)";
 								}
-							}else {
-								risposta = "email gia esistente";
-							}
-						}else {
-							risposta = "errore del database (presenza email)";
-						}
+							//}//else {
+								//risposta = "email gia esistente";
+							//}
+						//}else {
+							//risposta = "errore del database (presenza email)";
+						//}
 						break;
 						
 					default:

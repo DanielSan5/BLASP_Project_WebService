@@ -1,30 +1,29 @@
 package classes;
 
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-
-import com.mysql.jdbc.Connection;
-
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 
 public class QueryHandler {
 	
-	private static String db_url = "jdbc:mysql://localhost:3306/utenti";
+	private static String db_url = "jdbc:mysql://localhost:3306/ticketing";
     private static String db_driver = "com.mysql.jdbc.Driver";
     private static String db_user = "root";
     private static String db_password = "";
     private Connection conn;
+ ;
   
 
 	public QueryHandler() {
 		
 		try {
-			Class.forName(db_driver).newInstance();
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e1) {
+			Class.forName(db_driver);
+		} catch (ClassNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
@@ -34,7 +33,7 @@ public class QueryHandler {
 	private void establishConnection() {
 		
 		try{
-			conn = (Connection) DriverManager.getConnection(db_url, db_user, db_password); 
+			conn = DriverManager.getConnection(db_url, db_user, db_password); 
 		}catch(SQLException e){
 			System.err.println(e.getLocalizedMessage());
 		}
@@ -112,6 +111,7 @@ public class QueryHandler {
 				ResultSet res = pr.executeQuery();
 				if(res.next()) {
 					
+
 					String hashedPass = res.getString("UT_password");
 					conn.close();
 					
@@ -172,21 +172,21 @@ public class QueryHandler {
 	public int inserisciUtente(String username, String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO utenti (UT_username, UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		String prepared_query = "INSERT INTO utenti (UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 		
 		try(
 				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 				){
 				
-				pr.setString(1, username);
-				pr.setString(2, email);
-				pr.setString(3, password);
-				pr.setString(4, nome);
-				pr.setString(5, cognome);
-				pr.setString(6, data_nascita);
-				pr.setInt(7, classe);
-				pr.setString(8, indirizzo_scolastico);
-				pr.setString(9, localita);
+				//pr.setString(1, username);
+				pr.setString(1, email);
+				pr.setString(2, password);
+				pr.setString(3, nome);
+				pr.setString(4, cognome);
+				pr.setString(5, data_nascita);
+				pr.setInt(6, classe);
+				pr.setString(7, indirizzo_scolastico);
+				pr.setString(8, localita);
 				
 				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
 				int check = pr.executeUpdate();

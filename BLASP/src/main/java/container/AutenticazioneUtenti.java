@@ -90,9 +90,9 @@ public class AutenticazioneUtenti extends HttpServlet {
 		Gson g = new Gson();
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
-		username = user.get("Username").getAsString();		//ancora da definire
-		email = user.get("Email").getAsString();			//ancora da definire	
-		password = user.get("Password").getAsString();
+		//username = user.get("Username").getAsString();		//ancora da definire
+		email = user.get("email").getAsString();			//ancora da definire	
+		password = user.get("password").getAsString();
 		
 		JsonObject jwtFormat = new JsonObject();
 		jwtFormat.addProperty("sub", username);
@@ -102,11 +102,11 @@ public class AutenticazioneUtenti extends HttpServlet {
 		
 		
 		//controlli input
-		if(/*isNotBlank() &&*/ isValidUsername() && isValidEmail() /*&& isValidPassword()*/) {
+		if(/*isNotBlank() &&*/ /*isValidUsername() &&*/ isValidEmail() /*&& isValidPassword()*/) {
 			
 			QueryHandler queryForThis = new QueryHandler();
 			
-			int hasUsername = queryForThis.hasUsername(username);
+			int hasUsername = queryForThis.hasEmail(email);
 			
 			int user_id = queryForThis.getUserId(username);
 			
