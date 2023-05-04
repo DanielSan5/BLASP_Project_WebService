@@ -209,7 +209,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 		//String descrizione = user.get("descrizione").getAsString();
 		
 	
-		if(isNotBlank(nome, cognome) && /*isValidUsername(username) && */isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
+		if(isNotBlank(nome, cognome) && /*isValidUsername(username) && */ isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
 				/*
 				 * psw encryption
 				 */
