@@ -9,8 +9,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
+
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
@@ -98,6 +101,21 @@ public class RegistrazioneUtenti extends HttpServlet {
   	   }
   	   return true;	   
      }
+   
+	
+   //Date of birth check --> da testare
+   public boolean isValidDateOfBirth(String data_nascita) {
+	
+	   SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+	   dateFormat.setLenient(false);
+   
+	   try {
+		   dateFormat.parse(data_nascita);
+		   return true;
+	   } catch (Exception e) {
+		   return false;
+	   }
+   }
     
     //Password check
     public boolean isValidPassword(String password) {
@@ -106,7 +124,7 @@ public class RegistrazioneUtenti extends HttpServlet {
     	boolean hasUpperCase = false;
     	boolean hasDigit = false;
     	boolean hasSpecialChar = false;
-    	String specialChars = "!?&$";
+    	String specialChars = "!@#$%^&*(),.?\":{}|<>";
     	
     	for(int i=0; i < password.length(); i++) {
     		char passwordChar = password.charAt(i);
@@ -173,7 +191,6 @@ public class RegistrazioneUtenti extends HttpServlet {
 		String indirizzo_scolastico = user.get("indirizzo").getAsString();
 		String localita = user.get("localita").getAsString();
 		
-	
 		if(isNotBlank(nome, cognome) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
 				/*
 				 * psw encryption
