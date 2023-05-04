@@ -27,16 +27,7 @@ import classes.QueryHandler;
 @WebServlet("/RegistrazioneUtenti")
 public class RegistrazioneUtenti extends HttpServlet {
 	
-	private static final long serialVersionUID = 1L;
-    
-	//***CAMPI OBBLIGATORI***
-	
-	//altro
-	
-	//***CAMPI FACOLTATIVI***
-	String descrizione;
-
-	
+	private static final long serialVersionUID = 1L;	
 	String risposta;
 	
     /**
@@ -44,7 +35,7 @@ public class RegistrazioneUtenti extends HttpServlet {
      */
     public RegistrazioneUtenti() {
         super();
-        // TODO Auto-generated constructor stub
+        
     }
     
     private String passEncr(String password) {
@@ -88,14 +79,7 @@ public class RegistrazioneUtenti extends HttpServlet {
  	   
  	   return true;
     }
-    
-    //Username check
-    /*private boolean isValidUsername(String username) {
-    	if((username == null) || username.contains(" "))
-    		return false;
-    	else
-    		return true;
-    }*/
+ 
     
     //Class check
     private boolean isValidClass(int classe) {
@@ -104,6 +88,7 @@ public class RegistrazioneUtenti extends HttpServlet {
     		return true;
     	}else
     		return false;
+    	
     }
     
   //Empty input check
@@ -178,7 +163,6 @@ public class RegistrazioneUtenti extends HttpServlet {
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
 		//acquisizione valore delle chiavi
-		//String username = user.get("Username").getAsString();
 		String email = user.get("email").getAsString();
 		String password = user.get("password").getAsString();
 		String confirm_password = user.get("conferma_pass").getAsString();
@@ -188,17 +172,15 @@ public class RegistrazioneUtenti extends HttpServlet {
 		int classe = user.get("classe").getAsInt();
 		String indirizzo_scolastico = user.get("indirizzo").getAsString();
 		String localita = user.get("localita").getAsString();
-		//String descrizione = user.get("descrizione").getAsString();
 		
 	
-		if(isNotBlank(nome, cognome) && /*isValidUsername(username) && */isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
+		if(isNotBlank(nome, cognome) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
 				/*
 				 * psw encryption
 				 */
 				String encryptedPass = passEncr(password);
 				QueryHandler queryForThis = new QueryHandler();
 				
-				//int hasUsername = queryForThis.hasUsername(username);
 				int hasEmail = queryForThis.hasEmail(email); 
 				
 				switch(hasEmail) {
@@ -207,23 +189,13 @@ public class RegistrazioneUtenti extends HttpServlet {
 						risposta = "utente gia esistente";
 						break;
 					case 0:
+						int inserted = queryForThis.inserisciUtente(/*username , descrizione*/email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
 						
-						//if(hasEmail != -1) {
-							//if(hasEmail == 0) {
-							
-								int inserted = queryForThis.inserisciUtente(/*username , descrizione*/email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
-								
-								if(inserted != -1) {
-									risposta = "utente registrato";
-								}else {
-									risposta = "errore del database (inserimento utente)";
-								}
-							//}//else {
-								//risposta = "email gia esistente";
-							//}
-						//}else {
-							//risposta = "errore del database (presenza email)";
-						//}
+						if(inserted != -1) {
+							risposta = "utente registrato";
+						}else {
+							risposta = "errore del database (inserimento utente)";
+						}
 						break;
 						
 					default:
@@ -236,8 +208,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 		
 		
 		
-		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+	
 		//da trasformare in formato json
 		/*
 		 * le risposte in formato json conterranno:

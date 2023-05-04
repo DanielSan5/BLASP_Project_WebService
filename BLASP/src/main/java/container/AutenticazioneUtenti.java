@@ -128,7 +128,6 @@ public class AutenticazioneUtenti extends HttpServlet {
 			QueryHandler queryForThis = new QueryHandler();
 			
 			int hasEmail = queryForThis.hasEmail(email);
-			//int hasUsername = queryForThis.hasUsername(username);
 			int user_id = queryForThis.getUserId(email);
 			String userStatus =  queryForThis.getUserStatus(user_id);
 			
@@ -139,13 +138,11 @@ public class AutenticazioneUtenti extends HttpServlet {
 					//pezzo da confermare
 					if(userStatus.equals("none")) {
 						
-							
 						int checkPass = queryForThis.checkPass(user_id, password);
 						
 						if(checkPass == 1) {
 								
 							risposta = "password corretta";
-							
 							//generazione jwt per la sessione
 							try {
 								

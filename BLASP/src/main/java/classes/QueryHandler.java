@@ -81,7 +81,6 @@ public class QueryHandler {
 			ResultSet res = pr.executeQuery();
 			//per controllare se l'email istituzionale esiste basta vedere il risultato di next(), sar� false se non esistono righe
 			boolean check = res.next();
-			
 			conn.close();
 			return check ? 1 : 0; //se check true returna 1 altrimenti 0
 		
@@ -90,10 +89,10 @@ public class QueryHandler {
 			System.out.println("aa");
 			System.out.println(e.getLocalizedMessage());
 			return -1;
-		
 		}
 		
 	}
+	
 	
 	public int checkPass(int user_id, String password) {
 		

@@ -9,10 +9,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
-
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
-
 import classes.JwtVal;
 import classes.QueryHandler;
 import classes.Ticket;
@@ -30,7 +28,6 @@ public class RicercaFiltrataTickets extends HttpServlet {
 	QueryHandler queryForThis = new QueryHandler();
 	String risposta;
 	ArrayList<Ticket> tickets = new ArrayList<Ticket>();
-	
 	
 	//Authorization empty check
 	public boolean isValidAuthorization() {
@@ -51,7 +48,7 @@ public class RicercaFiltrataTickets extends HttpServlet {
 					return false;
 			}
 		}
-	
+		
 	//Value check
 	public boolean isValidValue() {
 		
@@ -115,8 +112,6 @@ public class RicercaFiltrataTickets extends HttpServlet {
      */
     public RicercaFiltrataTickets() {
         super();
-        
-        // TODO Auto-generated constructor stub
     }
 
 	/**
@@ -124,10 +119,8 @@ public class RicercaFiltrataTickets extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		
 		PrintWriter out = response.getWriter();
 		//Estrazione dei parametri dalla richiesta GET
-		//request.getQueryString();
 		filter = request.getParameter("filter");
 		value = request.getParameter("value");
 		
@@ -136,13 +129,11 @@ public class RicercaFiltrataTickets extends HttpServlet {
 		
 		if(isValidValue() && isValidFilter() && isValidAuthorization() ) {
 			
-			
 			final JwtVal validator = new JwtVal();
 			
 			try{
 				
 				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
-				
 				//String email = jwtDecoded.getClaim("sub").asString();
 				
 				tickets = queryForThis.getTickets(filter, value);

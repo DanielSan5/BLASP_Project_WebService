@@ -28,6 +28,7 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 public class JwtGen{
 
 	public JwtGen() {
+		 //bouncy castle provider usato per poter utilizzare la chiave in formato pkcs#1 per generare una keySpec in formato pkcs#8, senza convertire il file
 		Security.addProvider(new BouncyCastleProvider());
 	}
 	public String generateJwt(Map<String, String> payload) throws IllegalArgumentException, JWTCreationException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
@@ -82,7 +83,7 @@ public class JwtGen{
 		
 		
 	    byte[] encoded = Base64.getDecoder().decode(privateKeyPEM);
-	    //bouncy castle provider usato per poter utilizzare la chiave in formato pkcs#1 per generare una keySpec in formato pkcs#8, senza convertire il file
+	   
 	    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 	    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
 	    return (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
