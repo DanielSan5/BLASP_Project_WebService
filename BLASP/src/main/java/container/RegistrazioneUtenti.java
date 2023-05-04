@@ -139,7 +139,7 @@ public class RegistrazioneUtenti extends HttpServlet {
     	boolean hasUpperCase = false;
     	boolean hasDigit = false;
     	boolean hasSpecialChar = false;
-    	String specialChars = "!?&$";
+    	String specialChars = "!@#$%^&*(),.?\":{}|<>";
     	
     	for(int i=0; i < password.length(); i++) {
     		char passwordChar = password.charAt(i);
