@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -17,30 +18,19 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator.Builder;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
 
 public class JwtGen{
 
-	private RSAPublicKey publicKey;
-	private RSAPrivateKey privateKey;
-	
-	public JwtGen() throws NoSuchAlgorithmException {
-		
-		try {
-			this.publicKey = getPublicKey();
-			this.privateKey= getPrivateKey();
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-			
-			System.out.println("errore nella lettura delle chiavi");
-			e.printStackTrace();
-		}
-		
-		
+	public JwtGen() {
+		Security.addProvider(new BouncyCastleProvider());
 	}
-	
-	public String generateJwt(Map<String, String> payload) {
+	public String generateJwt(Map<String, String> payload) throws IllegalArgumentException, JWTCreationException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
 		
 		Builder tokenBuilder = JWT.create()
                 .withIssuer("https://blasp.mooo.com")
@@ -52,7 +42,8 @@ public class JwtGen{
         payload.entrySet().forEach(action -> tokenBuilder.withClaim(action.getKey(), action.getValue()));
        
         //generazione del token con le chiavi di rsa
-        return  tokenBuilder.sign(Algorithm.RSA256(this.publicKey, this.privateKey));
+        String token = tokenBuilder.sign(Algorithm.RSA256(getPublicKey(), getPrivateKey()));
+        return  token;
 	}
 	
 	
@@ -91,7 +82,7 @@ public class JwtGen{
 		
 		
 	    byte[] encoded = Base64.getDecoder().decode(privateKeyPEM);
-
+	    //bouncy castle provider usato per poter utilizzare la chiave in formato pkcs#1 per generare una keySpec in formato pkcs#8, senza convertire il file
 	    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 	    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
 	    return (RSAPrivateKey) keyFactory.generatePrivate(keySpec);

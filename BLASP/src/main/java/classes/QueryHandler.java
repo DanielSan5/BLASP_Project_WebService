@@ -86,7 +86,8 @@ public class QueryHandler {
 			return check ? 1 : 0; //se check true returna 1 altrimenti 0
 		
 		}catch(SQLException e){
-			
+			e.printStackTrace();
+			System.out.println("aa");
 			System.out.println(e.getLocalizedMessage());
 			return -1;
 		
@@ -118,6 +119,7 @@ public class QueryHandler {
 					if(argon2.verify(hashedPass, password)){
 						return 1;
 					}else {
+						System.out.println("password non verificata");
 						return 0;
 					}
 					
@@ -169,7 +171,7 @@ public class QueryHandler {
 	
 	
 	
-	public int inserisciUtente(String username, String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) {
+	public int inserisciUtente(/*String username,*/ String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) {
 		
 		establishConnection();
 		String prepared_query = "INSERT INTO utenti (UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -237,7 +239,7 @@ public class QueryHandler {
 	public int hasLocalita(String localita) {
 		
 		establishConnection();
-		String prepared_query = "SELECT * FROM localita WHERE LC_nome = ?";
+		String prepared_query = "SELECT * FROM localita WHERE LC_descrizione = ?";
 		
 		try(
 			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -256,6 +258,43 @@ public class QueryHandler {
 			
 			System.out.println(e.getLocalizedMessage());
 			return -1;
+		
+		}
+		
+	}
+	
+	//Controllo lo stato dell'utente --> DA CONFERMARE
+	public String getUserStatus(int user_id) {
+		
+		establishConnection();
+		String prepared_query = "SELECT UT_status FROM utenti WHERE UT_id = ?";
+		
+		try(
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			){
+			
+			pr.setInt(1, user_id);
+			
+			ResultSet res = pr.executeQuery();
+			
+			if(res.next()) {
+				
+				
+				String user_status = res.getString("UT_status");
+				conn.close();
+				return user_status;
+				
+				
+			}else {
+				return "";
+			}
+			
+		
+		}catch(SQLException e){
+			
+			e.printStackTrace();
+			System.out.println(e.getLocalizedMessage());
+			return "";
 		
 		}
 		

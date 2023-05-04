@@ -30,16 +30,6 @@ public class RegistrazioneUtenti extends HttpServlet {
 	private static final long serialVersionUID = 1L;
     
 	//***CAMPI OBBLIGATORI***
-	String username;		//ancora da discutere
-	String email;
-	String password;
-	String confirm_password;
-	String nome;
-	String cognome;
-	String data_nascita;
-	int classe;
-	String indirizzo_scolastico;
-	String localita;
 	
 	//altro
 	
@@ -68,12 +58,23 @@ public class RegistrazioneUtenti extends HttpServlet {
     	
     }
     
+    /*private boolean isValidLocation(String localita) {
+    	
+    }*/
+    
+    /*private boolean isValidDateFormat(String data_nascita) {
+	
+    }*/
+    
+    /*private boolean isValidSTA(String indirizzo_scolastico) {
+	
+    }*/
     //Email check (Aldini email)
     private boolean isValidEmail(String email) {
      	
      	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
      	
-     	if((email == null) || (email.matches(regexPattern) == false))
+     	if((email.isBlank()) || (email.matches(regexPattern) == false))
      		return false;
      	else 	
      		return true;
@@ -89,12 +90,12 @@ public class RegistrazioneUtenti extends HttpServlet {
     }
     
     //Username check
-    private boolean isValidUsername(String username) {
+    /*private boolean isValidUsername(String username) {
     	if((username == null) || username.contains(" "))
     		return false;
     	else
     		return true;
-    }
+    }*/
     
     //Class check
     private boolean isValidClass(int classe) {
@@ -105,9 +106,40 @@ public class RegistrazioneUtenti extends HttpServlet {
     		return false;
     }
     
-    //Empty input check
+  //Empty input check
+   public boolean isNotBlank(String nome, String cognome) {
+  	   if(nome.isBlank() || cognome.isBlank()) {
+  		   return false;
+  	   }
+  	   return true;	   
+     }
     
     //Password check
+    public boolean isValidPassword(String password) {
+    	
+    	boolean hasLowerCase = false;
+    	boolean hasUpperCase = false;
+    	boolean hasDigit = false;
+    	boolean hasSpecialChar = false;
+    	String specialChars = "!?&$";
+    	
+    	for(int i=0; i < password.length(); i++) {
+    		char passwordChar = password.charAt(i);
+    		if(Character.isLowerCase(passwordChar))
+    			hasLowerCase = true;
+    		else if (Character.isUpperCase(passwordChar))
+    			hasUpperCase = true;
+    		else if(Character.isDigit(passwordChar)) 
+                hasDigit = true;
+            else if(specialChars.indexOf(passwordChar) != -1)
+                hasSpecialChar = true;
+      }
+    	
+    	if(password.length() > 8 && hasLowerCase && hasUpperCase && hasDigit && hasSpecialChar) 
+    		return true;
+    	else 
+    		return false;
+    }
     
 
 	/**
@@ -146,21 +178,20 @@ public class RegistrazioneUtenti extends HttpServlet {
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
 		//acquisizione valore delle chiavi
-		//username = user.get("Username").getAsString();
-		email = user.get("email").getAsString();
-		password = user.get("password").getAsString();
-		confirm_password = user.get("conferma_pass").getAsString();
-		nome = user.get("nome").getAsString();
-		cognome = user.get("cognome").getAsString();
-		data_nascita = user.get("data_nascita").getAsString();
-		classe = user.get("classe").getAsInt();
-		indirizzo_scolastico = user.get("indirizzo").getAsString();
-		localita = user.get("localita").getAsString();
+		//String username = user.get("Username").getAsString();
+		String email = user.get("email").getAsString();
+		String password = user.get("password").getAsString();
+		String confirm_password = user.get("conferma_pass").getAsString();
+		String nome = user.get("nome").getAsString();
+		String cognome = user.get("cognome").getAsString();
+		String data_nascita = user.get("data_nascita").getAsString();
+		int classe = user.get("classe").getAsInt();
+		String indirizzo_scolastico = user.get("indirizzo").getAsString();
+		String localita = user.get("localita").getAsString();
+		//String descrizione = user.get("descrizione").getAsString();
 		
-		
-		
-		if(/*isNotBlank() && */ /*isValidUsername(username)*/ /*&& isValidPassword()*/  isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
-			
+	
+		if(isNotBlank(nome, cognome) && /*isValidUsername(username) && */isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
 				/*
 				 * psw encryption
 				 */
@@ -173,14 +204,14 @@ public class RegistrazioneUtenti extends HttpServlet {
 				switch(hasEmail) {
 				
 					case 1:
-						risposta = "username gia esistente";
+						risposta = "utente gia esistente";
 						break;
 					case 0:
 						
 						//if(hasEmail != -1) {
 							//if(hasEmail == 0) {
 							
-								int inserted = queryForThis.inserisciUtente(username ,email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+								int inserted = queryForThis.inserisciUtente(/*username , descrizione*/email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
 								
 								if(inserted != -1) {
 									risposta = "utente registrato";
@@ -196,7 +227,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 						break;
 						
 					default:
-						risposta = "errore del database (presenza username)";
+						risposta = "errore del database (presenza utente)";
 						break;
 				}
 		}else {

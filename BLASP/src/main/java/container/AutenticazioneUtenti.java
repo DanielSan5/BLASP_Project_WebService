@@ -21,9 +21,6 @@ import classes.QueryHandler;
 public class AutenticazioneUtenti extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	String username;	//ancora da definire
-	String email; 		//ancora da definire
-	String password;
 	String risposta;
 	String cookieForClient;
 	
@@ -36,29 +33,53 @@ public class AutenticazioneUtenti extends HttpServlet {
     }
 
     //Username check
-    public boolean isValidUsername() {
+    /*public boolean isValidUsername() {
     	if(username == null || username.contains(" "))
     		return false;
     	else
     		return true;
-    }
+    }*/
     
     //Email check (Aldini email)
-    public boolean isValidEmail() {
+    public boolean isValidEmail(String email) {
      	
      	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
      	
-     	if((email == null) || (email.matches(regexPattern) == false))
+     	if((email.isBlank()) || (email.matches(regexPattern) == false))
      		return false;
      	else 	
      		return true;
      }
     
     
-    //Empty input check
     
     //Password check
-    
+    public boolean isValidPassword(String password) {
+    	
+    	boolean hasLowerCase = false;
+    	boolean hasUpperCase = false;
+    	boolean hasDigit = false;
+    	boolean hasSpecialChar = false;
+    	String specialChars = "!?&$";
+    	
+    	for(int i=0; i < password.length(); i++) {
+    		char passwordChar = password.charAt(i);
+    		if(Character.isLowerCase(passwordChar))
+    			hasLowerCase = true;
+    		else if (Character.isUpperCase(passwordChar))
+    			hasUpperCase = true;
+    		else if(Character.isDigit(passwordChar)) 
+                hasDigit = true;
+            else if(specialChars.indexOf(passwordChar) != -1)
+                hasSpecialChar = true;
+      }
+    	
+    	if(password.length() > 8 && hasLowerCase && hasUpperCase && hasDigit && hasSpecialChar) 
+    		return true;
+    	else 
+    		return false;
+    	
+    }
     
    
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -90,67 +111,80 @@ public class AutenticazioneUtenti extends HttpServlet {
 		Gson g = new Gson();
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
-		//username = user.get("Username").getAsString();		//ancora da definire
-		email = user.get("email").getAsString();			//ancora da definire	
-		password = user.get("password").getAsString();
+		//String username = user.get("Username").getAsString();		//ancora da definire
+		String email = user.get("email").getAsString();			
+		String password = user.get("password").getAsString();
 		
 		JsonObject jwtFormat = new JsonObject();
-		jwtFormat.addProperty("sub", username);
+		//jwtFormat.addProperty("sub", username);
 		jwtFormat.addProperty("sub-email", email);
 		jwtFormat.addProperty("aud", "*");
 		
 		
 		
 		//controlli input
-		if(/*isNotBlank() &&*/ /*isValidUsername() &&*/ isValidEmail() /*&& isValidPassword()*/) {
+		if(/* isValidUsername() &&*/ isValidEmail(email) && isValidPassword(password)) {
 			
 			QueryHandler queryForThis = new QueryHandler();
 			
-			int hasUsername = queryForThis.hasEmail(email);
+			int hasEmail = queryForThis.hasEmail(email);
+			//int hasUsername = queryForThis.hasUsername(username);
+			int user_id = queryForThis.getUserId(email);
+			String userStatus =  queryForThis.getUserStatus(user_id);
 			
-			int user_id = queryForThis.getUserId(username);
-			
-			switch(hasUsername) {
+			switch(hasEmail/*hasUsername*/) {
 			
 				case 1:
 					
-					
-					int checkPass = queryForThis.checkPass(user_id, password);
-					
-					if(checkPass == 1) {
-							
-						risposta = "password corretta";
+					//pezzo da confermare
+					if(userStatus.equals("none")) {
 						
-						//generazione jwt per la sessione
-						try {
 							
-							JwtGen generator = new JwtGen();
-							Map<String, String> claims = new HashMap<>();
+						int checkPass = queryForThis.checkPass(user_id, password);
+						
+						if(checkPass == 1) {
+								
+							risposta = "password corretta";
 							
-							jwtFormat.keySet().forEach(keyStr ->
-						    {
-						        String keyvalue = jwtFormat.get(keyStr).getAsString();
-						        claims.put(keyStr, keyvalue);
-						      
-						    });
+							//generazione jwt per la sessione
+							try {
+								
+								JwtGen generator = new JwtGen();
+								Map<String, String> claims = new HashMap<>();
+								
+								jwtFormat.keySet().forEach(keyStr ->
+							    {
+							        String keyvalue = jwtFormat.get(keyStr).getAsString();
+							        claims.put(keyStr, keyvalue);
+							      
+							    });
+								
+								String token = generator.generateJwt(claims);
+								cookieForClient = token;
+								
+							} catch (Exception e) {
+								
+								e.printStackTrace();
+							}
+						
+						}else if (checkPass == 0){
 							
-							String token = generator.generateJwt(claims);
-							cookieForClient = token;
+							risposta = "password errata";
 							
-						} catch (Exception e) {
-							
-							e.printStackTrace();
+						}else {
+							risposta = "errore con il database (controllo password)";
 						}
+						
 					
-					}else if (checkPass == 0){
-						
-						risposta = "password errata";
-						
-					}else {
-						risposta = "errore con il database (controllo password)";
+					//pezzo nuovo da confermare
+					}else if (userStatus.equals("banned")) {
+						risposta = "utente bloccato";
+					}else if(userStatus.equals("unabled")){
+						risposta = "utente disabilitato";
+					}else if(userStatus.isBlank()){
+						risposta = "errore del database (controllo stato)";
 					}
 					break;
-					
 				case 0:
 					risposta = "utente inesistente";
 					break;

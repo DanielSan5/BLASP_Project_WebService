@@ -45,7 +45,7 @@ public class RicercaFiltrataTickets extends HttpServlet {
 			if (filter.isBlank())
 				return false;
 			else {
-				if (filter == "localita " || filter == "stato" || filter == "classe")
+				if (filter.equals("localita") || filter.equals("stato") || filter.equals("classe"))
 					return true;
 				else
 					return false;
@@ -55,7 +55,8 @@ public class RicercaFiltrataTickets extends HttpServlet {
 	//Value check
 	public boolean isValidValue() {
 		
-		boolean checkResult = false;
+		
+		//boolean checkResult = false;
 		
 		if (value.isBlank()) {
 			
@@ -69,6 +70,7 @@ public class RicercaFiltrataTickets extends HttpServlet {
 					
 					int hasLocalita = queryForThis.hasLocalita(value);
 					if(hasLocalita == 0 || hasLocalita == -1) {
+						System.out.println("problema");
 						return false;
 						
 					}else {
@@ -125,11 +127,12 @@ public class RicercaFiltrataTickets extends HttpServlet {
 		
 		PrintWriter out = response.getWriter();
 		//Estrazione dei parametri dalla richiesta GET
+		//request.getQueryString();
 		filter = request.getParameter("filter");
 		value = request.getParameter("value");
 		
 		//Estrazione del token dall'header
-		jwtToken = request.getHeader("Authorization");
+		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		
 		if(isValidValue() && isValidFilter() && isValidAuthorization() ) {
 			
@@ -140,11 +143,15 @@ public class RicercaFiltrataTickets extends HttpServlet {
 				
 				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
 				
-				String username = jwtDecoded.getClaim("sub").asString();
+				//String email = jwtDecoded.getClaim("sub").asString();
 				
 				tickets = queryForThis.getTickets(filter, value);
+				if(tickets == null) {
+					risposta = "nessun ticket trovato";
+				}else {
+					risposta = tickets.toString();
+				}
 				
-				risposta = tickets.toString();
 				
 			}catch(InvalidParameterException e) {
 				
