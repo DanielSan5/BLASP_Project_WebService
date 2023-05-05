@@ -31,27 +31,6 @@ public class AutenticazioneUtenti extends HttpServlet {
         super();
        
     }
-
-    //Username check
-    /*public boolean isValidUsername() {
-    	if(username == null || username.contains(" "))
-    		return false;
-    	else
-    		return true;
-    }*/
-    
-    //Email check (Aldini email)
-    public boolean isValidEmail(String email) {
-     	
-     	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
-     	
-     	if((email.isBlank()) || (email.matches(regexPattern) == false))
-     		return false;
-     	else 	
-     		return true;
-     }
-    
-    
     
     //Password check
     public boolean isValidPassword(String password) {
@@ -123,7 +102,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 		
 		
 		//controlli input
-		if(/* isValidUsername() &&*/ isValidEmail(email) && isValidPassword(password)) {
+		if(isValidPassword(password)) {
 			
 			QueryHandler queryForThis = new QueryHandler();
 			

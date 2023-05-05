@@ -16,7 +16,6 @@ public class QueryHandler {
     private static String db_user = "root";
     private static String db_password = "";
     private Connection conn;
- ;
   
 
 	public QueryHandler() {
@@ -127,9 +126,6 @@ public class QueryHandler {
 					return -1;
 				}
 				
-				
-				
-
 			}catch(SQLException e){
 				
 				System.out.println(e.getLocalizedMessage());
@@ -167,7 +163,6 @@ public class QueryHandler {
 		
 		}
 	}
-	
 	
 	
 	public int inserisciUtente(/*String username,*/ String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) {
@@ -302,7 +297,7 @@ public class QueryHandler {
 	/*
 	 * returna null se non esistono ticket con quei filtri oppure se ci sono stati errori
 	 */
-	public ArrayList<Ticket> getTickets(String filter, String value) {
+	/*public ArrayList<Ticket> getTickets(String filter, String value) {
 		
 		establishConnection();
 		
@@ -363,8 +358,8 @@ public class QueryHandler {
 			return null;
 		}
 		
-	}
-	
+	}*/
+
 	/*
 	 * Metodo per la query di modifica password
 	 * Metodo per la query di modifica data di nascita

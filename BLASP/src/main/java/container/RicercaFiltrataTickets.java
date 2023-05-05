@@ -9,10 +9,19 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import classes.JwtVal;
 import classes.QueryHandler;
+import classes.QueryHandler_filters;
 import classes.Ticket;
 
 /**
@@ -22,15 +31,17 @@ import classes.Ticket;
 public class RicercaFiltrataTickets extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	String filter;
-	String value;
-	String jwtToken;
-	QueryHandler queryForThis = new QueryHandler();
-	String risposta;
-	ArrayList<Ticket> tickets = new ArrayList<Ticket>();
+	private String filter;
+	private String value;
+	private String jwtToken;
+	private QueryHandler_filters queryForThis = new QueryHandler_filters();
+	private String risposta;
+	private ArrayList<Ticket> tickets = new ArrayList<Ticket>();
+	private Set<String> filters;
+	boolean check;
 	
 	//Authorization empty check
-	public boolean isValidAuthorization() {
+	private boolean isValidAuthorization() {
 		if(jwtToken == null || jwtToken.isBlank())
 			return false;
 		else 
@@ -38,74 +49,31 @@ public class RicercaFiltrataTickets extends HttpServlet {
 	}
        
 	//Filter check
-		public boolean isValidFilter() {
-			if (filter.isBlank())
-				return false;
-			else {
-				if (filter.equals("localita") || filter.equals("stato") || filter.equals("classe"))
-					return true;
-				else
-					return false;
-			}
-		}
+	private boolean isValidFilter(Set<String> filters) {
 		
-	//Value check
-	public boolean isValidValue() {
+		if(filters.contains("materia")){
 		
-		
-		//boolean checkResult = false;
-		
-		if (value.isBlank()) {
-			
-			return false;
-			
-		}else {
-			
-			switch(filter) {
+			filters.forEach((element) -> {
 				
-				case "localita":
+				if(element.equals("localita") || element.equals("classe") || element.equals("nome")){
 					
-					int hasLocalita = queryForThis.hasLocalita(value);
-					if(hasLocalita == 0 || hasLocalita == -1) {
-						System.out.println("problema");
-						return false;
-						
-					}else {
-						return true;
-						
-					}
+					check = true;
 					
-					
-				case "stato":
-					
-					if (value == "libero" || value == "occupato") {
-						return true;
-						
-					}else {
-						return false;
-						
-					}
-					
-					
-				/*case "classe":
-					
-					int valueInt = Integer.parseInt(value);
-					if (valueInt >= 1 && valueInt <= 5) {
-						checkResult = true;
-						break;
-					}else {
-						checkResult = false;
-						break;
-					}*/	
-				default:
-					return false;
-					
-			}
+				}else {
+					check = false;
+				}
 			
+			});
+				
+		}else {
+			return false;
 		}
-		
+		return check;
+			
+			
+				
+			
 	}
-	
 	
     /**
      * @see HttpServlet#HttpServlet()
@@ -121,13 +89,24 @@ public class RicercaFiltrataTickets extends HttpServlet {
 		
 		PrintWriter out = response.getWriter();
 		//Estrazione dei parametri dalla richiesta GET
-		filter = request.getParameter("filter");
-		value = request.getParameter("value");
+		/*
+		 * materia ok
+		 * materia-nome ok
+		 * materia-località ok
+		 * materia-classe ok
+		 * materia-nome-località ok
+		 * materia-nome-classe ok 
+		 * materia-località-classe ok
+		 * i ticket restituiti non dipendono dallo stato
+		 */
+		
+		
+		
 		
 		//Estrazione del token dall'header
 		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		
-		if(isValidValue() && isValidFilter() && isValidAuthorization() ) {
+		if(isValidFilter(this.filters) && isValidAuthorization() ) {
 			
 			final JwtVal validator = new JwtVal();
 			
@@ -135,12 +114,29 @@ public class RicercaFiltrataTickets extends HttpServlet {
 				
 				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
 				//String email = jwtDecoded.getClaim("sub").asString();
-				
-				tickets = queryForThis.getTickets(filter, value);
-				if(tickets == null) {
-					risposta = "nessun ticket trovato";
+				//mappatura dei parametri "chiave":"valore" ("localita":"Granarolo")
+				Map<String, String[]> params = request.getParameterMap();
+				filters = params.keySet();
+				//si presume che materia sia gia presente per via del controllo 
+				if(filters.contains("localita")) {
+					tickets = queryForThis.getFor("LM");
+					
+				}else if(filters.contains("classe")) {
+					tickets = queryForThis.getFor("CM");
+					
+				}else if(filters.contains("nome")) {
+					tickets = queryForThis.getFor("NM");
+					
+				}else if(filters.contains("localita") && filters.contains("classe")) {
+					tickets = queryForThis.getFor("LCM");
+					
+				}else if(filters.contains("localita") && filters.contains("nome")) {
+					tickets = queryForThis.getFor("LNM");
+					
+				}else if(filters.contains("classe") && filters.contains("nome")) {
+					tickets = queryForThis.getFor("CNM");
 				}else {
-					risposta = tickets.toString();
+					tickets = queryForThis.getFor("M");
 				}
 				
 				
@@ -158,10 +154,7 @@ public class RicercaFiltrataTickets extends HttpServlet {
 			risposta = "bad request";
 		}
 		
-		
-		
-		
-		//da trasformare in formato json
+		//da trasformare in formato json fare calsse risposta
 		/*
 		 * le risposte in formato json conterranno:
 		 * stati (andatura della richiesta, coincidenza password, controlli sugli input...)
@@ -171,6 +164,7 @@ public class RicercaFiltrataTickets extends HttpServlet {
 		out.println(risposta);
 		
 	}
+
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
