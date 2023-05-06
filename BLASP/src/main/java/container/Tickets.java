@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -38,9 +39,11 @@ public class Tickets extends HttpServlet {
 	private String value;
 	private String jwtToken;
 	private QueryHandler_filters queryForThis = new QueryHandler_filters();
-	private String risposta;
+	
 	private ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 	boolean check;
+	
+	private String descrizione_risposta;
 	
 	//Authorization empty check
 	private boolean isValidAuthorization() {
@@ -77,14 +80,15 @@ public class Tickets extends HttpServlet {
 			
 	}
 	
-	//Tag valid check
-		private boolean isValidTag(int tag) {
-			if(tag >= 1 || tag <= 5)
-				return true;
-			else 
-				return false;
-		}
-	
+//Tag valid check
+private boolean isValidTag(String tag) {
+	if(tag == "prima" || tag == "seconda" || tag == "terza" || tag == "quarta" || tag == "quinta")
+		return true;
+	else 
+		return false;
+}
+			
+				
     /**
      * @see HttpServlet#HttpServlet()
      */
@@ -165,7 +169,7 @@ public class Tickets extends HttpServlet {
 			}catch(InvalidParameterException e) {
 				
 				response.setStatus(401);
-				risposta = "non autorizzato";
+				descrizione_risposta = "non autorizzato";
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
@@ -173,7 +177,7 @@ public class Tickets extends HttpServlet {
 			
 		}else {
 			response.setStatus(400);
-			risposta = "bad request";
+			descrizione_risposta = "bad request";
 		}
 		
 		//da trasformare in formato json fare calsse risposta
@@ -183,7 +187,7 @@ public class Tickets extends HttpServlet {
 		 * descrizione
 		 * eventuali dati
 		 */
-		out.println(risposta);
+		out.println(descrizione_risposta);
 		
 	}
 
@@ -201,10 +205,11 @@ public class Tickets extends HttpServlet {
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		response.addHeader("Access-Control-Allow-Methods", "PUT");
 		PrintWriter out = response.getWriter(); 
-		
 		BufferedReader in_body = request.getReader();
+		JsonObject JsonResponse = new JsonObject();
+		
 		//stringBuilder per costruire una stringa dal messaggio in formato json
 		StringBuilder sb = new StringBuilder();
 		String line;
@@ -228,10 +233,9 @@ public class Tickets extends HttpServlet {
 		//acquisizione chiavi dell'ogetto "to_edit"
 		String valoreMateria = user.get("to_edit").getAsJsonObject().get("materia").getAsString();
 		String valoreDescrizione = user.get("to_edit").getAsJsonObject().get("descrizione").getAsString();
-		int valoreTag = user.get("to_edit").getAsJsonObject().get("tag").getAsInt();
+		String valoreTag = user.get("to_edit").getAsJsonObject().get("tag").getAsString();
 		
-		
-		if(isValidTag(valoreTag) && isValidAuthorization() /*isValidMateria(valoreMateria)*/) {
+		if(isValidTag(valoreTag) && isValidAuthorization()) {
 		
 			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
 			int hasTicketId = queryForThis.hasTicketId(numeroTicket);
@@ -246,25 +250,37 @@ public class Tickets extends HttpServlet {
 					case 1:
 						
 						//esecuzione della query
-						int modificaDatiTicket = queryForThis.modificaDatiTicket(hasTicketId, valoreMateria, valoreDescrizione, valoreTag);
+						int modificaDatiTicket = queryForThis.modificaDatiTicket(numeroTicket, valoreMateria, valoreDescrizione, valoreTag);
 						
 						if(modificaDatiTicket == 1) {
-							risposta = "Dati modificati correttamente";
+							JsonResponse.addProperty("desc", "ticket modificato");
+							JsonResponse.addProperty("stato", "confermato");
 						}else if(modificaDatiTicket == 0 || modificaDatiTicket == -1) {
-							risposta = "Errore nella modifica dei dati";
+							JsonResponse.addProperty("desc", "errore modifica ticket");
+							JsonResponse.addProperty("stato", "errore");
 						}
+						
+						String ticket_info = queryForThis.getTicketFromId(numeroTicket);
+						
+						if(ticket_info == "errore") {
+							JsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
+						}
+						
+						JsonResponse.addProperty("ticket_info", ticket_info);
 						
 						break;
 					
 					case 0:
 						
-						risposta = "Ticket non esistente";
+						JsonResponse.addProperty("desc", "ticket inesistente");
+						JsonResponse.addProperty("stato", "errore");
 						
 						break;
 						
 					case -1:
 						
-						risposta = "Errore";
+						JsonResponse.addProperty("stato", "errore");
+						JsonResponse.addProperty("desc", "errore connessione database");
 						
 						break;
 						
@@ -275,25 +291,29 @@ public class Tickets extends HttpServlet {
 			}catch(InvalidParameterException e) {
 			
 			response.setStatus(401);
-			risposta = "non autorizzato";
+			JsonResponse.addProperty("stato", "errore");
+			JsonResponse.addProperty("desc", "non autorizzato");
 			System.out.println("not authorized token");
 			e.printStackTrace();
 			
 			}
 		
 		}else {
-			risposta = "errore nell'input";
+			JsonResponse.addProperty("stato", "errore");
+			JsonResponse.addProperty("desc", "input errato");
 		}
+		
+		
 		
 		//da trasformare in formato json
 		/*
 		 * le risposte in formato json conterranno:
-		 * stati (verifica dell'email, andatura della richiesta, correttezza password, controlli sugli input...)
+		 * stati 
 		 * descrizione
 		 * eventuali dati
-		 */
-				
-		out.println(risposta);
+		 */		
+		
+		out.println(JsonResponse);
 		
 	}
 
