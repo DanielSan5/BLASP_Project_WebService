@@ -27,6 +27,9 @@ import classes.QueryHandler;
 import classes.QueryHandler_filters;
 import classes.QueryHandler_ticket;
 import classes.Ticket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import org.json.JSONObject;;
 
 /**
  * Servlet implementation class RicercaFiltrataTickets
@@ -196,7 +199,95 @@ private boolean isValidTag(String tag) {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setStatus(405);
+		
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "POST");
+		PrintWriter out = response.getWriter(); 
+		BufferedReader in_body = request.getReader();
+		JsonObject JsonResponse = new JsonObject();
+		
+		//stringBuilder per costruire una stringa dal messaggio in formato json
+		StringBuilder sb = new StringBuilder();
+		String line;
+		String body;
+				
+		while((line = in_body.readLine()) != null) {
+		sb.append(line);
+		}
+				
+		body = sb.toString();
+				
+		Gson g = new Gson();
+		JsonObject user = g.fromJson(body, JsonObject.class);
+		
+		//Estrazione del token dall'header
+		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		
+		//acquisizione valore delle chiavi
+		String materia = user.get("materia").getAsString();
+		String livello_materia = user.get("livello_materia").getAsString();
+		String descrizione = user.get("desc").getAsString();
+		
+if(isValidTag(livello_materia) && isValidAuthorization()) {
+			
+			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+			
+			Date dataOdierna = new Date();
+	        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+	        String dataStringa = formatter.format(dataOdierna);
+			
+			int inserisciTicket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa);
+			
+			switch(inserisciTicket) {
+			
+			case 0:
+				
+				JsonResponse.addProperty("stato", "errore");
+				JsonResponse.addProperty("desc", "impossibile creare il tiket");
+				
+				break;
+				
+			case -1:
+				
+				JsonResponse.addProperty("stato", "errore");
+				JsonResponse.addProperty("desc", "impossibile connettersi al database");
+				
+				break;
+				
+				default:
+					
+					String ticket_info = queryForThis.getTicketFromId(inserisciTicket);
+					
+					if(ticket_info != "errore") {
+					
+						JsonResponse.addProperty("stato", "confermato");
+						JsonResponse.addProperty("desc", "ticket creato");
+						
+					JSONObject jsonObject = new JSONObject(ticket_info);
+					
+					JsonObject ticket = new JsonObject();
+					ticket.addProperty("numero_ticket", inserisciTicket);
+					ticket.addProperty("data_cr", jsonObject.getString("TIC_data_cr"));
+					
+					JsonResponse.add("ticket_info", ticket);
+					
+					}else {
+						JsonResponse.addProperty("stato", "errore");
+						JsonResponse.addProperty("desc", "ticket non creato, errore del server");
+					}
+					
+					break;
+					
+			}
+			
+		}else {
+			JsonResponse.addProperty("stato", "errore");
+			JsonResponse.addProperty("desc", "input errato");
+		}
+
+
+		out.println(JsonResponse);
+		
 	}
 	
 	/**
