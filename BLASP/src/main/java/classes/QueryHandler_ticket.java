@@ -5,6 +5,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 public class QueryHandler_ticket {
 
 	private static String db_url = "jdbc:mysql://localhost:3306/ticketing";
@@ -44,7 +47,7 @@ public int hasTicketId(int ticket_id) {
 			
 			pr.setInt(1, ticket_id);
 			ResultSet res = pr.executeQuery();
-			//per controllare se l'email istituzionale esiste basta vedere il risultato di next(), sar  false se non esistono righe
+			//per controllare se il ticket esiste basta vedere il risultato di next(), sar  false se non esistono righe
 			boolean check = res.next();
 			conn.close();
 			return check ? 1 : 0; //se check true returna 1 altrimenti 0
@@ -59,7 +62,7 @@ public int hasTicketId(int ticket_id) {
 	}
 	
 	//***MODIFICA TUTTE LE INFORMAZIONI DEL TICKET***
-	public int modificaDatiTicket(int numero_ticket, String materia, String descrizione, int tag) {
+	public int modificaDatiTicket(int numero_ticket, String materia, String descrizione, String tag) {
 			
 		establishConnection();
 		String prepared_query = "UPDATE tickets SET (TIC_materia, TIC_descrizione, TIC_tag) = (?, ?, ?) WHERE TIC_id = ?";		
@@ -69,7 +72,7 @@ public int hasTicketId(int ticket_id) {
 					
 				pr.setString(1, materia);
 				pr.setString(2, descrizione);
-				pr.setInt(3, tag);
+				pr.setString(3, tag);
 		
 				//executeUpdate returna o 1 se   andato a buonfine o 0 se non   andato a buonfine
 				int check = pr.executeUpdate();
@@ -86,6 +89,54 @@ public int hasTicketId(int ticket_id) {
 			}
 			
 	}
+	
+	//***RESTITUISCE I CAMPI DI UN TICKET DAL SUO ID***
+	public String getTicketFromId(int ticket_id) {
+			
+			establishConnection();
+			String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ?";
+			
+			try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
+				
+				pr.setInt(1, ticket_id);
+				ResultSet res = pr.executeQuery();
+				
+				if(res.next()) {
+					  
+					JsonObject jobj = new JsonObject();
+					  
+					//Recupero i valori della risposta
+					int numero_ticket = res.getInt("TIC_id");
+					String data_cr = res.getString("TIC_data_cr");
+					String materia = res.getString("TIC_materia");
+					String livello_materia = res.getString("TIC_livello_materia");
+					String desc = res.getString("TIC_descrizione");
+					
+					//Inserisco i valori nell'oggetto Json
+					jobj.addProperty("numero_ticket", numero_ticket);
+					jobj.addProperty("data_cr", data_cr);
+					jobj.addProperty("materia", materia);
+					jobj.addProperty("livello_materia", livello_materia);
+					jobj.addProperty("desc", desc);
+					
+					return jobj.toString();
+				
+				}else {
+					return "errore";
+				}
+				
+			
+			
+			}catch(SQLException e){
+				e.printStackTrace();
+				System.out.println("aa");
+				System.out.println(e.getLocalizedMessage());
+				return "errore";
+			}
+			
+		}
 	
 	
 
