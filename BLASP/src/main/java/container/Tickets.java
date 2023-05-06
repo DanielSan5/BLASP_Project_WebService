@@ -27,8 +27,8 @@ import classes.Ticket;
 /**
  * Servlet implementation class RicercaFiltrataTickets
  */
-@WebServlet("/Get_tickets")
-public class RicercaFiltrataTickets extends HttpServlet {
+@WebServlet("/tickets")
+public class Tickets extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	private String filter;
@@ -77,7 +77,7 @@ public class RicercaFiltrataTickets extends HttpServlet {
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public RicercaFiltrataTickets() {
+    public Tickets() {
         super();
     }
 
