@@ -14,6 +14,7 @@ public class QueryHandler_ticket {
     private static String db_driver = "com.mysql.jdbc.Driver";
     private static String db_user = "root";
     private static String db_password = "";
+    private static int numero_ticket_creato=0;
     private Connection conn;
 	
 	public QueryHandler_ticket() {
@@ -35,6 +36,43 @@ public class QueryHandler_ticket {
 		
 	}
 	
+//***INSERISCI TICKET***
+public int inserisciTicket(String materia, String livello_materia, String descrizione, String dataCreazione) {
+		
+		establishConnection();
+		String prepared_query = "INSERT INTO utenti (TIC_materia, TIC_livello_materia, TIC_descrizione, TIC_data_cr) VALUES (?, ?, ?, ?)";
+		
+		try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
+				
+				pr.setString(1, materia);
+				pr.setString(2, livello_materia);
+				pr.setString(3, descrizione);
+				pr.setString(4, dataCreazione);
+				//DA CAPIRE LA DATA DI CREAZIONE
+				
+				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
+				int check = pr.executeUpdate();
+				
+				conn.close();
+				
+				if (check == 1) {
+					numero_ticket_creato++;
+					return numero_ticket_creato;
+				}else {
+					return 0;
+				}
+			
+			}catch(SQLException e){
+				
+				System.out.println(e.getLocalizedMessage());
+				return -1;
+			
+			}
+		
+	}
+
 //***CONTROLLA SE ESISTE L'ID DI UN TICKET***
 public int hasTicketId(int ticket_id) {
 		
@@ -51,6 +89,8 @@ public int hasTicketId(int ticket_id) {
 			boolean check = res.next();
 			conn.close();
 			return check ? 1 : 0; //se check true returna 1 altrimenti 0
+			
+			
 		
 		}catch(SQLException e){
 			e.printStackTrace();
