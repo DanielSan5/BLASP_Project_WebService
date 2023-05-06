@@ -37,7 +37,6 @@ public class RicercaFiltrataTickets extends HttpServlet {
 	private QueryHandler_filters queryForThis = new QueryHandler_filters();
 	private String risposta;
 	private ArrayList<Ticket> tickets = new ArrayList<Ticket>();
-	private Set<String> filters;
 	boolean check;
 	
 	//Authorization empty check
@@ -92,11 +91,11 @@ public class RicercaFiltrataTickets extends HttpServlet {
 		/*
 		 * materia ok
 		 * materia-nome ok
-		 * materia-località ok
+		 * materia-localitï¿½ ok
 		 * materia-classe ok
-		 * materia-nome-località ok
+		 * materia-nome-localitï¿½ ok
 		 * materia-nome-classe ok 
-		 * materia-località-classe ok
+		 * materia-localitï¿½-classe ok
 		 * i ticket restituiti non dipendono dallo stato
 		 */
 		
@@ -105,8 +104,10 @@ public class RicercaFiltrataTickets extends HttpServlet {
 		
 		//Estrazione del token dall'header
 		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		Map<String, String[]> filters = request.getParameterMap();
+		Set<String> types = filters.keySet();
 		
-		if(isValidFilter(this.filters) && isValidAuthorization() ) {
+		if(isValidFilter(types) && isValidAuthorization() ) {
 			
 			final JwtVal validator = new JwtVal();
 			
@@ -114,29 +115,39 @@ public class RicercaFiltrataTickets extends HttpServlet {
 				
 				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
 				//String email = jwtDecoded.getClaim("sub").asString();
-				//mappatura dei parametri "chiave":"valore" ("localita":"Granarolo")
-				Map<String, String[]> params = request.getParameterMap();
-				filters = params.keySet();
+				//mappatura dei parametri "chiave":"valore" ("localita":"Granarolo") il valore in array 
+				
 				//si presume che materia sia gia presente per via del controllo 
-				if(filters.contains("localita")) {
-					tickets = queryForThis.getFor("LM");
+				/*
+				 * combinazioni possibili:
+				 * M -> materia
+				 * LM -> localita e materia
+				 * CM -> classe e materia
+				 * NM -> nome e materia
+				 * LCM -> localita, classe e materia
+				 * LNM -> localita, nome e materia
+				 * CNM -> classe, nome e materia
+				 */
+				if(filters.containsKey("localita") && filters.containsKey("classe")) {
+					tickets = queryForThis.getLCM(filters);
 					
-				}else if(filters.contains("classe")) {
-					tickets = queryForThis.getFor("CM");
+				}else if(filters.containsKey("localita") && filters.containsKey("nome")) {
+					tickets = queryForThis.getLNM(filters);
 					
-				}else if(filters.contains("nome")) {
-					tickets = queryForThis.getFor("NM");
+				}else if(filters.containsKey("classe") && filters.containsKey("nome")) {
+					tickets = queryForThis.getCNM(filters);
+				}else if(filters.containsKey("localita")) {
+					tickets = queryForThis.getLM(filters);
 					
-				}else if(filters.contains("localita") && filters.contains("classe")) {
-					tickets = queryForThis.getFor("LCM");
+				}else if(filters.containsKey("classe")) {
+					tickets = queryForThis.getCM(filters);
 					
-				}else if(filters.contains("localita") && filters.contains("nome")) {
-					tickets = queryForThis.getFor("LNM");
+				}else if(filters.containsKey("nome")) {
+					tickets = queryForThis.getNM(filters);
 					
-				}else if(filters.contains("classe") && filters.contains("nome")) {
-					tickets = queryForThis.getFor("CNM");
-				}else {
-					tickets = queryForThis.getFor("M");
+				}
+				else {
+					tickets = queryForThis.getM(filters);
 				}
 				
 				

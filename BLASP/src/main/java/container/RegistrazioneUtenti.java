@@ -149,7 +149,6 @@ public class RegistrazioneUtenti extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
 		response.setStatus(405);
 		response.getWriter().append("Served at: ").append(request.getContextPath());
 	}
@@ -179,7 +178,6 @@ public class RegistrazioneUtenti extends HttpServlet {
 		//trsformazione stringa in oggetto json
 		Gson g = new Gson();
 		JsonObject user = g.fromJson(body, JsonObject.class);
-		
 		//acquisizione valore delle chiavi
 		String email = user.get("email").getAsString();
 		String password = user.get("password").getAsString();
