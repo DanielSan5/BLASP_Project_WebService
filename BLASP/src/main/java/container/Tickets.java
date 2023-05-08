@@ -29,6 +29,8 @@ import classes.QueryHandler_ticket;
 import classes.Ticket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+
 import org.json.JSONObject;;
 
 /**
@@ -38,15 +40,11 @@ import org.json.JSONObject;;
 public class Tickets extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	private String filter;
-	private String value;
 	private String jwtToken;
 	private QueryHandler_filters queryForThis = new QueryHandler_filters();
-	
-	private ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 	boolean check;
 	
-	private String descrizione_risposta;
+	
 	
 	//Authorization empty check
 	private boolean isValidAuthorization() {
@@ -76,20 +74,17 @@ public class Tickets extends HttpServlet {
 		}else {
 			return false;
 		}
-		return check;
-			
-			
-				
+		return check;		
 			
 	}
 	
-//Tag valid check
-private boolean isValidTag(String tag) {
-	if(tag == "prima" || tag == "seconda" || tag == "terza" || tag == "quarta" || tag == "quinta")
-		return true;
-	else 
-		return false;
-}
+	//Tag valid check
+	private boolean isValidTag(String tag) {
+		if(tag == "prima" || tag == "seconda" || tag == "terza" || tag == "quarta" || tag == "quinta")
+			return true;
+		else 
+			return false;
+	}
 			
 				
     /**
@@ -104,22 +99,11 @@ private boolean isValidTag(String tag) {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "POST");
 		PrintWriter out = response.getWriter();
-		//Estrazione dei parametri dalla richiesta GET
-		/*
-		 * materia ok
-		 * materia-nome ok
-		 * materia-localit� ok
-		 * materia-classe ok
-		 * materia-nome-localit� ok
-		 * materia-nome-classe ok 
-		 * materia-localit�-classe ok
-		 * i ticket restituiti non dipendono dallo stato
-		 */
-		
-		
-		
-		
+		JsonObject jsonResponse = new JsonObject();
+		Gson g = new Gson();
 		//Estrazione del token dall'header
 		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		Map<String, String[]> filters = request.getParameterMap();
@@ -131,10 +115,11 @@ private boolean isValidTag(String tag) {
 			
 			try{
 				
-				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
-				//String email = jwtDecoded.getClaim("sub").asString();
-				//mappatura dei parametri "chiave":"valore" ("localita":"Granarolo") il valore in array 
+				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
+				//DecodedJWT jwtDecoded =
+				validator.validate(jwtToken);
 				
+				//String email = jwtDecoded.getClaim("sub").asString();
 				//si presume che materia sia gia presente per via del controllo 
 				/*
 				 * combinazioni possibili:
@@ -146,33 +131,55 @@ private boolean isValidTag(String tag) {
 				 * LNM -> localita, nome e materia
 				 * CNM -> classe, nome e materia
 				 */
+				List<Ticket> tickets = new ArrayList<Ticket>();
 				if(filters.containsKey("localita") && filters.containsKey("classe")) {
-					tickets = queryForThis.getLCM(filters);
+					tickets = queryForThis.getLCM(filters.get("localita").toString(), filters.get("classe").toString(), 
+							filters.get("materia").toString());
 					
 				}else if(filters.containsKey("localita") && filters.containsKey("nome")) {
-					tickets = queryForThis.getLNM(filters);
+					tickets = queryForThis.getLNM(filters.get("localita").toString(), filters.get("nome").toString(), 
+							filters.get("materia").toString());
 					
 				}else if(filters.containsKey("classe") && filters.containsKey("nome")) {
-					tickets = queryForThis.getCNM(filters);
+					tickets = queryForThis.getCNM(filters.get("classe").toString(), filters.get("nome").toString(), 
+							filters.get("materia").toString());
+					
 				}else if(filters.containsKey("localita")) {
-					tickets = queryForThis.getLM(filters);
+					tickets = queryForThis.getLM(filters.get("localita").toString(), filters.get("materia").toString());
 					
 				}else if(filters.containsKey("classe")) {
-					tickets = queryForThis.getCM(filters);
+					tickets = queryForThis.getCM(filters.get("classe").toString(), filters.get("materia").toString());
 					
 				}else if(filters.containsKey("nome")) {
-					tickets = queryForThis.getNM(filters);
+					tickets = queryForThis.getNM(filters.get("nome").toString(), filters.get("materia").toString());
 					
 				}
 				else {
-					tickets = queryForThis.getM(filters);
+					tickets = queryForThis.getM(filters.get("materia").toString());
 				}
 				
+				if(tickets == null) {
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					out.println(jsonResponse.toString());
+				}else if(tickets.isEmpty()){
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("descrizione", "ricerca filtrata");
+					jsonResponse.addProperty("filtered", "nessun risultato");
+					out.println(jsonResponse.toString());
+				}else {
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("descrizione", "ricerca filtrata");
+					jsonResponse.add("filtered", g.toJsonTree(tickets));
+					out.println(jsonResponse.toString());	
+				}
 				
 			}catch(InvalidParameterException e) {
 				
 				response.setStatus(401);
-				descrizione_risposta = "non autorizzato";
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "non autorizzato");
+				out.println(jsonResponse.toString());
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
@@ -180,17 +187,12 @@ private boolean isValidTag(String tag) {
 			
 		}else {
 			response.setStatus(400);
-			descrizione_risposta = "bad request";
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "errore nella sintassi");
+			out.println(jsonResponse.toString());
+			
 		}
-		
-		//da trasformare in formato json fare calsse risposta
-		/*
-		 * le risposte in formato json conterranno:
-		 * stati (andatura della richiesta, coincidenza password, controlli sugli input...)
-		 * descrizione
-		 * eventuali dati
-		 */
-		out.println(descrizione_risposta);
+	
 		
 	}
 
@@ -204,95 +206,119 @@ private boolean isValidTag(String tag) {
 		response.addHeader("Access-Control-Allow-Methods", "POST");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
-		JsonObject JsonResponse = new JsonObject();
-		
-		//stringBuilder per costruire una stringa dal messaggio in formato json
+		JsonObject jsonResponse = new JsonObject();
+		Gson g = new Gson();
 		StringBuilder sb = new StringBuilder();
 		String line;
 		String body;
-				
+
 		while((line = in_body.readLine()) != null) {
-		sb.append(line);
+			sb.append(line);
 		}
 				
 		body = sb.toString();
 				
-		Gson g = new Gson();
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
-		//Estrazione del token dall'header
-		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-		
-		//acquisizione valore delle chiavi
 		String materia = user.get("materia").getAsString();
 		String livello_materia = user.get("livello_materia").getAsString();
 		String descrizione = user.get("desc").getAsString();
 		
-if(isValidTag(livello_materia) && isValidAuthorization()) {
+		//Estrazione del token dall'header
+		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		
+		if(isValidTag(livello_materia) && isValidAuthorization()) {
 			
-			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+			final JwtVal validator = new JwtVal();
 			
-			Date dataOdierna = new Date();
-	        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-	        String dataStringa = formatter.format(dataOdierna);
+			try {
 			
-			int inserisciTicket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa);
-			
-			switch(inserisciTicket) {
-			
-			case 0:
+				validator.validate(jwtToken);
 				
-				JsonResponse.addProperty("stato", "errore");
-				JsonResponse.addProperty("desc", "impossibile creare il tiket");
+				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
 				
-				break;
+				Date dataOdierna = new Date();
+		        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		        String dataStringa = formatter.format(dataOdierna);
 				
-			case -1:
+				int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa);
 				
-				JsonResponse.addProperty("stato", "errore");
-				JsonResponse.addProperty("desc", "impossibile connettersi al database");
+				switch(id_ticket) {
 				
-				break;
-				
-				default:
-					
-					String ticket_info = queryForThis.getTicketFromId(inserisciTicket);
-					
-					if(ticket_info != "errore") {
-					
-						JsonResponse.addProperty("stato", "confermato");
-						JsonResponse.addProperty("desc", "ticket creato");
+					case 0:
 						
-					JSONObject jsonObject = new JSONObject(ticket_info);
-					
-					JsonObject ticket = new JsonObject();
-					ticket.addProperty("numero_ticket", inserisciTicket);
-					ticket.addProperty("data_cr", jsonObject.getString("TIC_data_cr"));
-					
-					JsonResponse.add("ticket_info", ticket);
-					
-					}else {
-						JsonResponse.addProperty("stato", "errore");
-						JsonResponse.addProperty("desc", "ticket non creato, errore del server");
-					}
-					
-					break;
-					
-			}
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+						out.println(jsonResponse.toString());
+						break;
+						
+					case -1:
+						
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+						out.println(jsonResponse.toString());
+						break;
+						
+					default:
+						
+						Ticket ticket = queryForThis.getTicketFromId(id_ticket);
+						
+						if(ticket != null) {
+						
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("desc", "ticket creato");
+							
+							JsonObject ticket_info = new JsonObject();
+							ticket_info.addProperty("numero_ticket", id_ticket);
+							ticket_info.addProperty("data_cr", ticket.getData_cr());
+							ticket_info.add("ticket_info", g.toJsonTree(ticket));
+							
+							jsonResponse.add("ticket_inserito", ticket_info);
+							out.println(jsonResponse.toString());
+						
+						}else {
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+							out.println(jsonResponse.toString());
+						}
+						
+						break;
+							
+				}
+			}catch(InvalidParameterException e) {
+				
+				response.setStatus(401);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "non autorizzato");
+				out.println(jsonResponse.toString());
+				System.out.println("not authorized token");
+				e.printStackTrace();
 			
+			}catch(Exception e) {
+				
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				out.println(jsonResponse.toString());
+				
+				System.out.println("not created");
+				e.printStackTrace();
+				
+			}
 		}else {
-			JsonResponse.addProperty("stato", "errore");
-			JsonResponse.addProperty("desc", "input errato");
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore");
+			jsonResponse.addProperty("desc", "errore nella sintassi");
+			out.println(jsonResponse.toString());
 		}
-
-
-		out.println(JsonResponse);
+	
 		
 	}
 	
 	/**
 	 * @see HttpServlet#doPut(HttpServletRequest request, HttpServletResponse response)
 	 */
+	//da mettere a posto
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
@@ -351,14 +377,12 @@ if(isValidTag(livello_materia) && isValidAuthorization()) {
 							JsonResponse.addProperty("stato", "errore");
 						}
 						
-						String ticket_info = queryForThis.getTicketFromId(numeroTicket);
+						Ticket ticket_info = queryForThis.getTicketFromId(numeroTicket);
 						
-						if(ticket_info == "errore") {
+						if(ticket_info == null) {
 							JsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
 						}
-						
-						JsonResponse.addProperty("ticket_info", ticket_info);
-						
+						JsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
 						break;
 					
 					case 0:
@@ -370,8 +394,8 @@ if(isValidTag(livello_materia) && isValidAuthorization()) {
 						
 					case -1:
 						
-						JsonResponse.addProperty("stato", "errore");
-						JsonResponse.addProperty("desc", "errore connessione database");
+						JsonResponse.addProperty("stato", "errore server");
+						JsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
 						
 						break;
 						
@@ -381,12 +405,17 @@ if(isValidTag(livello_materia) && isValidAuthorization()) {
 		
 			}catch(InvalidParameterException e) {
 			
-			response.setStatus(401);
-			JsonResponse.addProperty("stato", "errore");
-			JsonResponse.addProperty("desc", "non autorizzato");
-			System.out.println("not authorized token");
-			e.printStackTrace();
+				response.setStatus(401);
+				JsonResponse.addProperty("stato", "errore");
+				JsonResponse.addProperty("desc", "non autorizzato");
+				System.out.println("not authorized token");
+				e.printStackTrace();
 			
+			}catch(Exception e) {
+				
+				System.out.println("no results");
+				e.printStackTrace();
+				
 			}
 		
 		}else {
@@ -404,7 +433,7 @@ if(isValidTag(livello_materia) && isValidAuthorization()) {
 		 * eventuali dati
 		 */		
 		
-		out.println(JsonResponse);
+		out.println(JsonResponse.toString());
 		
 	}
 

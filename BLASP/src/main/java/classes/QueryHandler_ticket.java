@@ -8,13 +8,14 @@ import java.sql.SQLException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import container.Tickets;
+
 public class QueryHandler_ticket {
 
 	private static String db_url = "jdbc:mysql://localhost:3306/ticketing";
     private static String db_driver = "com.mysql.jdbc.Driver";
     private static String db_user = "root";
     private static String db_password = "";
-    private static int numero_ticket_creato=0;
     private Connection conn;
 	
 	public QueryHandler_ticket() {
@@ -37,7 +38,7 @@ public class QueryHandler_ticket {
 	}
 	
 //***INSERISCI TICKET***
-public int inserisciTicket(String materia, String livello_materia, String descrizione, String dataCreazione) {
+	public int inserisciTicket(String materia, String livello_materia, String descrizione, String dataCreazione) {
 		
 		establishConnection();
 		String prepared_query = "INSERT INTO utenti (TIC_materia, TIC_livello_materia, TIC_descrizione, TIC_data_cr) VALUES (?, ?, ?, ?)";
@@ -55,11 +56,15 @@ public int inserisciTicket(String materia, String livello_materia, String descri
 				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
 				int check = pr.executeUpdate();
 				
-				conn.close();
-				
 				if (check == 1) {
-					numero_ticket_creato++;
-					return numero_ticket_creato;
+					if(pr.getGeneratedKeys().next()) {
+						conn.close();
+						return pr.getGeneratedKeys().getInt(1);
+					}else {
+						conn.close();
+						return 0;
+					}
+				
 				}else {
 					return 0;
 				}
@@ -73,8 +78,8 @@ public int inserisciTicket(String materia, String livello_materia, String descri
 		
 	}
 
-//***CONTROLLA SE ESISTE L'ID DI UN TICKET***
-public int hasTicketId(int ticket_id) {
+	//***CONTROLLA SE ESISTE L'ID DI UN TICKET***
+	public int hasTicketId(int ticket_id) {
 		
 		establishConnection();
 		String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ?";
@@ -94,7 +99,6 @@ public int hasTicketId(int ticket_id) {
 		
 		}catch(SQLException e){
 			e.printStackTrace();
-			System.out.println("aa");
 			System.out.println(e.getLocalizedMessage());
 			return -1;
 		}
@@ -131,7 +135,7 @@ public int hasTicketId(int ticket_id) {
 	}
 	
 	//***RESTITUISCE I CAMPI DI UN TICKET DAL SUO ID***
-	public String getTicketFromId(int ticket_id) {
+	public Ticket getTicketFromId(int ticket_id) throws Exception{
 			
 			establishConnection();
 			String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ?";
@@ -144,27 +148,14 @@ public int hasTicketId(int ticket_id) {
 				ResultSet res = pr.executeQuery();
 				
 				if(res.next()) {
-					  
-					JsonObject jobj = new JsonObject();
-					  
-					//Recupero i valori della risposta
-					int numero_ticket = res.getInt("TIC_id");
-					String data_cr = res.getString("TIC_data_cr");
-					String materia = res.getString("TIC_materia");
-					String livello_materia = res.getString("TIC_livello_materia");
-					String desc = res.getString("TIC_descrizione");
+					 
 					
-					//Inserisco i valori nell'oggetto Json
-					jobj.addProperty("numero_ticket", numero_ticket);
-					jobj.addProperty("data_cr", data_cr);
-					jobj.addProperty("materia", materia);
-					jobj.addProperty("livello_materia", livello_materia);
-					jobj.addProperty("desc", desc);
-					
-					return jobj.toString();
+					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
+							res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
+					return ticket;
 				
 				}else {
-					return "errore";
+					throw new Exception("nessun ticket trovato");
 				}
 				
 			
@@ -173,7 +164,7 @@ public int hasTicketId(int ticket_id) {
 				e.printStackTrace();
 				System.out.println("aa");
 				System.out.println(e.getLocalizedMessage());
-				return "errore";
+				return null;
 			}
 			
 		}

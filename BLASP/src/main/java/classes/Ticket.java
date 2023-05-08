@@ -2,23 +2,38 @@ package classes;
 
 public class Ticket {
 
-	
+	private int numero_ticket;
+	private String data_cr;
 	private String stato;
 	private String materia;
 	private String tags;
 	private String descrizione;
-	private int  UT_id_apertura;
-	private int UT_id_accettazione;
+	private Utente user_info;
 	
-	public Ticket(String stato, String materia, String tags, String descrizione, int UT_id_apertura, int UT_id_accettazione) {
+	
+	public Ticket(int numero_ticket, String data_cr, String stato, String materia, String tags, String descrizione) {
+		
+		this.numero_ticket = numero_ticket;
+		this.data_cr = data_cr;
 		this.stato = stato;
 		this.materia = materia;
 		this.tags = tags;
 		this.descrizione = descrizione;
-		this.UT_id_accettazione = UT_id_apertura;
-		this.UT_id_apertura = UT_id_accettazione;
 	}
 
+	public Ticket(int numero_ticket, String stato, String materia, String tags, String descrizione, Utente user_info) {
+		
+		this.numero_ticket = numero_ticket;
+		this.stato = stato;
+		this.materia = materia;
+		this.tags = tags;
+		this.descrizione = descrizione;
+		this.user_info = user_info;
+	}
+
+	public Utente getUser_info() {
+		return this.user_info;
+	} 
 	
 	public String getStato() {
 		return this.stato;
@@ -39,23 +54,13 @@ public class Ticket {
 		return this.descrizione;
 	}
 
-
-	public int getUT_id_apertura() {
-		return this.UT_id_apertura;
+	public int getNumero_ticket() {
+		return numero_ticket;
 	}
 
-
-	public int getUT_id_accettazione() {
-		return this.UT_id_accettazione;
+	public String getData_cr() {
+		return data_cr;
 	}
-
-
-	@Override
-	public String toString() {
-		return "Ticket [stato=" + this.stato + ", materia=" + this.materia + ", tags=" + this.tags + ", descrizione=" + this.descrizione
-				+ ", UT_id_apertura=" + this.UT_id_apertura + ", UT_id_accettazione=" + this.UT_id_accettazione + "]";
-	}
-
 	
 	
 	
