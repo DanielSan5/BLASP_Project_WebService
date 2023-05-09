@@ -56,9 +56,29 @@ public class RegistrazioneUtenti extends HttpServlet {
     	
     }*/
     
-    /*private boolean isValidDateFormat(String data_nascita) {
+   
+public class DateValidatorUsingLocalDate implements DateValidator {
+    private DateTimeFormatter dateFormatter;
 	
-    }*/
+	public DateValidatorUsingLocalDate(DateTimeFormatter dateFormatter) {
+        this.dateFormatter = dateFormatter;
+    }
+		
+	private boolean isValidDateFormat(String data_nascita) {
+        try {
+            LocalDate.parse(data_nascita, this.dateFormatter);
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+        return true;
+    }
+}
+DateTimeFormatter dateFormatter = DateTimeFormatter.BASIC_ISO_DATE;
+DateValidator validator = new DateValidatorUsingLocalDate(dateFormatter);
+        
+assertTrue(validator.isValid("20190228"));
+assertFalse(validator.isValid("20190230"));
+    
     
     /*private boolean isValidSTA(String indirizzo_scolastico) {
 	
