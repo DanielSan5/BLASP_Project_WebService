@@ -155,6 +155,7 @@ public class QueryHandler_ticket {
 					return ticket;
 				
 				}else {
+					
 					throw new Exception("nessun ticket trovato");
 				}
 				

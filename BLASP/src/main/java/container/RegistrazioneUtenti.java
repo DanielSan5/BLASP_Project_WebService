@@ -13,6 +13,8 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
@@ -21,6 +23,7 @@ import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import classes.JwtGen;
 import classes.QueryHandler;
 
 /**
@@ -30,8 +33,7 @@ import classes.QueryHandler;
 @WebServlet("/RegistrazioneUtenti")
 public class RegistrazioneUtenti extends HttpServlet {
 	
-	private static final long serialVersionUID = 1L;	
-	String risposta;
+	private static final long serialVersionUID = 1L;
 	
     /**
      * @see HttpServlet#HttpServlet()
@@ -160,6 +162,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		JsonObject jsonResponse = new JsonObject();
 		//output writer
 		PrintWriter out = response.getWriter(); 
 		//input reader
@@ -168,6 +171,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 		StringBuilder sb = new StringBuilder();
 		String line;
 		String body;
+	
 		
 		//acquisizione stringa dal body
 		while((line = in_body.readLine()) != null) {
@@ -178,6 +182,7 @@ public class RegistrazioneUtenti extends HttpServlet {
 		//trsformazione stringa in oggetto json
 		Gson g = new Gson();
 		JsonObject user = g.fromJson(body, JsonObject.class);
+
 		//acquisizione valore delle chiavi
 		String email = user.get("email").getAsString();
 		String password = user.get("password").getAsString();
@@ -201,37 +206,72 @@ public class RegistrazioneUtenti extends HttpServlet {
 				switch(hasEmail) {
 				
 					case 1:
-						risposta = "utente gia esistente";
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("descrizione", "utente già esistente");
+						out.println(jsonResponse.toString());
 						break;
+						
 					case 0:
-						int inserted = queryForThis.inserisciUtente(/*username , descrizione*/email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+						
+						int inserted = queryForThis.inserisciUtente(email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
 						
 						if(inserted != -1) {
-							risposta = "utente registrato";
+	
+							JsonObject jwtFormat = new JsonObject();
+							jwtFormat.addProperty("sub-email", email);
+							jwtFormat.addProperty("aud", "*");
+							try {
+								
+								JwtGen generator = new JwtGen();
+								Map<String, String> claims = new HashMap<>();
+								
+								jwtFormat.keySet().forEach(keyStr ->
+							    {
+							        String keyvalue = jwtFormat.get(keyStr).getAsString();
+							        claims.put(keyStr, keyvalue);
+							      
+							    });
+								
+								String token = generator.generateJwt(claims);
+	
+								response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+								response.setStatus(201);
+								jsonResponse.addProperty("stato", "confermato");
+								jsonResponse.addProperty("descrizione", "utente creato");
+								out.println(jsonResponse.toString());
+								
+							} catch (Exception e) {
+								
+								response.setStatus(500);
+								jsonResponse.addProperty("stato", "errore server");
+								jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+								out.println(jsonResponse.toString());
+								e.printStackTrace();
+							}
 						}else {
-							risposta = "errore del database (inserimento utente)";
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+							out.println(jsonResponse.toString());
 						}
 						break;
 						
 					default:
-						risposta = "errore del database (presenza utente)";
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+						out.println(jsonResponse.toString());
 						break;
 				}
 		}else {
-			risposta = "errore nell'input";
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "errore nella sintassi");
+			out.println(jsonResponse.toString());
 		}
 		
-		
-		
-	
-		//da trasformare in formato json
-		/*
-		 * le risposte in formato json conterranno:
-		 * stati (andatura della richiesta, coincidenza password, controlli sugli input...)
-		 * descrizione
-		 * eventuali dati
-		 */
-		out.println(risposta);
 				
 				
 				
