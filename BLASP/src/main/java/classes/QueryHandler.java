@@ -146,12 +146,14 @@ public class QueryHandler {
 			pr.setString(1, email);
 			ResultSet res = pr.executeQuery();
 			if(res.next()) {
+				
 				int user_id = res.getInt("UT_id");
 				conn.close();
 				return user_id;
+				
 			}else {
 				conn.close();
-				return -1;
+				return 0;
 			}
 			
 			
@@ -300,7 +302,7 @@ public class QueryHandler {
 	
 
 //CONTROLLO SE UNA MATERIA ESISTE NEL DATABASE
-public int checkExistMateria(String materia) {
+	public int checkExistMateria(String materia) {
 		
 		establishConnection();
 		String prepared_query = "SELECT * FROM materia WHERE MAT_nome = ?";
@@ -369,7 +371,7 @@ public int checkExistMateria(String materia) {
 		
 	}
 	
-public ArrayList<Ticket> getUserTickets(int user_id) throws Exception {
+	public ArrayList<Ticket> getUserTickets(int user_id) throws Exception {
 		
 		establishConnection();
 		

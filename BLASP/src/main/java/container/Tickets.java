@@ -257,68 +257,66 @@ public class Tickets extends HttpServlet {
 			try {
 			
 				DecodedJWT jwt = validator.validate(jwtToken);
-				
 				String email = jwt.getClaim("sub-email").asString();
-				
 				QueryHandler queryUser = new QueryHandler();
+				int user_id = queryUser.getUserId(email);
 				
-				int userID = queryUser.getUserId(email);
-				
-				if(userID == -1) 
-				{
-					response.setStatus(403);
-					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("desc", "utente non autorizzato");				
-				}else {
-				
-				QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
-				
-				int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa, userID);
-				
-				switch(id_ticket) {
+				switch(user_id) {
 				
 					case 0:
-						
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("descrizione", "utente non esistente");
 						break;
 						
-					case -1:
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						break;
+					case 1:
+						QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
 						
-					default:
+						int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa, user_id);
 						
-						Ticket ticket = queryForThis.getTicketFromId(id_ticket);
-						
-						if(ticket != null) {
+						if(id_ticket == 0){
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 							
-							response.setStatus(201);
-							jsonResponse.addProperty("stato", "confermato");
-							jsonResponse.addProperty("desc", "ticket creato");
+						}else if(id_ticket == 1){
 							
-							JsonObject ticket_info = new JsonObject();
-							ticket_info.addProperty("numero_ticket", id_ticket);
-							ticket_info.addProperty("data_cr", ticket.getData_cr());
-							ticket_info.add("ticket_info", g.toJsonTree(ticket));
+							Ticket ticket = queryForThis.getTicketFromId(id_ticket);
 							
-							jsonResponse.add("ticket_inserito", ticket_info);
-						
+							if(ticket != null) {
+								
+								response.setStatus(201);
+								jsonResponse.addProperty("stato", "confermato");
+								jsonResponse.addProperty("desc", "ticket creato");
+								
+								JsonObject ticket_info = new JsonObject();
+								ticket_info.addProperty("numero_ticket", id_ticket);
+								ticket_info.addProperty("data_cr", ticket.getData_cr());
+								ticket_info.add("ticket_info", g.toJsonTree(ticket));
+								
+								jsonResponse.add("ticket_inserito", ticket_info);
+							
+							}else {
+								response.setStatus(500);
+								jsonResponse.addProperty("stato", "errore server");
+								jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+								
+							}
+							
 						}else {
 							response.setStatus(500);
 							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-							
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						}
-						
+						break;		
+			
+					default:
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");	
 						break;
-							
 				}
 				
-				}
 			}catch(InvalidParameterException e) {
 				
 				response.setStatus(403);
@@ -326,7 +324,7 @@ public class Tickets extends HttpServlet {
 				jsonResponse.addProperty("descrizione", "non autorizzato");
 				System.out.println("not authorized token");
 				e.printStackTrace();
-			
+		
 			}catch(Exception e) {
 				
 				response.setStatus(400);
@@ -340,12 +338,12 @@ public class Tickets extends HttpServlet {
 				out.println(jsonResponse.toString());
 			}
 		}else {
-			
+				
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore");
 			jsonResponse.addProperty("desc", "errore nella sintassi");
 		}
-	
+		
 		out.println(jsonResponse.toString());
 		
 	}

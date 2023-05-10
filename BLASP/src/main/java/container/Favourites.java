@@ -81,26 +81,45 @@ public class Favourites extends HttpServlet {
 			DecodedJWT jwtDecoded =  validator.validate(jwtToken);
 			String email = jwtDecoded.getClaim("sub-email").asString();
 			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-			QueryHandler queryForThis_user = new QueryHandler();
 			
-			int user_id = queryForThis_user.getUserId(email);
-			int check = queryForThis.saveFavourites(ticket_id, user_id);
+			int hasTicket= queryForThis.hasTicketId(ticket_id);
 			
-			if( check != -1) {
-				
-				if(check==1) {
-					response.setStatus(201);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", "aggiunto ai preferiti");
-				}else
+			switch(hasTicket) {
+			
+				case 1:
+					QueryHandler queryForThis_user = new QueryHandler();
+					
+					int user_id = queryForThis_user.getUserId(email);
+					int check = queryForThis.saveFavourites(ticket_id, user_id);
+					
+					if( check != -1) {
+						
+						if(check==1) {
+							response.setStatus(201);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("desc", "aggiunto ai preferiti");
+						}else
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+					}else {
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+					}
+					break;
+				case 0:
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "ticket inesistente");
+					break;
+				default:
 					response.setStatus(500);
 					jsonResponse.addProperty("stato", "errore server");
 					jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-			}else {
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+					break;
 			}
+		
 	
 		}catch(InvalidParameterException e) {
 		
