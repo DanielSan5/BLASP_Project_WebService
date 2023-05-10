@@ -90,6 +90,7 @@ public class RegistrazioneUtenti extends HttpServlet {
  	   
  	   return true;
     }
+    
  
     
     //Class check
