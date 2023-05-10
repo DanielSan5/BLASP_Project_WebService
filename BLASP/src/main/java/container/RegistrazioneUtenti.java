@@ -1,5 +1,5 @@
-package container;
 
+package container;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -12,6 +12,9 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +28,9 @@ import com.google.gson.JsonObject;
 
 import classes.JwtGen;
 import classes.QueryHandler;
+
+
+
 
 /**
  * Servlet implementation class RegistrazioneUtenti
@@ -103,21 +109,30 @@ public class RegistrazioneUtenti extends HttpServlet {
   	   }
   	   return true;	   
      }
+
    
-	
-   //Date of birth check --> da testare
-  /* public boolean isValidDateOfBirth(String data_nascita) {
-	
-	   SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
-	   dateFormat.setLenient(false);
-   
-	   try {
-		   dateFormat.parse(data_nascita);
-		   return true;
-	   } catch (Exception e) {
-		   return false;
-	   }
-   }*/
+  /* public class DateValidatorUsingLocalDate implements DateValidator {
+       private DateTimeFormatter dateFormatter;
+   	
+   	public DateValidatorUsingLocalDate(DateTimeFormatter dateFormatter) {
+           this.dateFormatter = dateFormatter;
+       }
+   		
+   	private boolean isValidDateFormat(String data_nascita) {
+           try {
+               LocalDate.parse(data_nascita, this.dateFormatter);
+           } catch (DateTimeParseException e) {
+               return false;
+           }
+           return true;
+       }
+   }
+   DateTimeFormatter dateFormatter = DateTimeFormatter.BASIC_ISO_DATE;
+   DateValidator validator = new DateValidatorUsingLocalDate(dateFormatter);
+           
+   assertTrue(validator.isValid("20190228"));
+   assertFalse(validator.isValid("20190230"));*/
+       
     
     //Password check
     public boolean isValidPassword(String password) {
