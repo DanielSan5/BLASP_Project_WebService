@@ -93,7 +93,7 @@ public class RegistrazioneUtenti extends HttpServlet {
  
     
     //Class check
-    private boolean isValidClass(int classe) {
+    private boolean isValidClas(int classe) {
     	
     	if(classe == 1 || classe == 2 || classe == 3 || classe == 4 || classe == 5) {
     		return true;
