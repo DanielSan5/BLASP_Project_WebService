@@ -38,10 +38,10 @@ public class QueryHandler_ticket {
 	}
 	
 //***INSERISCI TICKET***
-	public int inserisciTicket(String materia, String livello_materia, String descrizione, String dataCreazione) {
+public int inserisciTicket(String materia, String livello_materia, String descrizione, String dataCreazione, int userID) {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO utenti (TIC_materia, TIC_livello_materia, TIC_descrizione, TIC_data_cr) VALUES (?, ?, ?, ?)";
+		String prepared_query = "INSERT INTO utenti (TIC_materia, TIC_livello_materia, TIC_descrizione, TIC_data_cr, UT_id_apertura) VALUES (?, ?, ?, ?, ?)";
 		
 		try(
 				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -51,6 +51,7 @@ public class QueryHandler_ticket {
 				pr.setString(2, livello_materia);
 				pr.setString(3, descrizione);
 				pr.setString(4, dataCreazione);
+				pr.setInt(5, userID);
 				//DA CAPIRE LA DATA DI CREAZIONE
 				
 				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine

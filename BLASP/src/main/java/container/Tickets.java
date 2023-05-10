@@ -252,13 +252,22 @@ public class Tickets extends HttpServlet {
 				
 				QueryHandler queryUser = new QueryHandler();
 				
+				int userID = queryUser.getUserId(email);
+				
+				if(userID == -1) 
+				{
+					response.setStatus(403);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");				
+				}else {
+				
 				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
 				
 				Date dataOdierna = new Date();
 		        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		        String dataStringa = formatter.format(dataOdierna);
 				
-				int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa);
+				int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa, userID);
 				
 				switch(id_ticket) {
 				
@@ -301,6 +310,8 @@ public class Tickets extends HttpServlet {
 						
 						break;
 							
+				}
+				
 				}
 			}catch(InvalidParameterException e) {
 				
