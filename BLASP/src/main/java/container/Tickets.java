@@ -239,7 +239,11 @@ public class Tickets extends HttpServlet {
 			
 			try {
 			
-				validator.validate(jwtToken);
+				DecodedJWT jwt = validator.validate(jwtToken);
+				
+				String email = jwt.getClaim("sub-email").asString();
+				
+				QueryHandler queryUser = new QueryHandler();
 				
 				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
 				
@@ -304,6 +308,8 @@ public class Tickets extends HttpServlet {
 				System.out.println("not created");
 				e.printStackTrace();
 				
+			}finally {
+				out.println(jsonResponse.toString());
 			}
 		}else {
 			
@@ -326,7 +332,7 @@ public class Tickets extends HttpServlet {
 		response.addHeader("Access-Control-Allow-Methods", "PUT");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
-		JsonObject JsonResponse = new JsonObject();
+		JsonObject jsonResponse = new JsonObject();
 		
 		//stringBuilder per costruire una stringa dal messaggio in formato json
 		StringBuilder sb = new StringBuilder();
@@ -371,32 +377,32 @@ public class Tickets extends HttpServlet {
 						int modificaDatiTicket = queryForThis.modificaDatiTicket(numeroTicket, valoreMateria, valoreDescrizione, valoreTag);
 						
 						if(modificaDatiTicket == 1) {
-							JsonResponse.addProperty("desc", "ticket modificato");
-							JsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("desc", "ticket modificato");
+							jsonResponse.addProperty("stato", "confermato");
 						}else if(modificaDatiTicket == 0 || modificaDatiTicket == -1) {
-							JsonResponse.addProperty("desc", "errore modifica ticket");
-							JsonResponse.addProperty("stato", "errore");
+							jsonResponse.addProperty("desc", "errore modifica ticket");
+							jsonResponse.addProperty("stato", "errore");
 						}
 						
 						Ticket ticket_info = queryForThis.getTicketFromId(numeroTicket);
 						
 						if(ticket_info == null) {
-							JsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
+							jsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
 						}
-						JsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
+						jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
 						break;
 					
 					case 0:
 						
-						JsonResponse.addProperty("desc", "ticket inesistente");
-						JsonResponse.addProperty("stato", "errore");
+						jsonResponse.addProperty("desc", "ticket inesistente");
+						jsonResponse.addProperty("stato", "errore");
 						
 						break;
 						
 					case -1:
 						
-						JsonResponse.addProperty("stato", "errore server");
-						JsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
 						
 						break;
 						
@@ -407,8 +413,8 @@ public class Tickets extends HttpServlet {
 			}catch(InvalidParameterException e) {
 			
 				response.setStatus(401);
-				JsonResponse.addProperty("stato", "errore");
-				JsonResponse.addProperty("desc", "non autorizzato");
+				jsonResponse.addProperty("stato", "errore");
+				jsonResponse.addProperty("desc", "non autorizzato");
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
@@ -417,11 +423,13 @@ public class Tickets extends HttpServlet {
 				System.out.println("no results");
 				e.printStackTrace();
 				
+			}finally {
+				out.println(jsonResponse.toString());
 			}
 		
 		}else {
-			JsonResponse.addProperty("stato", "errore");
-			JsonResponse.addProperty("desc", "input errato");
+			jsonResponse.addProperty("stato", "errore");
+			jsonResponse.addProperty("desc", "input errato");
 		}
 		
 		
@@ -434,8 +442,9 @@ public class Tickets extends HttpServlet {
 		 * eventuali dati
 		 */		
 		
-		out.println(JsonResponse.toString());
+		out.println(jsonResponse.toString());
 		
 	}
 
 }
+
