@@ -170,6 +170,36 @@ public int inserisciTicket(String materia, String livello_materia, String descri
 			
 		}
 	
+	
+	//***RESTITUISCE L'ID UTENTE DALL'ID TICKET***
+		public int getUtenteId(int ticket_id) {
+			
+			establishConnection();
+			String prepared_query = "SELECT UT_id FROM tickets WHERE TIC_id = ?";
+			//DA MODIFICARE IL NOME DEL CAMPO
+			
+			try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
+				
+				pr.setInt(1, ticket_id);
+				ResultSet res = pr.executeQuery();
+				
+				conn.close();
+				
+				if(res.next())
+					return res.getInt("UT_id");				//se true ritorna l'ID utente
+				else
+					return 0;								//se false ritorna 0
+			
+			}catch(SQLException e){
+				e.printStackTrace();
+				System.out.println(e.getLocalizedMessage());
+				return -1;
+			}
+			
+		}
+	
 	//***CANCELLA UN TICKET***
 	public int cancellaTicket(int numero_ticket) {
 			

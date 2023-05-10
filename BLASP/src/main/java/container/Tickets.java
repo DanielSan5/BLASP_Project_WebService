@@ -480,7 +480,7 @@ public class Tickets extends HttpServlet {
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	
 		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.addHeader("Access-Control-Allow-Methods", "DELETE");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
