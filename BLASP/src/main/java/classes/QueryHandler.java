@@ -165,7 +165,7 @@ public class QueryHandler {
 	}
 	
 	
-	public int inserisciUtente(/*String username,*/ String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) {
+	public int inserisciUtente(String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) {
 		
 		establishConnection();
 		String prepared_query = "INSERT INTO utenti (UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -327,60 +327,39 @@ public int checkExistMateria(String materia) {
 	}
 
 	
-	/*public ArrayList<Ticket> getTickets(String filter, String value) {
+	public Utente getUserData(String email) throws Exception {
 		
 		establishConnection();
 		
-		String ticketStato = "SELECT * FROM tickets WHERE UT_stato = ?";
-		String ticketLocalita = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE u.UT_localita = ?";
+		String getUser = "SELECT * FROM utenti WHERE UT_email = ?";
+		//String ticketLocalita = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE u.UT_localita = ?";
 		//String ticketClasse = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE u.UT_classe = ?";
 		ResultSet res;
-		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
+		
 		
 		try(
-			java.sql.PreparedStatement ticketStato_query = conn.prepareStatement(ticketStato);
-			java.sql.PreparedStatement ticketLocalita_query = conn.prepareStatement(ticketLocalita);
+			java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
+			//java.sql.PreparedStatement ticketLocalita_query = conn.prepareStatement(ticketLocalita);
 			//java.sql.PreparedStatement ticketClasse_query = conn.prepareStatement(ticketClasse);
 			){
 			
-				switch(filter) {
 			
-					case "localita":
-						
-						ticketLocalita_query.setString(1, value);
-						res = ticketLocalita_query.executeQuery();
-						while(res.next()) {
-							
-							Ticket ticket = new Ticket(res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), res.getString("TIC_descrizione"), res.getInt("UT_id_apertura"), res.getInt("UT_id_accettazione"));
-							tickets.add(ticket);
-							
-						}
-						conn.close();
-						break;
-							
-					case "stato":
-						
-						ticketStato_query.setString(1, value);
-						res = ticketStato_query.executeQuery();
-						while(res.next()) {
-							
-							Ticket ticket = new Ticket(res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), res.getString("TIC_descrizione"), res.getInt("UT_id_apertura"), res.getInt("UT_id_accettazione"));
-							tickets.add(ticket);
-							
-						}
-						conn.close();
-						break;
-						
-					default:
-						 return null;
-					
-				}
 				
-				if(tickets.isEmpty()) {
-					return null;
-				}else {
-					return tickets;
+				getUser_query.setString(1, email);
+				res = getUser_query.executeQuery();
+				
+				if(res.next()) {
+					
+					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"));
+					conn.close();
+					return user_info;	
 				}
+				else
+					throw new Exception("utente non esistente");
+				
+						
+					
 				
 				
 		}catch(SQLException e){
@@ -388,7 +367,7 @@ public int checkExistMateria(String materia) {
 			return null;
 		}
 		
-	}*/
+	}
 
 	/*
 	 * Metodo per la query di modifica password

@@ -111,6 +111,7 @@ public class Tickets extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
@@ -169,13 +170,16 @@ public class Tickets extends HttpServlet {
 				}
 				
 				if(tickets == null) {
+					response.setStatus(500);
 					jsonResponse.addProperty("stato", "errore server");
 					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 				}else if(tickets.isEmpty()){
+					response.setStatus(200);
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("descrizione", "ricerca filtrata");
 					jsonResponse.addProperty("filtered", "nessun risultato");
 				}else {
+					response.setStatus(200);
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("descrizione", "ricerca filtrata");
 					jsonResponse.add("filtered", g.toJsonTree(tickets));	
@@ -183,12 +187,14 @@ public class Tickets extends HttpServlet {
 				
 			}catch(InvalidParameterException e) {
 				
-				response.setStatus(401);
+				response.setStatus(403);
 				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("descrizione", "non autorizzato");
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
+			}finally {
+				out.println(jsonResponse.toString());
 			}
 			
 		}else {
@@ -210,6 +216,7 @@ public class Tickets extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
 		JsonObject jsonResponse = new JsonObject();
@@ -257,12 +264,13 @@ public class Tickets extends HttpServlet {
 				
 					case 0:
 						
+						response.setStatus(500);
 						jsonResponse.addProperty("stato", "errore server");
 						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						break;
 						
 					case -1:
-						
+						response.setStatus(500);
 						jsonResponse.addProperty("stato", "errore server");
 						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						break;
@@ -272,7 +280,8 @@ public class Tickets extends HttpServlet {
 						Ticket ticket = queryForThis.getTicketFromId(id_ticket);
 						
 						if(ticket != null) {
-						
+							
+							response.setStatus(201);
 							jsonResponse.addProperty("stato", "confermato");
 							jsonResponse.addProperty("desc", "ticket creato");
 							
@@ -284,6 +293,7 @@ public class Tickets extends HttpServlet {
 							jsonResponse.add("ticket_inserito", ticket_info);
 						
 						}else {
+							response.setStatus(500);
 							jsonResponse.addProperty("stato", "errore server");
 							jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
 							
@@ -294,7 +304,7 @@ public class Tickets extends HttpServlet {
 				}
 			}catch(InvalidParameterException e) {
 				
-				response.setStatus(401);
+				response.setStatus(403);
 				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("descrizione", "non autorizzato");
 				System.out.println("not authorized token");
@@ -302,8 +312,9 @@ public class Tickets extends HttpServlet {
 			
 			}catch(Exception e) {
 				
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
 				
 				System.out.println("not created");
 				e.printStackTrace();
@@ -330,6 +341,7 @@ public class Tickets extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "PUT");
+		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
 		JsonObject jsonResponse = new JsonObject();
@@ -377,9 +389,11 @@ public class Tickets extends HttpServlet {
 						int modificaDatiTicket = queryForThis.modificaDatiTicket(numeroTicket, valoreMateria, valoreDescrizione, valoreTag);
 						
 						if(modificaDatiTicket == 1) {
+							response.setStatus(200);
 							jsonResponse.addProperty("desc", "ticket modificato");
 							jsonResponse.addProperty("stato", "confermato");
 						}else if(modificaDatiTicket == 0 || modificaDatiTicket == -1) {
+							response.setStatus(400);
 							jsonResponse.addProperty("desc", "errore modifica ticket");
 							jsonResponse.addProperty("stato", "errore");
 						}
@@ -387,6 +401,7 @@ public class Tickets extends HttpServlet {
 						Ticket ticket_info = queryForThis.getTicketFromId(numeroTicket);
 						
 						if(ticket_info == null) {
+							response.setStatus(400);
 							jsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
 						}
 						jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
@@ -394,13 +409,16 @@ public class Tickets extends HttpServlet {
 					
 					case 0:
 						
-						jsonResponse.addProperty("desc", "ticket inesistente");
+						response.setStatus(400);
 						jsonResponse.addProperty("stato", "errore");
+						jsonResponse.addProperty("desc", "ticket inesistente");
+						
 						
 						break;
 						
 					case -1:
 						
+						response.setStatus(500);
 						jsonResponse.addProperty("stato", "errore server");
 						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
 						
@@ -412,7 +430,7 @@ public class Tickets extends HttpServlet {
 		
 			}catch(InvalidParameterException e) {
 			
-				response.setStatus(401);
+				response.setStatus(403);
 				jsonResponse.addProperty("stato", "errore");
 				jsonResponse.addProperty("desc", "non autorizzato");
 				System.out.println("not authorized token");
@@ -420,6 +438,9 @@ public class Tickets extends HttpServlet {
 			
 			}catch(Exception e) {
 				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
 				System.out.println("no results");
 				e.printStackTrace();
 				
@@ -428,19 +449,12 @@ public class Tickets extends HttpServlet {
 			}
 		
 		}else {
+			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore");
-			jsonResponse.addProperty("desc", "input errato");
+			jsonResponse.addProperty("desc", "errore nella sintassi");
 		}
 		
-		
-		
-		//da trasformare in formato json
-		/*
-		 * le risposte in formato json conterranno:
-		 * stati 
-		 * descrizione
-		 * eventuali dati
-		 */		
+			
 		
 		out.println(jsonResponse.toString());
 		

@@ -9,29 +9,39 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.InvalidParameterException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import classes.JwtGen;
+import classes.JwtVal;
 import classes.QueryHandler;
+import classes.Ticket;
+import classes.Utente;
 
 /**
  * Servlet implementation class RegistrazioneUtenti
  */
 
-@WebServlet("/RegistrazioneUtenti")
+@WebServlet("/user")
 public class RegistrazioneUtenti extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;	
-	String risposta;
 	
     /**
      * @see HttpServlet#HttpServlet()
@@ -52,32 +62,44 @@ public class RegistrazioneUtenti extends HttpServlet {
     	
     }
     
+    private boolean isValidDateOfBirth(String strDate)
+    {
+	 	/* Check if date is 'null' */
+	 	if (strDate.trim().equals(""))
+	 	{
+	 	    return false;
+	 	}
+	 	/* Date is not 'null' */
+	 	else
+	 	{
+	 	    /*
+	 	     * Set preferred date format,
+	 	     * For example MM-dd-yyyy, MM.dd.yyyy,dd.MM.yyyy etc.*/
+	 	    SimpleDateFormat sdfrmt = new SimpleDateFormat("YYYY/mm/dd");
+	 	    sdfrmt.setLenient(false);
+	 	    /* Create Date object
+	 	     * parse the string into date 
+	              */
+	 	    try
+	 	    {
+	 	        sdfrmt.parse(strDate); 
+	 	        System.out.println(strDate+" is valid date format");
+	 	    }
+	 	    /* Date format is invalid */
+	 	    catch (ParseException e)
+	 	    {
+	 	        System.out.println(strDate+" is Invalid Date format");
+	 	        return false;
+	 	    }
+	 	    /* Return true if date format is valid */
+	 	    return true;
+	 	}
+    }
+    
     /*private boolean isValidLocation(String localita) {
     	
     }*/
     
-   
-public class DateValidatorUsingLocalDate implements DateValidator {
-    private DateTimeFormatter dateFormatter;
-	
-	public DateValidatorUsingLocalDate(DateTimeFormatter dateFormatter) {
-        this.dateFormatter = dateFormatter;
-    }
-		
-	private boolean isValidDateFormat(String data_nascita) {
-        try {
-            LocalDate.parse(data_nascita, this.dateFormatter);
-        } catch (DateTimeParseException e) {
-            return false;
-        }
-        return true;
-    }
-}
-DateTimeFormatter dateFormatter = DateTimeFormatter.BASIC_ISO_DATE;
-DateValidator validator = new DateValidatorUsingLocalDate(dateFormatter);
-        
-assertTrue(validator.isValid("20190228"));
-assertFalse(validator.isValid("20190230"));
     
     
     /*private boolean isValidSTA(String indirizzo_scolastico) {
@@ -121,21 +143,7 @@ assertFalse(validator.isValid("20190230"));
   	   }
   	   return true;	   
      }
-   
-	
-   //Date of birth check --> da testare
-  /* public boolean isValidDateOfBirth(String data_nascita) {
-	
-	   SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
-	   dateFormat.setLenient(false);
-   
-	   try {
-		   dateFormat.parse(data_nascita);
-		   return true;
-	   } catch (Exception e) {
-		   return false;
-	   }
-   }*/
+  
     
     //Password check
     public boolean isValidPassword(String password) {
@@ -169,8 +177,58 @@ assertFalse(validator.isValid("20190230"));
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setStatus(405);
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+		
+		
+		//ottenimento solo dei dati personali
+		response.setContentType("application/json");
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		
+		PrintWriter out = response.getWriter(); 
+		JsonObject jsonResponse = new JsonObject();
+		Gson g = new Gson();
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		
+		final JwtVal validator = new JwtVal();
+		
+		try{
+			
+			//se non viene autorizzato lancia eccezzione gestita nel catch sotto
+			DecodedJWT jwtDecoded = validator.validate(jwtToken);
+			
+			String email = jwtDecoded.getClaim("sub").asString();
+			QueryHandler queryForThis = new QueryHandler();
+			Utente userData = queryForThis.getUserData(email);
+			if(userData != null) {
+				response.setStatus(200);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("desc", " ottenimento dati personali");
+				jsonResponse.add("user_info", g.toJsonTree(userData));
+				
+			}else {
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+			}
+		}catch(InvalidParameterException e) {
+			
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+			
+		}catch(Exception e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
+		}
+		finally {
+			out.println(jsonResponse.toString());
+		}
+		
+		out.println(jsonResponse.toString());
 	}
 
 	/**
@@ -180,11 +238,13 @@ assertFalse(validator.isValid("20190230"));
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		response.setContentType("application/json");
 		//output writer
 		PrintWriter out = response.getWriter(); 
 		//input reader
 		BufferedReader in_body = request.getReader();
 		//stringBuilder per costruire una stringa dal messaggio in formato json
+		JsonObject jsonResponse = new JsonObject();
 		StringBuilder sb = new StringBuilder();
 		String line;
 		String body;
@@ -209,7 +269,7 @@ assertFalse(validator.isValid("20190230"));
 		String indirizzo_scolastico = user.get("indirizzo").getAsString();
 		String localita = user.get("localita").getAsString();
 		
-		if(isNotBlank(nome, cognome) /*&& isValidDateOfBirth(data_nascita)*/ && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
+		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
 				/*
 				 * psw encryption
 				 */
@@ -221,37 +281,69 @@ assertFalse(validator.isValid("20190230"));
 				switch(hasEmail) {
 				
 					case 1:
-						risposta = "utente gia esistente";
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("descrizione", "errore nella sintassi");
 						break;
 					case 0:
-						int inserted = queryForThis.inserisciUtente(/*username , descrizione*/email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+						int inserted = queryForThis.inserisciUtente(email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
 						
 						if(inserted != -1) {
-							risposta = "utente registrato";
+							
+							JsonObject jwtFormat = new JsonObject();
+							//jwtFormat.addProperty("sub", username);
+							jwtFormat.addProperty("sub-email", email);
+							jwtFormat.addProperty("aud", "*");
+							
+							try {
+								
+								JwtGen generator = new JwtGen();
+								Map<String, String> claims = new HashMap<>();
+								
+								jwtFormat.keySet().forEach(keyStr ->
+							    {
+							        String keyvalue = jwtFormat.get(keyStr).getAsString();
+							        claims.put(keyStr, keyvalue);
+							      
+							    });
+								
+								String token = generator.generateJwt(claims);
+								response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+								response.setStatus(201);
+								jsonResponse.addProperty("stato", "confermato");
+								jsonResponse.addProperty("desc", "utente creato");
+								
+							} catch (Exception e) {
+								
+								response.setStatus(500);
+								jsonResponse.addProperty("stato", "errore server");
+								jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+								e.printStackTrace();
+							}finally {
+								
+								out.println(jsonResponse.toString());
+							}
 						}else {
-							risposta = "errore del database (inserimento utente)";
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						}
 						break;
 						
 					default:
-						risposta = "errore del database (presenza utente)";
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						break;
 				}
 		}else {
-			risposta = "errore nell'input";
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "errore nella sintassi");
 		}
 		
-		
-		
 	
-		//da trasformare in formato json
-		/*
-		 * le risposte in formato json conterranno:
-		 * stati (andatura della richiesta, coincidenza password, controlli sugli input...)
-		 * descrizione
-		 * eventuali dati
-		 */
-		out.println(risposta);
+		out.println(jsonResponse.toString());
 				
 				
 				

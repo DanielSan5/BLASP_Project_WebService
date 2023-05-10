@@ -21,8 +21,6 @@ import classes.QueryHandler;
 public class AutenticazioneUtenti extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	String risposta;
-	String cookieForClient;
 	
 	
        
@@ -73,10 +71,10 @@ public class AutenticazioneUtenti extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
-		
+		JsonObject jsonResponse = new JsonObject();
 		BufferedReader in_body = request.getReader();
-		//stringBuilder per costruire una stringa dal messaggio in formato json
 		StringBuilder sb = new StringBuilder();
 		String line;
 		String body;
@@ -110,7 +108,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 			int user_id = queryForThis.getUserId(email);
 			String userStatus =  queryForThis.getUserStatus(user_id);
 			
-			switch(hasEmail/*hasUsername*/) {
+			switch(hasEmail) {
 			
 				case 1:
 					
@@ -121,7 +119,6 @@ public class AutenticazioneUtenti extends HttpServlet {
 						
 						if(checkPass == 1) {
 								
-							risposta = "password corretta";
 							//generazione jwt per la sessione
 							try {
 								
@@ -136,54 +133,74 @@ public class AutenticazioneUtenti extends HttpServlet {
 							    });
 								
 								String token = generator.generateJwt(claims);
-								cookieForClient = token;
+								response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+								response.setStatus(200);
+								jsonResponse.addProperty("stato", "confermato");
+								jsonResponse.addProperty("desc", "utente autorizzato");
 								
 							} catch (Exception e) {
-								
+								response.setStatus(500);
+								jsonResponse.addProperty("stato", "errore server");
+								jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 								e.printStackTrace();
+							}finally {
+								out.println(jsonResponse.toString());
 							}
 						
 						}else if (checkPass == 0){
 							
-							risposta = "password errata";
+							response.setStatus(401);
+							jsonResponse.addProperty("stato", "errore client");
+							jsonResponse.addProperty("descrizione", "credenziali invalide");
 							
 						}else {
-							risposta = "errore con il database (controllo password)";
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						}
 						
 					
 					//pezzo nuovo da confermare
 					}else if (userStatus.equals("banned")) {
-						risposta = "utente bloccato";
+						
+						response.setStatus(401);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("descrizione", "utente bloccato");
+						
 					}else if(userStatus.equals("unabled")){
-						risposta = "utente disabilitato";
+						
+						response.setStatus(401);
+						jsonResponse.addProperty("stato", "errore");
+						jsonResponse.addProperty("descrizione", "utente disabilitato");
+						
 					}else if(userStatus.isBlank()){
-						risposta = "errore del database (controllo stato)";
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 					}
 					break;
 				case 0:
-					risposta = "utente inesistente";
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("descrizione", "errore nella sintassi");
 					break;
 					
 				default:
-					risposta = "errore del database (presenza username)";
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 					break;
 			}
 			
 			
 		}else {
-			risposta = "errore nell'input";
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "errore nella sintassi");
 		}
 
-		//da trasformare in formato json
-		/*
-		 * le risposte in formato json conterranno:
-		 * stati (verifica dell'email, andatura della richiesta, correttezza password, controlli sugli input...)
-		 * descrizione
-		 * eventuali dati
-		 */
-		response.addHeader("Set-cookie","__refresh__token=" + cookieForClient + "; HttpOnly; Secure");
-		out.println(risposta);
+		
+		out.println(jsonResponse.toString());
 		
 		
 	}
