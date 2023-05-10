@@ -44,7 +44,14 @@ public class Tickets extends HttpServlet {
 	private QueryHandler_filters queryForThis = new QueryHandler_filters();
 	boolean check;
 	
-	
+	 //Empty input check
+	   public boolean isNotBlank(String materia, String livello_materia, String descrizione, String dataStringa) {
+	  	   if(materia.isBlank() || livello_materia.isBlank() || descrizione.isBlank() || dataStringa.isBlank()) {
+	  		   return false;
+	  	   }
+	  	   return true;	   
+	     }
+	  
 	
 	//Authorization empty check
 	private boolean isValidAuthorization() {
@@ -236,11 +243,14 @@ public class Tickets extends HttpServlet {
 		String materia = user.get("materia").getAsString();
 		String livello_materia = user.get("livello_materia").getAsString();
 		String descrizione = user.get("desc").getAsString();
+		Date dataOdierna = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		String dataStringa = formatter.format(dataOdierna);
 		
 		//Estrazione del token dall'header
 		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		
-		if(isValidTag(livello_materia) && isValidAuthorization()) {
+		if(isValidTag(livello_materia) && isValidAuthorization() && isValidMateria(materia) && isNotBlank(materia, livello_materia, descrizione, dataStringa)) {
 			
 			final JwtVal validator = new JwtVal();
 			
@@ -252,13 +262,18 @@ public class Tickets extends HttpServlet {
 				
 				QueryHandler queryUser = new QueryHandler();
 				
-				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+				int userID = queryUser.getUserId(email);
 				
-				Date dataOdierna = new Date();
-		        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-		        String dataStringa = formatter.format(dataOdierna);
+				if(userID == -1) 
+				{
+					response.setStatus(403);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");				
+				}else {
 				
-				int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa);
+				QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
+				
+				int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa, userID);
 				
 				switch(id_ticket) {
 				
@@ -301,6 +316,8 @@ public class Tickets extends HttpServlet {
 						
 						break;
 							
+				}
+				
 				}
 			}catch(InvalidParameterException e) {
 				
