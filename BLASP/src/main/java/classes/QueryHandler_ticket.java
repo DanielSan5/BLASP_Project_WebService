@@ -170,6 +170,33 @@ public int inserisciTicket(String materia, String livello_materia, String descri
 			
 		}
 	
+	//***CANCELLA UN TICKET***
+	public int cancellaTicket(int numero_ticket) {
+			
+		establishConnection();
+		String prepared_query = "DELETE FROM tickets WHERE TIC_id = ?";		
+		try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
+					
+				pr.setInt(1, numero_ticket);
+				
+				//executeUpdate returna o 1 se   andato a buonfine o 0 se non   andato a buonfine
+				int check = pr.executeUpdate();
+					
+				conn.close();
+					
+				return check;
+				
+			}catch(SQLException e){
+					
+				System.out.println(e.getLocalizedMessage());
+				return -1;
+				
+			}
+			
+	}
+	
 	
 
 }

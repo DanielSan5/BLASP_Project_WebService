@@ -476,6 +476,95 @@ public class Tickets extends HttpServlet {
 		out.println(jsonResponse.toString());
 		
 	}
+	
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.setContentType("application/json");
+		PrintWriter out = response.getWriter(); 
+		BufferedReader in_body = request.getReader();
+		JsonObject jsonResponse = new JsonObject();
+		Gson g = new Gson();
+		StringBuilder sb = new StringBuilder();
+		String line;
+		String body;
+
+		while((line = in_body.readLine()) != null) {
+			sb.append(line);
+		}
+				
+		body = sb.toString();
+				
+		JsonObject ticket = g.fromJson(body, JsonObject.class);
+		
+		//Estrazione del token dall'header
+		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		
+		//acquisizione delle chiavi
+		int numeroTicket = ticket.get("numero_ticket").getAsInt();	
+		
+		QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+		int hasTicketId = queryForThis.hasTicketId(numeroTicket);
+		
+		final JwtVal validator = new JwtVal();
+		
+		try{
+			
+			DecodedJWT jwtDecoded =  validator.validate(jwtToken);
+			
+			switch(hasTicketId) {
+			
+			case 1:
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("desc", "ticket cancellato");
+			
+				break;
+			
+			case 0:
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore");
+				jsonResponse.addProperty("desc", "ticket inesistente");
+				
+				
+				break;
+				
+			case -1:
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+				
+				break;
+				
+			}
+		
+		}catch(InvalidParameterException e) {
+			
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore");
+			jsonResponse.addProperty("desc", "non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+		
+		}catch(Exception e) {
+			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+			System.out.println("no results");
+			e.printStackTrace();
+			
+		}finally {
+			out.println(jsonResponse.toString());
+		}
+		
+		out.println(jsonResponse.toString());
+		
+	}
 
 }
 
