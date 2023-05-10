@@ -297,6 +297,35 @@ public class QueryHandler {
 	/*
 	 * returna null se non esistono ticket con quei filtri oppure se ci sono stati errori
 	 */
+	
+
+//CONTROLLO SE UNA MATERIA ESISTE NEL DATABASE
+public int checkExistMateria(String materia) {
+		
+		establishConnection();
+		String prepared_query = "SELECT * FROM materia WHERE MAT_nome = ?";
+		
+		try(
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			){
+			
+			pr.setString(1, materia);
+			ResultSet res = pr.executeQuery();
+			//per controllare se l'username esiste basta vedere il risultato di next(), sarà false se non esistono righe
+			boolean check = res.next();
+			
+			conn.close();
+			return check ? 1 : 0; //se check true returna 1 altrimenti 0
+		
+		}catch(SQLException e){
+			
+			System.out.println(e.getLocalizedMessage());
+			return -1;
+		
+		}
+		
+	}
+	
 	/*public ArrayList<Ticket> getTickets(String filter, String value) {
 		
 		establishConnection();

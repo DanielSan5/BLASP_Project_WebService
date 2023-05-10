@@ -85,6 +85,16 @@ public class Tickets extends HttpServlet {
 		else 
 			return false;
 	}
+	
+	//Materia valid check
+	private boolean isValidMateria(String materia) {
+		
+		QueryHandler queryForThis = new QueryHandler();
+		if(queryForThis.checkExistMateria(materia) == 1)
+			return true;
+		else
+			return false;
+	}
 			
 				
     /**
@@ -161,17 +171,14 @@ public class Tickets extends HttpServlet {
 				if(tickets == null) {
 					jsonResponse.addProperty("stato", "errore server");
 					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-					out.println(jsonResponse.toString());
 				}else if(tickets.isEmpty()){
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("descrizione", "ricerca filtrata");
 					jsonResponse.addProperty("filtered", "nessun risultato");
-					out.println(jsonResponse.toString());
 				}else {
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("descrizione", "ricerca filtrata");
-					jsonResponse.add("filtered", g.toJsonTree(tickets));
-					out.println(jsonResponse.toString());	
+					jsonResponse.add("filtered", g.toJsonTree(tickets));	
 				}
 				
 			}catch(InvalidParameterException e) {
@@ -179,7 +186,6 @@ public class Tickets extends HttpServlet {
 				response.setStatus(401);
 				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("descrizione", "non autorizzato");
-				out.println(jsonResponse.toString());
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
@@ -189,10 +195,10 @@ public class Tickets extends HttpServlet {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "errore nella sintassi");
-			out.println(jsonResponse.toString());
 			
 		}
 	
+		out.println(jsonResponse.toString());
 		
 	}
 
@@ -249,14 +255,12 @@ public class Tickets extends HttpServlet {
 						
 						jsonResponse.addProperty("stato", "errore server");
 						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						out.println(jsonResponse.toString());
 						break;
 						
 					case -1:
 						
 						jsonResponse.addProperty("stato", "errore server");
 						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						out.println(jsonResponse.toString());
 						break;
 						
 					default:
@@ -274,12 +278,11 @@ public class Tickets extends HttpServlet {
 							ticket_info.add("ticket_info", g.toJsonTree(ticket));
 							
 							jsonResponse.add("ticket_inserito", ticket_info);
-							out.println(jsonResponse.toString());
 						
 						}else {
 							jsonResponse.addProperty("stato", "errore server");
 							jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-							out.println(jsonResponse.toString());
+							
 						}
 						
 						break;
@@ -290,7 +293,6 @@ public class Tickets extends HttpServlet {
 				response.setStatus(401);
 				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("descrizione", "non autorizzato");
-				out.println(jsonResponse.toString());
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
@@ -298,7 +300,6 @@ public class Tickets extends HttpServlet {
 				
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				out.println(jsonResponse.toString());
 				
 				System.out.println("not created");
 				e.printStackTrace();
@@ -309,9 +310,9 @@ public class Tickets extends HttpServlet {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore");
 			jsonResponse.addProperty("desc", "errore nella sintassi");
-			out.println(jsonResponse.toString());
 		}
 	
+		out.println(jsonResponse.toString());
 		
 	}
 	
@@ -352,7 +353,7 @@ public class Tickets extends HttpServlet {
 		String valoreDescrizione = user.get("to_edit").getAsJsonObject().get("descrizione").getAsString();
 		String valoreTag = user.get("to_edit").getAsJsonObject().get("tag").getAsString();
 		
-		if(isValidTag(valoreTag) && isValidAuthorization()) {
+		if(isValidTag(valoreTag) && isValidAuthorization() && isValidMateria(valoreMateria)) {
 		
 			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
 			int hasTicketId = queryForThis.hasTicketId(numeroTicket);
