@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -18,44 +19,112 @@ import com.google.gson.JsonObject;
 import classes.QueryHandler;
 import classes.QueryHandler_filters;
 import classes.QueryHandler_ticket;
-import classes.QueryHandler_avviso;
+import classes.QueryHandler_flags;
 import classes.Ticket;
-
+import classes.Avviso;
 import classes.JwtVal;
 import classes.QueryHandler;
 
 /**
  * Servlet implementation class Avvisi
  */
-@WebServlet("/Flag_ticket")
+@WebServlet("/avvisi")
 public class Avvisi extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	private String jwtToken;
+	
 	
     /**
      * @see HttpServlet#HttpServlet()
      */
     public Avvisi() {
         super();
-        // TODO Auto-generated constructor stub
     }
-
-    
-  //Empty input check
-public boolean isNotBlank(String avviso, int id_ticket) {
+    //Empty input check
+    public boolean isNotBlank(String avviso, int id_ticket) {
+	
 	 if(avviso.isBlank() || id_ticket == 0) {
 	  	return false;
 	  }
 	   return true;	   
-}
-    
+    }
+   
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+		
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "GET");
+		response.setContentType("application/json");
+		PrintWriter out = response.getWriter(); 
+		JsonObject jsonResponse = new JsonObject();
+		Gson g = new Gson();
+		
+		//Estrazione del token dall'header
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+	
+		final JwtVal validator = new JwtVal();
+		
+		try {
+		
+			DecodedJWT jwt = validator.validate(jwtToken);
+			QueryHandler queryUser = new QueryHandler();
+			int utente_id = queryUser.getUserId(jwt.getClaim("sub-email").asString());
+			
+			//controllo sull'ID utente del ticket
+			if(utente_id == 0){
+		
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
+				
+			}else if(utente_id == -1) {
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				
+			}else{
+			
+				QueryHandler_flags queryAvviso = new QueryHandler_flags();
+				ArrayList<Avviso> avvisi = queryAvviso.getAvvisi(utente_id);
+				
+				if(avvisi != null) {
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("descrizione", "ottenimento avvisi");
+					jsonResponse.add("avvisi", g.toJsonTree(avvisi));
+				}else {
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				}
+				
+			} 
+					
+		}catch(InvalidParameterException e) {
+			
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+		
+		}catch(Exception e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
+			
+			System.out.println("no results");
+			e.printStackTrace();
+			
+		}finally {
+			out.println(jsonResponse.toString());
+		}
+		
+		out.println(jsonResponse.toString());
 	}
 
 	/**
@@ -86,7 +155,7 @@ public boolean isNotBlank(String avviso, int id_ticket) {
 		int ticket_id = user.get("numero_ticket").getAsInt();
 		
 		//Estrazione del token dall'header
-		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		
 		if(isNotBlank(avviso, ticket_id)) {
 			
@@ -116,7 +185,7 @@ public boolean isNotBlank(String avviso, int id_ticket) {
 						
 					}else{
 					
-					QueryHandler_avviso queryUtenteAvviso = new QueryHandler_avviso();
+					QueryHandler_flags queryUtenteAvviso = new QueryHandler_flags();
 					
 					switch(queryUtenteAvviso.inserisciAvviso(avviso,ticket_id, utente_id)) {
 					
@@ -143,8 +212,7 @@ public boolean isNotBlank(String avviso, int id_ticket) {
 					}
 					
 					
-				} 
-						
+				}				
 						
 			}catch(InvalidParameterException e) {
 				
@@ -166,19 +234,17 @@ public boolean isNotBlank(String avviso, int id_ticket) {
 			}finally {
 				out.println(jsonResponse.toString());
 			}
-			
-			
 		}else {
 			
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore");
 			jsonResponse.addProperty("desc", "errore nella sintassi");
 	
-	}
+		}
 		
 		out.println(jsonResponse.toString());
 
-}
+	}
 	
 	
 }

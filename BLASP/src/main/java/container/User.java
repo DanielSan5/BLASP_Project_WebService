@@ -95,7 +95,6 @@ public class User extends HttpServlet {
 	 	    return true;
 	 	}
     }
-    
     /*private boolean isValidLocation(String localita) {
     	
     }*/
@@ -350,8 +349,7 @@ public class User extends HttpServlet {
 		
 	
 		out.println(jsonResponse.toString());
-				
-				
+			
 				
 	}
 		

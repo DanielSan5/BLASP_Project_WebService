@@ -44,4 +44,14 @@
     <servlet-name>favourites</servlet-name>
     <url-pattern>/favourites</url-pattern>
   </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>Segnalazioni</display-name>
+    <servlet-name>Segnalazioni</servlet-name>
+    <servlet-class>container.Segnalazioni</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Segnalazioni</servlet-name>
+    <url-pattern>/Segnalazioni</url-pattern>
+  </servlet-mapping>
 </web-app>
