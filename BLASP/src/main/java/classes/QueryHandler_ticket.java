@@ -78,6 +78,28 @@ public int inserisciTicket(String materia, String livello_materia, String descri
 			}
 		
 	}
+	public int saveFavourites(int ticket_id, int user_id) {
+		
+		establishConnection();
+		String prepared_query = "INSERT INTO preferiti (UT_id, TIC_id) VALUES (?, ?)";
+		
+		try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
+				
+				pr.setInt(1, ticket_id);
+				pr.setInt(2, user_id);
+				
+				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
+				return pr.executeUpdate();
+			
+			}catch(SQLException e){
+				
+				System.out.println(e.getLocalizedMessage());
+				return -1;
+			
+			}
+	}
 
 	//***CONTROLLA SE ESISTE L'ID DI UN TICKET***
 	public int hasTicketId(int ticket_id) {

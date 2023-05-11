@@ -146,12 +146,14 @@ public class QueryHandler {
 			pr.setString(1, email);
 			ResultSet res = pr.executeQuery();
 			if(res.next()) {
+				
 				int user_id = res.getInt("UT_id");
 				conn.close();
 				return user_id;
+				
 			}else {
 				conn.close();
-				return -1;
+				return 0;
 			}
 			
 			
@@ -300,7 +302,7 @@ public class QueryHandler {
 	
 
 //CONTROLLO SE UNA MATERIA ESISTE NEL DATABASE
-public int checkExistMateria(String materia) {
+	public int checkExistMateria(String materia) {
 		
 		establishConnection();
 		String prepared_query = "SELECT * FROM materia WHERE MAT_nome = ?";
@@ -327,11 +329,11 @@ public int checkExistMateria(String materia) {
 	}
 
 	
-	public Utente getUserData(String email) throws Exception {
+	public Utente getUserData(int user_id) throws Exception {
 		
 		establishConnection();
 		
-		String getUser = "SELECT * FROM utenti WHERE UT_email = ?";
+		String getUser = "SELECT * FROM utenti WHERE UT_id = ?";
 		//String ticketLocalita = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE u.UT_localita = ?";
 		//String ticketClasse = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE u.UT_classe = ?";
 		ResultSet res;
@@ -345,7 +347,7 @@ public int checkExistMateria(String materia) {
 			
 			
 				
-				getUser_query.setString(1, email);
+				getUser_query.setInt(1, user_id);
 				res = getUser_query.executeQuery();
 				
 				if(res.next()) {
@@ -361,6 +363,42 @@ public int checkExistMateria(String materia) {
 						
 					
 				
+				
+		}catch(SQLException e){
+			System.out.println(e.getLocalizedMessage());
+			return null;
+		}
+		
+	}
+	
+	public ArrayList<Ticket> getUserTickets(int user_id) throws Exception {
+		
+		establishConnection();
+		
+		String getUser = "SELECT * FROM tickets WHERE UT_id_apertura = ?";
+		ResultSet res;
+		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
+		
+		try(
+			java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
+			){
+			
+				getUser_query.setInt(1, user_id);
+				res = getUser_query.executeQuery();
+				
+				while(res.next()) {
+					
+					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
+							res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
+					
+					tickets.add(ticket);
+					
+				}
+				if(tickets.isEmpty()) {
+					throw new Exception("utente non esistente");
+				}else {
+					return tickets;
+				}
 				
 		}catch(SQLException e){
 			System.out.println(e.getLocalizedMessage());

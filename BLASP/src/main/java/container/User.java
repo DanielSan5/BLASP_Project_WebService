@@ -39,14 +39,14 @@ import classes.Utente;
  */
 
 @WebServlet("/user")
-public class RegistrazioneUtenti extends HttpServlet {
+public class User extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;	
 	
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public RegistrazioneUtenti() {
+    public User() {
         super();
         
     }
@@ -198,14 +198,20 @@ public class RegistrazioneUtenti extends HttpServlet {
 			
 			String email = jwtDecoded.getClaim("sub").asString();
 			QueryHandler queryForThis = new QueryHandler();
-			Utente userData = queryForThis.getUserData(email);
+			int user_id = queryForThis.getUserId(email);
+			Utente userData = queryForThis.getUserData(user_id);
+			ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
+			
 			if(userData != null) {
+				
 				response.setStatus(200);
 				jsonResponse.addProperty("stato", "confermato");
 				jsonResponse.addProperty("desc", " ottenimento dati personali");
 				jsonResponse.add("user_info", g.toJsonTree(userData));
+				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
 				
 			}else {
+				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
