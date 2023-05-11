@@ -203,17 +203,20 @@ public class QueryHandler {
 	}
 	
 	
-	//***DESCRIZIONE UTENTE campo facoltativo***
-	public int inserisciDescrizioneUtente(int user_id, String descrizione) {
+	//***UPDATE DATI UTENTE***
+	public int modificaDatiUtente(int user_id, String descrizione, String localita, String classe, String indirizzo) {
 		
 		establishConnection();
-		String prepared_query = "UPDATE utenti SET UT_descrizione = ? WHERE UT_id = ?";		
+		String prepared_query = "UPDATE utenti SET (UT_descrizione, UT_localita, UT_classe, UT_indirizzo_scolastico) = (?, ?, ?, ?) WHERE UT_id = ?";		
 		try(
 				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 				){
 				
-				pr.setInt(1, user_id);
-				pr.setString(2, descrizione);
+				pr.setString(1, descrizione);
+				pr.setString(2, localita);
+				pr.setString(3, classe);
+				pr.setString(4, indirizzo);
+				pr.setInt(5, user_id);
 	
 				//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
 				int check = pr.executeUpdate();
@@ -230,6 +233,34 @@ public class QueryHandler {
 			}
 		
 	}
+	
+	//***UPDATE PASSWORD UTENTE***
+		public int modificaPasswordUtente(int user_id, String password_cr) {
+			
+			establishConnection();
+			String prepared_query = "UPDATE utenti SET UT_password = ? WHERE UT_id = ?";		
+			try(
+					java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+					){
+					
+					pr.setString(1, password_cr);
+					pr.setInt(2, user_id);
+					
+					//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
+					int check = pr.executeUpdate();
+					
+					conn.close();
+					
+					return check;
+				
+				}catch(SQLException e){
+					
+					System.out.println(e.getLocalizedMessage());
+					return -1;
+				
+				}
+			
+		}
 	
 	//Controllo se la località inserita esiste
 	public int hasLocalita(String localita) {
