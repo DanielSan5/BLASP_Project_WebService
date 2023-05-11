@@ -42,6 +42,7 @@ import classes.Utente;
 public class User extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;	
+	private String jwtToken;
 	
     /**
      * @see HttpServlet#HttpServlet()
@@ -105,6 +106,7 @@ public class User extends HttpServlet {
     /*private boolean isValidSTA(String indirizzo_scolastico) {
 	
     }*/
+    
     //Email check (Aldini email)
     private boolean isValidEmail(String email) {
      	
@@ -243,7 +245,7 @@ public class User extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		response.addHeader("Access-Control-Allow-Methods", "POST");
 		response.setContentType("application/json");
 		//output writer
 		PrintWriter out = response.getWriter(); 
@@ -355,5 +357,194 @@ public class User extends HttpServlet {
 				
 	}
 		
+	
+	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "PUT");
+		response.setContentType("application/json");
+		//output writer
+		PrintWriter out = response.getWriter(); 
+		//input reader
+		BufferedReader in_body = request.getReader();
+		//stringBuilder per costruire una stringa dal messaggio in formato json
+		JsonObject jsonResponse = new JsonObject();
+		StringBuilder sb = new StringBuilder();
+		String line;
+		String body;
+		
+		//acquisizione stringa dal body
+		while((line = in_body.readLine()) != null) {
+			sb.append(line);
+		}
+		
+		body = sb.toString();
+		//trsformazione stringa in oggetto json
+		Gson g = new Gson();
+		JsonObject user = g.fromJson(body, JsonObject.class);
+		//acquisizione valore delle chiavi
+		boolean action_modifica_password = user.get("action_modificaPassword").getAsBoolean();
+		
+		//Estrazione del token dall'header
+		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		
+		final JwtVal validator = new JwtVal();
+		
+		try {
+			
+			DecodedJWT jwt = validator.validate(jwtToken);
+		
+			String email = jwt.getClaim("sub-email").asString();
+			QueryHandler queryUser = new QueryHandler();
+			int user_id = queryUser.getUserId(email);
+			
+		if(action_modifica_password) {
+			
+			//acquisizione valore delle chiavi
+			String descrizione = user.get("descrizione").getAsString();
+			String localita = user.get("localita").getAsString();
+			String classe = user.get("classe").getAsString();
+			String indirizzo = user.get("indirizzo").getAsString();
+			String old_password = user.get("old_password").getAsString();
+			String new_password = user.get("new_password").getAsString();
+			String confirm_new_password = user.get("confirm_new_password").getAsString();
+			
+			if(isValidPassword(new_password) && isConfirmedPassword(new_password, confirm_new_password)/*altri controlli*/) {
+				
+				int checkPassword = queryUser.checkPass(user_id, old_password);
+				
+				if(checkPassword == 1) {
+				
+				/*
+				 * psw encryption
+				 */
+				String encryptedPass = passEncr(new_password);
+				
+				switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
+				
+				case 1:
+					
+					int cambio_psw = queryUser.modificaPasswordUtente(user_id, encryptedPass);
+					
+					if(cambio_psw == 1) {
+						
+						response.setStatus(200);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("desc", "dati utente e psw modificati");
+						
+					}else {
+						
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+						
+					}
+					
+					break;
+					
+				default:
+					
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					
+					break;
+					
+				
+				
+				}
+				
+				}else if(checkPassword == 0) {
+					
+					response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("descrizione", "credenziali non valide");
+					
+				}else {
+					
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					
+				}
+				
+			}else {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+				
+			}
+			
+			
+		}else{
+			
+			//acquisizione valore delle chiavi
+			String descrizione = user.get("descrizione").getAsString();
+			String localita = user.get("localita").getAsString();
+			String classe = user.get("classe").getAsString();
+			String indirizzo = user.get("indirizzo").getAsString();
+			
+			//if(isValidLocalita(localita)) {
+			
+			switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
+			
+			case 1:
+				
+				response.setStatus(200);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("desc", "dati utente e psw modificati");
+				
+				break;
+				
+			default:
+					
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				
+				break;
+			
+			}
+			
+			
+			//}else {
+			
+			/*
+			 * 
+			 * response.setStatus(400);
+			 * jsonResponse.addProperty("stato", "errore client");
+			 * jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+			 * 
+			 */
+			
+			//}	
+		}
+		
+		}catch(InvalidParameterException e) {
+			
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+	
+		}catch(Exception e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
+			
+			System.out.println("not created");
+			e.printStackTrace();
+			
+		}finally {
+			out.println(jsonResponse.toString());
+		}
+		
+		out.println(jsonResponse.toString());
+		
+	}
+	
 }
 
