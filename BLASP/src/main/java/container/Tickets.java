@@ -447,8 +447,8 @@ public class Tickets extends HttpServlet {
 			}catch(InvalidParameterException e) {
 			
 				response.setStatus(403);
-				jsonResponse.addProperty("stato", "errore");
-				jsonResponse.addProperty("desc", "non autorizzato");
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("desc", "utente non autorizzato");
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
@@ -466,8 +466,8 @@ public class Tickets extends HttpServlet {
 		
 		}else {
 			response.setStatus(400);
-			jsonResponse.addProperty("stato", "errore");
-			jsonResponse.addProperty("desc", "errore nella sintassi");
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 		}
 		
 			
@@ -516,7 +516,7 @@ public class Tickets extends HttpServlet {
 			
 			case 1:
 				
-				response.setStatus(400);
+				response.setStatus(200);
 				jsonResponse.addProperty("stato", "confermato");
 				jsonResponse.addProperty("desc", "ticket cancellato");
 			
@@ -525,8 +525,8 @@ public class Tickets extends HttpServlet {
 			case 0:
 				
 				response.setStatus(400);
-				jsonResponse.addProperty("stato", "errore");
-				jsonResponse.addProperty("desc", "ticket inesistente");
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 				
 				
 				break;
@@ -544,8 +544,8 @@ public class Tickets extends HttpServlet {
 		}catch(InvalidParameterException e) {
 			
 			response.setStatus(403);
-			jsonResponse.addProperty("stato", "errore");
-			jsonResponse.addProperty("desc", "non autorizzato");
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("desc", "utente non autorizzato");
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
