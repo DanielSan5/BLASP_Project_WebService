@@ -97,9 +97,18 @@ public class User extends HttpServlet {
 	 	}
     }
     
-    /*private boolean isValidLocation(String localita) {
+    private boolean isValidLocation(String localita) {
+    	QueryHandler queryLocalita = new QueryHandler();
     	
-    }*/
+    	switch(queryLocalita.hasLocalita(localita)) {
+    	
+    	case 1:
+    		return true;
+    	default:
+    		return false;
+    	
+    	}
+    }
     
     
     
@@ -485,7 +494,7 @@ public class User extends HttpServlet {
 			String classe = user.get("classe").getAsString();
 			String indirizzo = user.get("indirizzo").getAsString();
 			
-			//if(isValidLocalita(localita)) {
+			if(isValidLocation(localita)) {
 			
 			switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
 			
@@ -508,17 +517,13 @@ public class User extends HttpServlet {
 			}
 			
 			
-			//}else {
+			}else {
 			
-			/*
-			 * 
-			 * response.setStatus(400);
-			 * jsonResponse.addProperty("stato", "errore client");
-			 * jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
-			 * 
-			 */
+			 response.setStatus(400);
+			 jsonResponse.addProperty("stato", "errore client");
+			 jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 			
-			//}	
+			}	
 		}
 		
 		}catch(InvalidParameterException e) {
