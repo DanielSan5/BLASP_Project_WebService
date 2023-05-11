@@ -167,6 +167,7 @@ public boolean isNotBlank(String avviso, int id_ticket) {
 				out.println(jsonResponse.toString());
 			}
 			
+			
 		}else {
 			
 			response.setStatus(400);

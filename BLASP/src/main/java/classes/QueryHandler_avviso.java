@@ -53,6 +53,7 @@ public int inserisciAvviso(String descrizione_avviso, int ticket_id, int utente_
 				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
 				int check = pr.executeUpdate();
 				
+				
 				if (check == 1) {
 					if(pr.getGeneratedKeys().next()) {
 						conn.close();
