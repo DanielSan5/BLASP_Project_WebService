@@ -9,6 +9,7 @@ public class Utente {
 	private String descrizione;
 	private String data_nascita;
 	private String localita;
+	private int num_segnalazioni;
 	
 	public Utente(String nome, String cognome, int classe, String indirizzo, String descrizione, String data_nascita,
 			String localita) {
@@ -19,6 +20,18 @@ public class Utente {
 		this.descrizione = descrizione;
 		this.data_nascita = data_nascita;
 		this.localita = localita;
+	}
+	
+	public Utente(String nome, String cognome, int classe, String indirizzo, String descrizione, String data_nascita,
+			String localita, int num_segnalazioni) {
+		this.nome = nome;
+		this.cognome = cognome;
+		this.classe = classe;
+		this.indirizzo = indirizzo;
+		this.descrizione = descrizione;
+		this.data_nascita = data_nascita;
+		this.localita = localita;
+		this.num_segnalazioni = num_segnalazioni;
 	}
 
 	

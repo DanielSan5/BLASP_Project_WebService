@@ -54,4 +54,14 @@
     <servlet-name>Segnalazioni</servlet-name>
     <url-pattern>/Segnalazioni</url-pattern>
   </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>Users</display-name>
+    <servlet-name>Users</servlet-name>
+    <servlet-class>container.Users</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Users</servlet-name>
+    <url-pattern>/Users</url-pattern>
+  </servlet-mapping>
 </web-app>

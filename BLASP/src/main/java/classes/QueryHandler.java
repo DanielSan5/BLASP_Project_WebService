@@ -16,7 +16,6 @@ public class QueryHandler {
     private static String db_user = "root";
     private static String db_password = "";
     private Connection conn;
-  
 
 	public QueryHandler() {
 		
@@ -38,7 +37,6 @@ public class QueryHandler {
 		}
 		
 	}
-	
 	
 	public int hasUsername(String username) {
 		
@@ -66,8 +64,8 @@ public class QueryHandler {
 		
 	}
 	
-	
 	public int hasEmail(String email) {
+
 		
 		establishConnection();
 		String prepared_query = "SELECT * FROM utenti WHERE UT_email = ?";
@@ -91,7 +89,6 @@ public class QueryHandler {
 		}
 		
 	}
-	
 	
 	public int checkPass(int user_id, String password) {
 		
@@ -166,7 +163,6 @@ public class QueryHandler {
 		}
 	}
 	
-	
 	public int inserisciUtente(String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) {
 		
 		establishConnection();
@@ -202,7 +198,6 @@ public class QueryHandler {
 		
 	}
 	
-	
 	//***UPDATE DATI UTENTE***
 	public int modificaDatiUtente(int user_id, String descrizione, String localita, String classe, String indirizzo) {
 		
@@ -235,7 +230,7 @@ public class QueryHandler {
 	}
 	
 	//***UPDATE PASSWORD UTENTE***
-		public int modificaPasswordUtente(int user_id, String password_cr) {
+	public int modificaPasswordUtente(int user_id, String password_cr) {
 			
 			establishConnection();
 			String prepared_query = "UPDATE utenti SET UT_password = ? WHERE UT_id = ?";		
@@ -326,13 +321,8 @@ public class QueryHandler {
 		}
 		
 	}
-	
-	/*
-	 * returna null se non esistono ticket con quei filtri oppure se ci sono stati errori
-	 */
-	
 
-//CONTROLLO SE UNA MATERIA ESISTE NEL DATABASE
+	//CONTROLLO SE UNA MATERIA ESISTE NEL DATABASE
 	public int checkExistMateria(String materia) {
 		
 		establishConnection();
@@ -359,8 +349,8 @@ public class QueryHandler {
 		
 	}
 
-	
 	public Utente getUserData(int user_id) throws Exception {
+
 		
 		establishConnection();
 		
@@ -438,6 +428,77 @@ public class QueryHandler {
 		
 	}
 
+	public int isUserAdmin(int user_id) throws Exception {
+		
+		establishConnection();
+		String prepared_query = "SELECT UT_admin FROM utenti WHERE UT_id = ?";
+		
+		try(
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			){
+			
+			pr.setInt(1, user_id);
+			ResultSet res = pr.executeQuery();
+			//per controllare se l'email istituzionale esiste basta vedere il risultato di next(), sar� false se non esistono righe
+			if(res.next()) {
+				
+				if(res.getInt("UT_admin") == 1) {
+					conn.close();
+					return 1;
+				}else {
+					conn.close();
+					return 0;
+				}
+				
+			}else {
+				conn.close();
+				throw new Exception("no results");
+			}
+	
+		}catch(SQLException e){
+			e.printStackTrace();
+			System.out.println("aa");
+			System.out.println(e.getLocalizedMessage());
+			return -1;
+		}
+		
+	}
+	
+	public ArrayList<Utente> getToBlock() throws Exception{
+		
+		establishConnection();
+		String prepared_query = "SELECT COUNT(*) as num_flags, u.UT_email, u.UT_nome, u.UT_cognome"
+				+ " FROM utenti u INNER JOIN segnalazione s ON u.UT_id = s.UT_id_segnalato GROUP BY u.UT_id";
+		ArrayList<Utente> toBlock = new ArrayList<Utente>();
+		
+		try(
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			){
+			
+			
+			ResultSet res = pr.executeQuery();
+			
+			while(res.next()) {
+				
+				Utente ut = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+						res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getInt("num_flags"));
+				
+				toBlock.add(ut);
+				
+			}
+			if(toBlock.isEmpty()) {
+				throw new Exception("no results");
+			}else {
+				return toBlock;
+			}
+	
+		}catch(SQLException e){
+			e.printStackTrace();
+			System.out.println("aa");
+			System.out.println(e.getLocalizedMessage());
+			return null;
+		}
+	}
 	/*
 	 * Metodo per la query di modifica password
 	 * Metodo per la query di modifica data di nascita

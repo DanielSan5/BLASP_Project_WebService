@@ -213,6 +213,7 @@ public class User extends HttpServlet {
 			int user_id = queryForThis.getUserId(email);
 			Utente userData = queryForThis.getUserData(user_id);
 			ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
+			int isAdmin = queryForThis.isUserAdmin(user_id);
 			
 			if(userData != null) {
 				
@@ -221,6 +222,20 @@ public class User extends HttpServlet {
 				jsonResponse.addProperty("desc", " ottenimento dati personali");
 				jsonResponse.add("user_info", g.toJsonTree(userData));
 				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
+				
+				switch(isAdmin) {
+				
+				case 0:
+					break;
+					
+				case 1:
+					ArrayList<Utente> toBlock = queryForThis.getToBlock();
+					jsonResponse.add("to_block", g.toJsonTree(toBlock));
+					break;
+					
+				default:
+					break;
+				}
 				
 			}else {
 				
