@@ -351,6 +351,7 @@ public class QueryHandler {
 
 	public Utente getUserData(int user_id) throws Exception {
 
+
 		
 		establishConnection();
 		
@@ -374,7 +375,7 @@ public class QueryHandler {
 				if(res.next()) {
 					
 					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"));
+							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
 					conn.close();
 					return user_info;	
 				}
@@ -465,6 +466,7 @@ public class QueryHandler {
 	}
 	
 	public ArrayList<Utente> getToBlock() throws Exception{
+
 		
 		establishConnection();
 		String prepared_query = "SELECT COUNT(*) as num_flags, u.UT_email, u.UT_nome, u.UT_cognome"

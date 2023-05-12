@@ -10,9 +10,10 @@ public class Utente {
 	private String data_nascita;
 	private String localita;
 	private int num_segnalazioni;
+	private boolean admin;
 	
 	public Utente(String nome, String cognome, int classe, String indirizzo, String descrizione, String data_nascita,
-			String localita) {
+			String localita, boolean admin) {
 		this.nome = nome;
 		this.cognome = cognome;
 		this.classe = classe;
@@ -20,6 +21,7 @@ public class Utente {
 		this.descrizione = descrizione;
 		this.data_nascita = data_nascita;
 		this.localita = localita;
+		this.admin = admin;
 	}
 	
 	public Utente(String nome, String cognome, int classe, String indirizzo, String descrizione, String data_nascita,
@@ -76,7 +78,15 @@ public class Utente {
 		return localita;
 	}
 
+	
 
+	public int getNum_segnalazioni() {
+		return num_segnalazioni;
+	}
+
+	public boolean isAdmin() {
+		return admin;
+	}
 
 	@Override
 	public String toString() {

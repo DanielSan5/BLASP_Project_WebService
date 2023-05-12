@@ -190,11 +190,10 @@ public class User extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		
 		//ottenimento solo dei dati personali
 		response.setContentType("application/json");
 		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		response.addHeader("Access-Control-Allow-Methods", "GET");
 		
 		PrintWriter out = response.getWriter(); 
 		JsonObject jsonResponse = new JsonObject();
@@ -208,7 +207,7 @@ public class User extends HttpServlet {
 			//se non viene autorizzato lancia eccezzione gestita nel catch sotto
 			DecodedJWT jwtDecoded = validator.validate(jwtToken);
 			
-			String email = jwtDecoded.getClaim("sub").asString();
+			String email = jwtDecoded.getClaim("sub-email").asString();
 			QueryHandler queryForThis = new QueryHandler();
 			int user_id = queryForThis.getUserId(email);
 			Utente userData = queryForThis.getUserData(user_id);
@@ -234,6 +233,9 @@ public class User extends HttpServlet {
 					break;
 					
 				default:
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 					break;
 				}
 				

@@ -55,7 +55,7 @@ public class QueryHandler_filters {
 				res = ticketCM_query.executeQuery();
 				while(res.next()) {
 					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"));
+							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
 					
 					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
 							res.getString("TIC_descrizione"), user_info);
@@ -90,7 +90,7 @@ public class QueryHandler_filters {
 				res = ticketLNM_query.executeQuery();
 				while(res.next()) {
 					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"));
+							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
 					
 					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
 							res.getString("TIC_descrizione"), user_info);
@@ -124,7 +124,7 @@ public class QueryHandler_filters {
 				while(res.next()) {
 					
 					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"));
+							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
 					
 					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
 							res.getString("TIC_descrizione"), user_info);
@@ -158,7 +158,7 @@ public class QueryHandler_filters {
 				while(res.next()) {
 					
 					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"));
+							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
 					
 					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
 							res.getString("TIC_descrizione"), user_info);
@@ -193,7 +193,7 @@ public class QueryHandler_filters {
 				while(res.next()) {
 					
 					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"));
+							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
 					
 					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
 							res.getString("TIC_descrizione"), user_info);
@@ -226,7 +226,7 @@ public class QueryHandler_filters {
 					while(res.next()) {
 						
 						Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-								res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"));
+								res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
 						
 						Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
 								res.getString("TIC_descrizione"), user_info);
@@ -262,7 +262,7 @@ public class QueryHandler_filters {
 				while(res.next()) {
 					
 					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"));
+							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
 					
 					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
 							res.getString("TIC_descrizione"), user_info);
