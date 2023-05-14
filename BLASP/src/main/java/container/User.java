@@ -5,6 +5,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.text.Normalizer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -135,6 +136,24 @@ public class User extends HttpServlet {
     	   }
  	   
  	   return true;
+    }
+    
+    //Name and Surname check
+    private boolean isValidNameAndSurname(String nome, String cognome, String email) {
+    	String nomeNormalizzato = Normalizer.normalize(nome.toLowerCase(), Normalizer.Form.NFD);
+    	String cognomeNormalizzato = Normalizer.normalize(cognome.toLowerCase(), Normalizer.Form.NFD);
+    	
+    	String nomeNoAccenti = nomeNormalizzato.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+    	String cognomeNoAccenti = cognomeNormalizzato.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+    	
+    	String nomeNoSpazi = nomeNoAccenti.replaceAll("\\s+","");
+    	String cognomeNoSpazi = cognomeNoAccenti.replaceAll("\\s+","");
+    	
+    	
+    	if(email.contains(nomeNoSpazi) && email.contains(cognomeNoSpazi))
+    		return true;
+    	else 
+    		return false;
     }
  
     
@@ -304,7 +323,7 @@ public class User extends HttpServlet {
 		String indirizzo_scolastico = user.get("indirizzo").getAsString();
 		String localita = user.get("localita").getAsString();
 		
-		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
+		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password) && isValidNameAndSurname(nome, cognome, email)) {
 				/*
 				 * psw encryption
 				 */
