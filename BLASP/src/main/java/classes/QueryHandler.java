@@ -285,6 +285,34 @@ public class QueryHandler {
 		
 	}
 	
+	//Controllo se l'indirizzo di studio inserito esiste
+		public int hasIndirizzo(String indirizzo) {
+			
+			establishConnection();
+			String prepared_query = "SELECT * FROM indirizzo_scolastico WHERE INS_nome = ?";
+			
+			try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
+				
+				pr.setString(1, indirizzo);
+				
+				ResultSet res = pr.executeQuery();
+				//per controllare se la località esiste basta vedere il risultato di next(), sar� false se non esistono righe
+				boolean check = res.next();
+				
+				conn.close();
+				return check ? 1 : 0; //se check true returna 1 altrimenti 0
+			
+			}catch(SQLException e){
+				
+				System.out.println(e.getLocalizedMessage());
+				return -1;
+			
+			}
+			
+		}
+	
 	//Controllo lo stato dell'utente --> DA CONFERMARE
 	public String getUserStatus(int user_id) {
 		

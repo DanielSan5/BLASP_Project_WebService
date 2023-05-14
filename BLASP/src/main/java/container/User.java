@@ -65,6 +65,7 @@ public class User extends HttpServlet {
     	
     }
     
+    //Data format check
     private boolean isValidDateOfBirth(String strDate)
     {
 	 	/* Check if date is 'null' */
@@ -137,6 +138,20 @@ public class User extends HttpServlet {
     	QueryHandler queryLocalita = new QueryHandler();
     	
     	switch(queryLocalita.hasLocalita(localita)) {
+    	
+    	case 1:
+    		return true;
+    	default:
+    		return false;
+    	
+    	}
+    }
+    
+    //School address check
+    private boolean isValidSchoolAddress(String indirizzo) {
+    	QueryHandler queryIndirizzo = new QueryHandler();
+    	
+    	switch(queryIndirizzo.hasIndirizzo(indirizzo)) {
     	
     	case 1:
     		return true;
@@ -357,7 +372,7 @@ public class User extends HttpServlet {
 		String indirizzo_scolastico = user.get("indirizzo").getAsString();
 		String localita = user.get("localita").getAsString();
 		
-		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password) && isValidNameAndSurname(nome, cognome, email) && isValidAge(data_nascita, classe)) {
+		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password) && isValidNameAndSurname(nome, cognome, email) && isValidAge(data_nascita, classe) && isValidLocation(localita) && isValidSchoolAddress(indirizzo_scolastico)) {
 				/*
 				 * psw encryption
 				 */
