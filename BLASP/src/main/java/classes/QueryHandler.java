@@ -199,7 +199,7 @@ public class QueryHandler {
 	}
 	
 	//***UPDATE DATI UTENTE***
-	public int modificaDatiUtente(int user_id, String descrizione, String localita, String classe, String indirizzo) {
+	public int modificaDatiUtente(int user_id, String descrizione, String localita, int classe, String indirizzo) {
 		
 		establishConnection();
 		String prepared_query = "UPDATE utenti SET (UT_descrizione, UT_localita, UT_classe, UT_indirizzo_scolastico) = (?, ?, ?, ?) WHERE UT_id = ?";		
@@ -209,7 +209,7 @@ public class QueryHandler {
 				
 				pr.setString(1, descrizione);
 				pr.setString(2, localita);
-				pr.setString(3, classe);
+				pr.setInt(3, classe);
 				pr.setString(4, indirizzo);
 				pr.setInt(5, user_id);
 	

@@ -15,6 +15,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -98,7 +99,40 @@ public class User extends HttpServlet {
 	 	}
     }
 
+    //Age valid check
+    private boolean isValidAge(String date, int classe) {
+    	boolean result = false;
+    	int annoDataInput = Integer.parseInt(date.substring(0, 4)); //prende solo il primo valore (prime 4 cifre) quindi l'anno
+    	int currentYear = LocalDate.now().getYear();
+    	
+    	switch(classe) {
+    	case 5:
+    		if((currentYear - annoDataInput) >= 17)		
+    			result = true;
+    		break;
+    	case 4:
+    		if((currentYear - annoDataInput) >= 16)		
+    			result = true;
+    		break;
+    	case 3:
+    		if((currentYear - annoDataInput) >= 15)		
+    			result = true;
+    		break;
+    	case 2:
+    		if((currentYear - annoDataInput) >= 14)		
+    			result = true;
+    		break;
+    	case 1:
+    		if((currentYear - annoDataInput) >= 13)		
+    			result = true;
+    		break;
+    	}
+    	
+    	return result;
+    	
+    }
     
+    //Location check
     private boolean isValidLocation(String localita) {
     	QueryHandler queryLocalita = new QueryHandler();
     	
@@ -323,7 +357,7 @@ public class User extends HttpServlet {
 		String indirizzo_scolastico = user.get("indirizzo").getAsString();
 		String localita = user.get("localita").getAsString();
 		
-		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password) && isValidNameAndSurname(nome, cognome, email)) {
+		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password) && isValidNameAndSurname(nome, cognome, email) && isValidAge(data_nascita, classe)) {
 				/*
 				 * psw encryption
 				 */
@@ -448,13 +482,13 @@ public class User extends HttpServlet {
 			//acquisizione valore delle chiavi
 			String descrizione = user.get("descrizione").getAsString();
 			String localita = user.get("localita").getAsString();
-			String classe = user.get("classe").getAsString();
+			int classe = user.get("classe").getAsInt();
 			String indirizzo = user.get("indirizzo").getAsString();
 			String old_password = user.get("old_password").getAsString();
 			String new_password = user.get("new_password").getAsString();
 			String confirm_new_password = user.get("confirm_new_password").getAsString();
 			
-			if(isValidPassword(new_password) && isConfirmedPassword(new_password, confirm_new_password)/*altri controlli*/) {
+			if(isValidPassword(new_password) && isConfirmedPassword(new_password, confirm_new_password) && isValidClass(classe) && isValidLocation(localita)/* && isValidIndirizzo(indirizzo)*//*altri controlli*/) {
 				
 				int checkPassword = queryUser.checkPass(user_id, old_password);
 				
@@ -527,7 +561,7 @@ public class User extends HttpServlet {
 			//acquisizione valore delle chiavi
 			String descrizione = user.get("descrizione").getAsString();
 			String localita = user.get("localita").getAsString();
-			String classe = user.get("classe").getAsString();
+			int classe = user.get("classe").getAsInt();
 			String indirizzo = user.get("indirizzo").getAsString();
 			
 			if(isValidLocation(localita)) {
