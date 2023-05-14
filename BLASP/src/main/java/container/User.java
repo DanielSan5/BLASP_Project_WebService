@@ -146,12 +146,13 @@ public class User extends HttpServlet {
     	
     	}
     }
+        
     
-    //School address check
-    private boolean isValidSchoolAddress(String indirizzo) {
-    	QueryHandler queryIndirizzo = new QueryHandler();
-    	
-    	switch(queryIndirizzo.hasIndirizzo(indirizzo)) {
+  //School address check
+    private boolean isValidSTA(String indirizzo_scolastico) {
+		QueryHandler queryIndirizzo = new QueryHandler();
+    	String indirizzo_upperCase = indirizzo_scolastico.toUpperCase();
+    	switch(queryIndirizzo.hasIndirizzo(indirizzo_upperCase)) {
     	
     	case 1:
     		return true;
@@ -160,12 +161,6 @@ public class User extends HttpServlet {
     	
     	}
     }
-    
-    
-    
-    /*private boolean isValidSTA(String indirizzo_scolastico) {
-	
-    }*/
     
     //Email check (Aldini email)
     private boolean isValidEmail(String email) {
@@ -372,7 +367,7 @@ public class User extends HttpServlet {
 		String indirizzo_scolastico = user.get("indirizzo").getAsString();
 		String localita = user.get("localita").getAsString();
 		
-		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password) && isValidNameAndSurname(nome, cognome, email) && isValidAge(data_nascita, classe) && isValidLocation(localita) && isValidSchoolAddress(indirizzo_scolastico)) {
+		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password) && isValidNameAndSurname(nome, cognome, email) && isValidAge(data_nascita, classe) && isValidLocation(localita) && isValidSTA(indirizzo_scolastico)) {
 				/*
 				 * psw encryption
 				 */
