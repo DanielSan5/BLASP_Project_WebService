@@ -87,7 +87,7 @@ public class Tickets extends HttpServlet {
 	
 	//Tag valid check
 	private boolean isValidTag(String tag) {
-		if(tag == "prima" || tag == "seconda" || tag == "terza" || tag == "quarta" || tag == "quinta")
+		if(tag.equals("prima") || tag.equals("seconda") || tag.equals("terza") || tag.equals("quarta") || tag.equals("quinta"))
 			return true;
 		else 
 			return false;

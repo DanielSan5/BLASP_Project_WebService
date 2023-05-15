@@ -76,7 +76,7 @@ public class User extends HttpServlet {
 	 	    /*
 	 	     * Set preferred date format,
 	 	     * For example MM-dd-yyyy, MM.dd.yyyy,dd.MM.yyyy etc.*/
-	 	    SimpleDateFormat sdfrmt = new SimpleDateFormat("YYYY/mm/dd");
+	 	    SimpleDateFormat sdfrmt = new SimpleDateFormat("yyyy-MM-dd");
 	 	    sdfrmt.setLenient(false);
 	 	    /* Create Date object
 	 	     * parse the string into date 
