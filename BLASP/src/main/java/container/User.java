@@ -5,6 +5,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.text.Normalizer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -63,6 +65,7 @@ public class User extends HttpServlet {
     	
     }
     
+    //Data format check
     private boolean isValidDateOfBirth(String strDate)
     {
 	 	/* Check if date is 'null' */
@@ -97,7 +100,40 @@ public class User extends HttpServlet {
 	 	}
     }
 
+    //Age valid check
+    private boolean isValidAge(String date, int classe) {
+    	boolean result = false;
+    	int annoDataInput = Integer.parseInt(date.substring(0, 4)); //prende solo il primo valore (prime 4 cifre) quindi l'anno
+    	int currentYear = LocalDate.now().getYear();
+    	
+    	switch(classe) {
+    	case 5:
+    		if((currentYear - annoDataInput) >= 17)		
+    			result = true;
+    		break;
+    	case 4:
+    		if((currentYear - annoDataInput) >= 16)		
+    			result = true;
+    		break;
+    	case 3:
+    		if((currentYear - annoDataInput) >= 15)		
+    			result = true;
+    		break;
+    	case 2:
+    		if((currentYear - annoDataInput) >= 14)		
+    			result = true;
+    		break;
+    	case 1:
+    		if((currentYear - annoDataInput) >= 13)		
+    			result = true;
+    		break;
+    	}
+    	
+    	return result;
+    	
+    }
     
+    //Location check
     private boolean isValidLocation(String localita) {
     	QueryHandler queryLocalita = new QueryHandler();
     	
@@ -110,12 +146,21 @@ public class User extends HttpServlet {
     	
     	}
     }
+        
     
-    
-    
-    /*private boolean isValidSTA(String indirizzo_scolastico) {
-	
-    }*/
+  //School address check
+    private boolean isValidSTA(String indirizzo_scolastico) {
+		QueryHandler queryIndirizzo = new QueryHandler();
+    	String indirizzo_upperCase = indirizzo_scolastico.toUpperCase();
+    	switch(queryIndirizzo.hasIndirizzo(indirizzo_upperCase)) {
+    	
+    	case 1:
+    		return true;
+    	default:
+    		return false;
+    	
+    	}
+    }
     
     //Email check (Aldini email)
     private boolean isValidEmail(String email) {
@@ -135,6 +180,24 @@ public class User extends HttpServlet {
     	   }
  	   
  	   return true;
+    }
+    
+    //Name and Surname check
+    private boolean isValidNameAndSurname(String nome, String cognome, String email) {
+    	String nomeNormalizzato = Normalizer.normalize(nome.toLowerCase(), Normalizer.Form.NFD);
+    	String cognomeNormalizzato = Normalizer.normalize(cognome.toLowerCase(), Normalizer.Form.NFD);
+    	
+    	String nomeNoAccenti = nomeNormalizzato.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+    	String cognomeNoAccenti = cognomeNormalizzato.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+    	
+    	String nomeNoSpazi = nomeNoAccenti.replaceAll("\\s+","");
+    	String cognomeNoSpazi = cognomeNoAccenti.replaceAll("\\s+","");
+    	
+    	
+    	if(email.contains(nomeNoSpazi) && email.contains(cognomeNoSpazi))
+    		return true;
+    	else 
+    		return false;
     }
  
     
@@ -304,7 +367,7 @@ public class User extends HttpServlet {
 		String indirizzo_scolastico = user.get("indirizzo").getAsString();
 		String localita = user.get("localita").getAsString();
 		
-		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password)) {
+		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password) && isValidNameAndSurname(nome, cognome, email) && isValidAge(data_nascita, classe) && isValidLocation(localita) && isValidSTA(indirizzo_scolastico)) {
 				/*
 				 * psw encryption
 				 */
@@ -429,13 +492,13 @@ public class User extends HttpServlet {
 			//acquisizione valore delle chiavi
 			String descrizione = user.get("descrizione").getAsString();
 			String localita = user.get("localita").getAsString();
-			String classe = user.get("classe").getAsString();
+			int classe = user.get("classe").getAsInt();
 			String indirizzo = user.get("indirizzo").getAsString();
 			String old_password = user.get("old_password").getAsString();
 			String new_password = user.get("new_password").getAsString();
 			String confirm_new_password = user.get("confirm_new_password").getAsString();
 			
-			if(isValidPassword(new_password) && isConfirmedPassword(new_password, confirm_new_password)/*altri controlli*/) {
+			if(isValidPassword(new_password) && isConfirmedPassword(new_password, confirm_new_password) && isValidClass(classe) && isValidLocation(localita)/* && isValidIndirizzo(indirizzo)*//*altri controlli*/) {
 				
 				int checkPassword = queryUser.checkPass(user_id, old_password);
 				
@@ -508,7 +571,7 @@ public class User extends HttpServlet {
 			//acquisizione valore delle chiavi
 			String descrizione = user.get("descrizione").getAsString();
 			String localita = user.get("localita").getAsString();
-			String classe = user.get("classe").getAsString();
+			int classe = user.get("classe").getAsInt();
 			String indirizzo = user.get("indirizzo").getAsString();
 			
 			if(isValidLocation(localita)) {

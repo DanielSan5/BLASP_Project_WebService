@@ -87,10 +87,19 @@ public class Tickets extends HttpServlet {
 	
 	//Tag valid check
 	private boolean isValidTag(String tag) {
-		if(tag.equals("prima") || tag.equals("seconda") || tag.equals("terza") || tag.equals("quarta") || tag.equals("quinta"))
-			return true;
-		else 
-			return false;
+
+		boolean result = false;
+		ArrayList<String> validStrings = new ArrayList<>(List.of("prima", "seconda", "terza", "quarta", "quinta"));
+		String[] tagSeparati = tag.split(",");
+		
+		for(String tagSingolo : tagSeparati) {
+			if(!validStrings.contains(tagSingolo.trim()))
+				result = true;
+			else
+				result = false;
+				break;
+		}
+		return result;
 	}
 	
 	//Materia valid check

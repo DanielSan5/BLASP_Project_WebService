@@ -199,7 +199,7 @@ public class QueryHandler {
 	}
 	
 	//***UPDATE DATI UTENTE***
-	public int modificaDatiUtente(int user_id, String descrizione, String localita, String classe, String indirizzo) {
+	public int modificaDatiUtente(int user_id, String descrizione, String localita, int classe, String indirizzo) {
 		
 		establishConnection();
 		String prepared_query = "UPDATE utenti SET (UT_descrizione, UT_localita, UT_classe, UT_indirizzo_scolastico) = (?, ?, ?, ?) WHERE UT_id = ?";		
@@ -209,7 +209,7 @@ public class QueryHandler {
 				
 				pr.setString(1, descrizione);
 				pr.setString(2, localita);
-				pr.setString(3, classe);
+				pr.setInt(3, classe);
 				pr.setString(4, indirizzo);
 				pr.setInt(5, user_id);
 	
@@ -284,6 +284,34 @@ public class QueryHandler {
 		}
 		
 	}
+	
+	//Controllo se l'indirizzo di studio inserito esiste
+		public int hasIndirizzo(String indirizzo) {
+			
+			establishConnection();
+			String prepared_query = "SELECT * FROM indirizzo_scolastico WHERE INS_nome = ?";
+			
+			try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
+				
+				pr.setString(1, indirizzo);
+				
+				ResultSet res = pr.executeQuery();
+				//per controllare se la località esiste basta vedere il risultato di next(), sar� false se non esistono righe
+				boolean check = res.next();
+				
+				conn.close();
+				return check ? 1 : 0; //se check true returna 1 altrimenti 0
+			
+			}catch(SQLException e){
+				
+				System.out.println(e.getLocalizedMessage());
+				return -1;
+			
+			}
+			
+		}
 	
 	//Controllo lo stato dell'utente --> DA CONFERMARE
 	public String getUserStatus(int user_id) {
