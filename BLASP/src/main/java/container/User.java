@@ -631,5 +631,9 @@ public class User extends HttpServlet {
 		
 	}
 	
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		response.setStatus(405);
+	}
+	
 }
 

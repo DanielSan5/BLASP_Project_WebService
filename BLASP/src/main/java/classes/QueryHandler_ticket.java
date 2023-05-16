@@ -157,6 +157,34 @@ public int inserisciTicket(String materia, String livello_materia, String descri
 			
 	}
 	
+	//***MODIFICA LO STATO DEL TICKET***
+	public int modificaStatoTicket(int id_user, int numero_ticket) {
+				
+		establishConnection();
+		String prepared_query = "UPDATE tickets SET (UT_id_accettazione, TIC_stato) = (?,'pending') WHERE TIC_id = ?";		
+		try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
+						
+				pr.setInt(1, id_user);
+				pr.setInt(2, numero_ticket);
+			
+				//executeUpdate returna o 1 se   andato a buonfine o 0 se non   andato a buonfine
+				int check = pr.executeUpdate();
+						
+				conn.close();
+						
+				return check;
+					
+			}catch(SQLException e){
+						
+				System.out.println(e.getLocalizedMessage());
+				return -1;
+					
+			}
+				
+	}
+	
 	//***RESTITUISCE I CAMPI DI UN TICKET DAL SUO ID***
 	public Ticket getTicketFromId(int ticket_id) throws Exception{
 			
