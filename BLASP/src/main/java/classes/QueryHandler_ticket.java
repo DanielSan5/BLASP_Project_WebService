@@ -38,7 +38,7 @@ public class QueryHandler_ticket {
 	}
 	
 //***INSERISCI TICKET***
-public int inserisciTicket(String materia, String livello_materia, String descrizione, String dataCreazione, int userID) {
+	public int inserisciTicket(String materia, String livello_materia, String descrizione, String dataCreazione, int userID) {
 		
 		establishConnection();
 		String prepared_query = "INSERT INTO utenti (TIC_materia, TIC_livello_materia, TIC_descrizione, TIC_data_cr, UT_id_apertura) VALUES (?, ?, ?, ?, ?)";
@@ -78,6 +78,7 @@ public int inserisciTicket(String materia, String livello_materia, String descri
 			}
 		
 	}
+	
 	public int saveFavourites(int ticket_id, int user_id) {
 		
 		establishConnection();
@@ -171,7 +172,6 @@ public int inserisciTicket(String materia, String livello_materia, String descri
 				ResultSet res = pr.executeQuery();
 				
 				if(res.next()) {
-					 
 					
 					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
 							res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
@@ -194,7 +194,7 @@ public int inserisciTicket(String materia, String livello_materia, String descri
 	
 	
 	//***RESTITUISCE L'ID UTENTE DALL'ID TICKET***
-		public int getUtenteId(int ticket_id) {
+	public int getUtenteId(int ticket_id) {
 			
 			establishConnection();
 			String prepared_query = "SELECT UT_id FROM tickets WHERE TIC_id = ?";

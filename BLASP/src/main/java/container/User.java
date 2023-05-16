@@ -142,6 +142,7 @@ public class User extends HttpServlet {
     	case 1:
     		return true;
     	default:
+    		System.out.println("localita errata");
     		return false;
     	
     	}
@@ -150,6 +151,7 @@ public class User extends HttpServlet {
     
   //School address check
     private boolean isValidSTA(String indirizzo_scolastico) {
+    	
 		QueryHandler queryIndirizzo = new QueryHandler();
     	String indirizzo_upperCase = indirizzo_scolastico.toUpperCase();
     	switch(queryIndirizzo.hasIndirizzo(indirizzo_upperCase)) {
@@ -157,6 +159,7 @@ public class User extends HttpServlet {
     	case 1:
     		return true;
     	default:
+    		System.out.println("sta errata");
     		return false;
     	
     	}
@@ -167,8 +170,10 @@ public class User extends HttpServlet {
      	
      	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
      	
-     	if((email.isBlank()) || (email.matches(regexPattern) == false))
+     	if((email.isBlank()) || (email.matches(regexPattern) == false)) {
+     		System.out.println("email errata");
      		return false;
+     	}
      	else 	
      		return true;
      }
@@ -176,6 +181,7 @@ public class User extends HttpServlet {
     //Confirm password check
     private boolean isConfirmedPassword(String password, String confirm_password) {
  	   if(!password.equals(confirm_password)) {
+ 		  System.out.println("password non coincidono ");
  		   return false;
     	   }
  	   
@@ -197,6 +203,7 @@ public class User extends HttpServlet {
     	if(email.contains(nomeNoSpazi) && email.contains(cognomeNoSpazi))
     		return true;
     	else 
+    		System.out.println("nome errato");
     		return false;
     }
  
@@ -204,16 +211,18 @@ public class User extends HttpServlet {
     //Class check
     private boolean isValidClass(int classe) {
     	
-    	if(classe == 1 || classe == 2 || classe == 3 || classe == 4 || classe == 5) {
-    		return true;
-    	}else
+    	if(classe < 1 || classe > 5) {
+    		System.out.println("classe errata");
     		return false;
+    	}else
+    		return true;
     	
     }
     
   //Empty input check
    public boolean isNotBlank(String nome, String cognome) {
   	   if(nome.isBlank() || cognome.isBlank()) {
+  		   System.out.println("campi vuoti");
   		   return false;
   	   }
   	   return true;	   
@@ -244,6 +253,7 @@ public class User extends HttpServlet {
     	if(password.length() > 8 && hasLowerCase && hasUpperCase && hasDigit && hasSpecialChar) 
     		return true;
     	else 
+    		System.out.println("password non conforme");
     		return false;
     }
     
@@ -381,7 +391,7 @@ public class User extends HttpServlet {
 					case 1:
 						response.setStatus(400);
 						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("descrizione", "errore nella sintassi");
+						jsonResponse.addProperty("descrizione", "utente gia esistente");
 						break;
 					case 0:
 						int inserted = queryForThis.inserisciUtente(email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
@@ -425,6 +435,7 @@ public class User extends HttpServlet {
 							response.setStatus(500);
 							jsonResponse.addProperty("stato", "errore server");
 							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+							out.println(jsonResponse.toString());
 						}
 						break;
 						
@@ -432,12 +443,14 @@ public class User extends HttpServlet {
 						response.setStatus(500);
 						jsonResponse.addProperty("stato", "errore server");
 						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+						out.println(jsonResponse.toString());
 						break;
 				}
 		}else {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "errore nella sintassi");
+			out.println(jsonResponse.toString());
 		}
 		
 	

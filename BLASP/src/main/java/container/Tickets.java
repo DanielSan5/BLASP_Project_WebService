@@ -126,7 +126,7 @@ public class Tickets extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.addHeader("Access-Control-Allow-Methods", "GET");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		JsonObject jsonResponse = new JsonObject();

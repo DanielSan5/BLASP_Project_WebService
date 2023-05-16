@@ -298,7 +298,7 @@ public class QueryHandler {
 				pr.setString(1, indirizzo);
 				
 				ResultSet res = pr.executeQuery();
-				//per controllare se la località esiste basta vedere il risultato di next(), sar� false se non esistono righe
+				
 				boolean check = res.next();
 				
 				conn.close();
