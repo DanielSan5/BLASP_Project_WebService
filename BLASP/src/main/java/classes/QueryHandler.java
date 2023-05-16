@@ -131,10 +131,44 @@ public class QueryHandler {
 			}
 	}
 	
+	//RECUPERO USER ID DALLA MAIL
 	public int getUserId(String email) {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_id FROM utenti WHERE UT_email = ?";
+		
+		try(
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			){
+			
+			pr.setString(1, email);
+			ResultSet res = pr.executeQuery();
+			if(res.next()) {
+				
+				int user_id = res.getInt("UT_id");
+				conn.close();
+				return user_id;
+				
+			}else {
+				conn.close();
+				return 0;
+			}
+			
+			
+			
+		}catch(SQLException e){
+			
+			System.out.println(e.getLocalizedMessage());
+			return -1;
+		
+		}
+	}
+	
+	//RECUPERO USER ID DALLA MAIL --> SOLO SE ADMIN
+	public int getUserIdAdmin(String email) {
+		
+		establishConnection();
+		String prepared_query = "SELECT UT_id FROM utenti WHERE UT_email = ? AND UT_tipo = 'admin'";
 		
 		try(
 			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -256,6 +290,34 @@ public class QueryHandler {
 				}
 			
 		}
+	
+	//***BLOCCAGGIO UTENTE***
+		public int blockUser(int user_id) {
+				
+				establishConnection();
+				String prepared_query = "UPDATE utenti SET UT_stato = 'bloccato' WHERE UT_id = ?";		
+				try(
+						java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+						){
+						
+						pr.setInt(1, user_id);
+						
+						//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
+						int check = pr.executeUpdate();
+						
+						conn.close();
+						
+						return check;
+					
+					}catch(SQLException e){
+						
+						System.out.println(e.getLocalizedMessage());
+						return -1;
+					
+					}
+				
+			}
+		
 	
 	//Controllo se la località inserita esiste
 	public int hasLocalita(String localita) {
