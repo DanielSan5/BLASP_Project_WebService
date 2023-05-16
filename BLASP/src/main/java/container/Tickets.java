@@ -277,8 +277,13 @@ public class Tickets extends HttpServlet {
 						jsonResponse.addProperty("stato", "errore client");
 						jsonResponse.addProperty("descrizione", "utente non esistente");
 						break;
+					case -1:
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");	
+						break;
 						
-					case 1:
+					default:
 						QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
 						
 						int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa, user_id);
@@ -318,12 +323,6 @@ public class Tickets extends HttpServlet {
 							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						}
 						break;		
-			
-					default:
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");	
-						break;
 				}
 				
 				
