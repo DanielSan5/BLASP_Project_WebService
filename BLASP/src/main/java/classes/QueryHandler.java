@@ -38,32 +38,6 @@ public class QueryHandler {
 		
 	}
 	
-	public int hasUsername(String username) {
-		
-		establishConnection();
-		String prepared_query = "SELECT * FROM utenti WHERE UT_username = ?";
-		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			pr.setString(1, username);
-			ResultSet res = pr.executeQuery();
-			//per controllare se l'username esiste basta vedere il risultato di next(), sarà false se non esistono righe
-			boolean check = res.next();
-			
-			conn.close();
-			return check ? 1 : 0; //se check true returna 1 altrimenti 0
-		
-		}catch(SQLException e){
-			
-			System.out.println(e.getLocalizedMessage());
-			return -1;
-		
-		}
-		
-	}
-	
 	public int hasEmail(String email) {
 
 		
@@ -76,7 +50,7 @@ public class QueryHandler {
 			
 			pr.setString(1, email);
 			ResultSet res = pr.executeQuery();
-			//per controllare se l'email istituzionale esiste basta vedere il risultato di next(), sar� false se non esistono righe
+			//per controllare se l'email esiste basta vedere il risultato di next(), sar� false se non esistono righe
 			boolean check = res.next();
 			conn.close();
 			return check ? 1 : 0; //se check true returna 1 altrimenti 0
@@ -592,11 +566,35 @@ public class QueryHandler {
 		}
 	}
 	/*
-	 * Metodo per la query di modifica password
-	 * Metodo per la query di modifica data di nascita
-	 * Metodo per la query di modifica indirizzo  
-	 * Metodo per la query della sezione scolastica
-	 * Metodo per la query di modifica del paese
+	 * da sistemare ogni metodo gestendo gli errori nel codice principale, non si chiude la connessione nel catch 
 	 */
+
+	public int inserisciCodice(int user_id, String ver_code) {
+		
+		establishConnection();
+		String prepared_query = "INSERT INTO utenti (UT_ver_code) VALUES (?) WHERE UT_id = ?";
+		
+		try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
+				
+				//pr.setString(1, username);
+				pr.setString(1, ver_code);
+				pr.setInt(2, user_id);
+				
+				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
+				int check = pr.executeUpdate();
+				conn.close();
+				
+				return check;
+			
+			}catch(SQLException e){
+				
+				System.out.println(e.getLocalizedMessage());
+				return -1;
+			
+			}
+		
+	}
 
 }

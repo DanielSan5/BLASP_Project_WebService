@@ -1,23 +1,31 @@
 package container;
 
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+import jakarta.mail.*;
+import java.util.UUID;
+
+import org.eclipse.angus.mail.util.MailSSLSocketFactory;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import classes.JwtGen;
 import classes.QueryHandler;
 
-@WebServlet("/AutenticazioneUtenti")
+@WebServlet("/auth")
 public class AutenticazioneUtenti extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -28,6 +36,50 @@ public class AutenticazioneUtenti extends HttpServlet {
     public AutenticazioneUtenti() {
         super();
        
+    }
+    
+    public void sendEmailCode(String email, String code) throws GeneralSecurityException, MessagingException{
+    	
+    	MailSSLSocketFactory sf = null;
+    	
+		sf = new MailSSLSocketFactory();
+		
+		if(sf != null) {
+    		String host = "smtp.gmail.com";
+    		String from = "zuccoroulette.co@gmail.com";
+    		String to = email;
+    		String username = "zuccoroulette.co@gmail.com";
+    		String password = "draviynfjvrgjvjy";
+    		
+    		Properties props = new Properties();
+        	props.put("mail.smtp.host", host);
+        	props.put("mail.smtp.port", 587);
+        	props.put("mail.smtp.starttks.enable", "true");
+        	props.put("mail.smtp.auth", "true");
+        	
+        	Authenticator authenticator = new Authenticator() {
+        		protected PasswordAuthentication getPasswordAuthentication() {
+        			return new PasswordAuthentication(username, password);
+        		}
+        	};
+        	
+    		Session session =Session.getInstance(props, authenticator);
+        	
+        		
+    		MimeMessage mi = new MimeMessage(session);
+    		mi.setFrom(InternetAddress.parse(from) [0]);
+    		mi.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+    		mi.setSubject("Codice di verifica");
+    		mi.setSentDate(new Date());
+    		mi.setText(code);
+    		Transport.send(mi);
+        	
+    	}
+    		
+    	
+   
+    
+    	
     }
     
     //Password check
@@ -204,6 +256,79 @@ public class AutenticazioneUtenti extends HttpServlet {
 		
 		
 	}
+	
+	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		response.setContentType("application/json");
+		PrintWriter out = response.getWriter(); 
+		JsonObject jsonResponse = new JsonObject();
+		BufferedReader in_body = request.getReader();
+		StringBuilder sb = new StringBuilder();
+		String line;
+		String body;
+		
+		while((line = in_body.readLine()) != null) {
+			sb.append(line);
+		}
+		
+		body = sb.toString();
+		
+		Gson g = new Gson();
+		JsonObject user = g.fromJson(body, JsonObject.class);
+			
+		String action = user.get("action").getAsString();
+		QueryHandler queryForThis = new QueryHandler();
+		
+		switch(action) {
+		
+		
+		case "email_info":
+			String email = user.get("email").getAsString();
+			int check = queryForThis.hasEmail(email);
+			if(check == 1) {
+				
+				int user_id = queryForThis.getUserId(email);
+				String ver_code = UUID.randomUUID().toString();
+				
+				if(queryForThis.inserisciCodice(user_id, ver_code) == 1) {
+					
+					try {
+						
+						sendEmailCode(email, ver_code);
+						//da testare
+					} catch (GeneralSecurityException | MessagingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+				}else {
+					//errore database
+				}
+				
+			}else if(check == 0){
+				//email inesistente
+			}else {
+				//errore database
+			}
+			break;
+			
+		case "ver_code":
+			break;
+			
+		case "change_pass":
+			break;
+		}
+	
+		
+		
+		
+
+		
+		
+	}
+
 
 
 }
