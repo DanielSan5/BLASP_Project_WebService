@@ -193,8 +193,11 @@ public class User extends HttpServlet {
     	String nomeNoSpazi = nomeNoAccenti.replaceAll("\\s+","");
     	String cognomeNoSpazi = cognomeNoAccenti.replaceAll("\\s+","");
     	
+    	String nomeNoApostrofo = nomeNoSpazi.replaceAll("'", "");
+    	String cognomeNoApostrofo = cognomeNoSpazi.replaceAll("'", "");
     	
-    	if(email.contains(nomeNoSpazi) && email.contains(cognomeNoSpazi))
+    	
+    	if(email.contains(nomeNoApostrofo) && email.contains(cognomeNoApostrofo))
     		return true;
     	else 
     		return false;
