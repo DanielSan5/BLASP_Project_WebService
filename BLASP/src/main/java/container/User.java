@@ -529,7 +529,7 @@ public class User extends HttpServlet {
 				
 				case 1:
 					
-					int cambio_psw = queryUser.modificaPasswordUtente(user_id, encryptedPass);
+					int cambio_psw = queryUser.changePass(user_id, encryptedPass);
 					
 					if(cambio_psw == 1) {
 						

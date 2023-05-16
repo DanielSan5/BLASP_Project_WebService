@@ -3,6 +3,8 @@ package container;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +27,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import classes.JwtGen;
 import classes.QueryHandler;
+import de.mkammerer.argon2.Argon2;
+import de.mkammerer.argon2.Argon2Factory;
+import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 
 @WebServlet("/auth")
 public class AutenticazioneUtenti extends HttpServlet {
@@ -37,6 +43,17 @@ public class AutenticazioneUtenti extends HttpServlet {
         super();
        
     }
+    
+	private String passEncr(String password) {
+	    	
+	    	Argon2 argon2 = Argon2Factory.create(Argon2Types.ARGON2id);
+	    	String hash = argon2.hash(4, 1024 * 1024, 8, password);
+	
+	    	return hash;
+	  
+	    	
+	    	
+	    }
     
     public void sendEmailCode(String email, String code) throws GeneralSecurityException, MessagingException{
     	
@@ -82,6 +99,27 @@ public class AutenticazioneUtenti extends HttpServlet {
     	
     }
     
+    private boolean isConfirmedPassword(String password, String confirm_password) {
+  	   if(!password.equals(confirm_password)) {
+  		  System.out.println("password non coincidono ");
+  		   return false;
+     	   }
+  	   
+  	   return true;
+     }
+    
+    private boolean isValidEmail(String email) {
+     	
+     	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
+     	
+     	if((email.isBlank()) || (email.matches(regexPattern) == false)) {
+     		System.out.println("email errata");
+     		return false;
+     	}
+     	else 	
+     		return true;
+     }
+    
     //Password check
     public boolean isValidPassword(String password) {
     	
@@ -110,7 +148,7 @@ public class AutenticazioneUtenti extends HttpServlet {
     	
     }
     
-   
+
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		response.setStatus(405);
@@ -279,46 +317,91 @@ public class AutenticazioneUtenti extends HttpServlet {
 		JsonObject user = g.fromJson(body, JsonObject.class);
 			
 		String action = user.get("action").getAsString();
-		QueryHandler queryForThis = new QueryHandler();
+		String email = user.get("email").getAsString();
 		
-		switch(action) {
-		
-		
-		case "email_info":
-			String email = user.get("email").getAsString();
-			int check = queryForThis.hasEmail(email);
-			if(check == 1) {
-				
-				int user_id = queryForThis.getUserId(email);
-				String ver_code = UUID.randomUUID().toString();
-				
-				if(queryForThis.inserisciCodice(user_id, ver_code) == 1) {
+		if(isValidEmail(email)) {
+			
+			QueryHandler queryForThis = new QueryHandler();
+			int user_id = queryForThis.getUserId(email);
+			
+			switch(action) {
+			
+			
+				case "email_info":
 					
+					int check = queryForThis.hasEmail(email);
+					
+					if(check == 1) {
+						
+						
+						String ver_code = UUID.randomUUID().toString();
+						
+						if(queryForThis.inserisciCodice(user_id, ver_code) == 1) {
+							
+							try {
+								
+								sendEmailCode(email, ver_code);
+								//da testare
+							} catch (GeneralSecurityException | MessagingException e) {
+								//errore database
+								e.printStackTrace();
+							}
+							
+						}else {
+							//errore database
+						}
+						
+					}else if(check == 0){
+						//email inesistente
+					}else {
+						//errore database
+					}
+					break;
+					
+				case "ver_code":
+					
+					String code = user.get("code").getAsString();
 					try {
 						
-						sendEmailCode(email, ver_code);
-						//da testare
-					} catch (GeneralSecurityException | MessagingException e) {
-						// TODO Auto-generated catch block
+						if( queryForThis.checkCode(user_id, code)) {
+							//success
+							
+						}else {
+							//codice errato
+						}
+						
+					} catch (Exception e) {
+						//errore database
 						e.printStackTrace();
 					}
 					
-				}else {
-					//errore database
-				}
-				
-			}else if(check == 0){
-				//email inesistente
-			}else {
-				//errore database
+					break;
+					
+				case "change_pass":
+					
+					String new_pass = user.get("new_pass").getAsString();
+					String conf_pass = user.get("conf_new_pass").getAsString();
+					if(isValidPassword(new_pass) && isConfirmedPassword(new_pass, conf_pass)) {
+						
+						String new_pass_encr = passEncr(new_pass);
+						int checkPass = queryForThis.changePass(user_id, new_pass_encr);
+						if(checkPass == 1) {
+							//password cambiata
+						}else {
+							//errore
+						}
+						
+					}else {
+						//errore input
+					}
+					break;
+					
+				default:
+					//errore input
+					break;
 			}
-			break;
-			
-		case "ver_code":
-			break;
-			
-		case "change_pass":
-			break;
+		}else {
+			//errore input
 		}
 	
 		

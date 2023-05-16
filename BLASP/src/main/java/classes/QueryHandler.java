@@ -238,7 +238,7 @@ public class QueryHandler {
 	}
 	
 	//***UPDATE PASSWORD UTENTE***
-	public int modificaPasswordUtente(int user_id, String password_cr) {
+	public int changePass(int user_id, String password_encr) {
 			
 			establishConnection();
 			String prepared_query = "UPDATE utenti SET UT_password = ? WHERE UT_id = ?";		
@@ -246,7 +246,7 @@ public class QueryHandler {
 					java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 					){
 					
-					pr.setString(1, password_cr);
+					pr.setString(1, password_encr);
 					pr.setInt(2, user_id);
 					
 					//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
@@ -504,7 +504,7 @@ public class QueryHandler {
 			
 			pr.setInt(1, user_id);
 			ResultSet res = pr.executeQuery();
-			//per controllare se l'email istituzionale esiste basta vedere il risultato di next(), sar� false se non esistono righe
+			
 			if(res.next()) {
 				
 				if(res.getInt("UT_admin") == 1) {
@@ -566,7 +566,7 @@ public class QueryHandler {
 		}
 	}
 	/*
-	 * da sistemare ogni metodo gestendo gli errori nel codice principale, non si chiude la connessione nel catch 
+	 * da sistemare ogni metodo gestendo gli errori nel codice principale in modo da poter returnare un tipo boolean, non si chiude la connessione nel catch 
 	 */
 
 	public int inserisciCodice(int user_id, String ver_code) {
@@ -596,5 +596,41 @@ public class QueryHandler {
 			}
 		
 	}
+	
+	public boolean checkCode(int user_id, String ver_code) throws SQLException, Exception {
+		
+		establishConnection();
+		String prepared_query = "SELECT UT_ver_code FROM utenti WHERE UT_id = ?";
+		
+		
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				
+				
+			
+				pr.setInt(1, user_id);
+				ResultSet res = pr.executeQuery();
+				
+				if(res.next()) {
+					
+					if(res.getString("UT_ver_code").equals(ver_code)) {
+						
+						conn.close();
+						return true;
+						
+					}else {
+						
+						conn.close();
+						return false;
+					}
+					
+				}else {
+					conn.close();
+					throw new Exception("no results");
+				}
+			
+	}
+
+		
+	
 
 }
