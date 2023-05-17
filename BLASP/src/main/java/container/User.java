@@ -139,8 +139,8 @@ public class User extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
-			} catch (CredentialNotFoundException e) {
-				
+			} catch (CredentialNotFoundException | SQLException e) {
+				//errore db
 				e.printStackTrace();
 			}finally {
 				
@@ -215,38 +215,30 @@ public class User extends HttpServlet {
 						
 				}else {
 					
-					int inserted = queryForThis.inserisciUtente(email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+					//gestito nel catch
+					queryForThis.inserisciUtente(email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+
+					JsonObject jwtFormat = new JsonObject();
 					
-					if(inserted == 1) {
-						
-						JsonObject jwtFormat = new JsonObject();
-						//jwtFormat.addProperty("sub", username);
-						jwtFormat.addProperty("sub-email", email);
-						jwtFormat.addProperty("aud", "*");
-						
-						JwtGen generator = new JwtGen();
-						Map<String, String> claims = new HashMap<>();
-						
-						jwtFormat.keySet().forEach(keyStr ->
-					    {
-					        String keyvalue = jwtFormat.get(keyStr).getAsString();
-					        claims.put(keyStr, keyvalue);
-					      
-					    });
-						
-						String token = generator.generateJwt(claims);
-						response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
-						response.setStatus(201);
-						jsonResponse.addProperty("stato", "confermato");
-						jsonResponse.addProperty("desc", "utente creato");
-							
-						
-					}else {
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						
-					}
+					jwtFormat.addProperty("sub-email", email);
+					jwtFormat.addProperty("aud", "*");
+					
+					JwtGen generator = new JwtGen();
+					Map<String, String> claims = new HashMap<>();
+					
+					jwtFormat.keySet().forEach(keyStr ->
+				    {
+				        String keyvalue = jwtFormat.get(keyStr).getAsString();
+				        claims.put(keyStr, keyvalue);
+				      
+				    });
+					
+					String token = generator.generateJwt(claims);
+					response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+					response.setStatus(201);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "utente creato");
+	
 				}
 				
 			}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
@@ -409,14 +401,7 @@ public class User extends HttpServlet {
 					System.out.println("not authorized token");
 					e.printStackTrace();
 			
-				} catch (CredentialNotFoundException e) {
-				
-					response.setStatus(400);
-					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("descrizione", "errore nella sintassi");
-					e.printStackTrace();
-					
-				} catch (SQLException e) {
+				}catch (SQLException | CredentialNotFoundException e) {
 					
 					response.setStatus(500);
 					jsonResponse.addProperty("stato", "errore server");

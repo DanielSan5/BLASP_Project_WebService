@@ -260,16 +260,15 @@ public class AutenticazioneUtenti extends HttpServlet{
 		
 		if(Checks.isValidEmail(email) && Checks.isNotBlank(toCheck)) {
 			
-			QueryHandler queryForThis = new QueryHandler();
-			int user_id = queryForThis.getUserId(email);
-			
-			switch(action) {
-			
-			
-				case "email_info":
-					
-					try {
-						
+			try {
+				
+				QueryHandler queryForThis = new QueryHandler();
+				int user_id = queryForThis.getUserId(email);
+				
+				switch(action) {
+	
+					case "email_info":
+	
 						boolean hasEmail = queryForThis.hasEmail(email);
 						
 						if(hasEmail) {
@@ -286,18 +285,12 @@ public class AutenticazioneUtenti extends HttpServlet{
 						}else{
 							//email inesistente
 						}
+							
+						break;
 						
-					}catch(GeneralSecurityException | MessagingException | SQLException e) {
-						//errore database
-						e.printStackTrace();
-					}
+					case "ver_code":
 						
-					break;
-					
-				case "ver_code":
-					
-					String code = user.get("code").getAsString();
-					try {
+						String code = user.get("code").getAsString();
 						
 						if( queryForThis.checkCode(user_id, code)) {
 							//success
@@ -305,37 +298,38 @@ public class AutenticazioneUtenti extends HttpServlet{
 						}else {
 							//codice errato
 						}
+						break;
 						
-					} catch (Exception e) {
-						//errore database
-						e.printStackTrace();
-					}
-					
-					break;
-					
-				case "change_pass":
-					
-					String new_pass = user.get("new_pass").getAsString();
-					String conf_pass = user.get("conf_new_pass").getAsString();
-					if(Checks.isValidPassword(new_pass) && Checks.isConfirmedPassword(new_pass, conf_pass)) {
+					case "change_pass":
 						
-						String new_pass_encr = passEncr(new_pass);
-						int checkPass = queryForThis.changePass(user_id, new_pass_encr);
-						if(checkPass == 1) {
-							//password cambiata
+						String new_pass = user.get("new_pass").getAsString();
+						String conf_pass = user.get("conf_new_pass").getAsString();
+						if(Checks.isValidPassword(new_pass) && Checks.isConfirmedPassword(new_pass, conf_pass)) {
+							
+							String new_pass_encr = passEncr(new_pass);
+							int checkPass = queryForThis.changePass(user_id, new_pass_encr);
+							if(checkPass == 1) {
+								//password cambiata
+							}else {
+								//errore
+							}
+							
 						}else {
-							//errore
+							//errore input
 						}
+						break;
 						
-					}else {
+					default:
 						//errore input
-					}
-					break;
-					
-				default:
-					//errore input
-					break;
+						break;
+				}
+			}catch(GeneralSecurityException | MessagingException | SQLException e) {
+				//errore database
+				e.printStackTrace();
+			}finally {
+				
 			}
+			
 		}else {
 			//errore input
 		}

@@ -9,6 +9,8 @@ import java.util.ArrayList;
 
 import javax.security.auth.login.CredentialNotFoundException;
 
+import com.mysql.jdbc.exceptions.MySQLDataException;
+
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
@@ -90,103 +92,89 @@ public class QueryHandler {
 	}
 	
 	//RECUPERO USER ID DALLA MAIL
-	public int getUserId(String email) {
+	public int getUserId(String email) throws SQLException, CredentialNotFoundException {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_id FROM utenti WHERE UT_email = ?";
 		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			pr.setString(1, email);
-			ResultSet res = pr.executeQuery();
-			if(res.next()) {
-				
-				int user_id = res.getInt("UT_id");
-				conn.close();
-				return user_id;
-				
-			}else {
-				conn.close();
-				return 0;
-			}
-			
-			
-			
-		}catch(SQLException e){
-			
-			System.out.println(e.getLocalizedMessage());
-			return -1;
 		
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		
+		
+		pr.setString(1, email);
+		ResultSet res = pr.executeQuery();
+		if(res.next()) {
+			
+			int user_id = res.getInt("UT_id");
+			conn.close();
+			return user_id;
+			
+		}else {
+			conn.close();
+			throw new CredentialNotFoundException("no results in getUserId");
 		}
+			
+			
+			
 	}
 	
+	
 	//RECUPERO USER ID DALLA MAIL --> SOLO SE ADMIN
-	public int getUserIdAdmin(String email) {
+	public int getUserIdAdmin(String email) throws SQLException, CredentialNotFoundException {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_id FROM utenti WHERE UT_email = ? AND UT_tipo = 'admin'";
 		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			pr.setString(1, email);
-			ResultSet res = pr.executeQuery();
-			if(res.next()) {
-				
-				int user_id = res.getInt("UT_id");
-				conn.close();
-				return user_id;
-				
-			}else {
-				conn.close();
-				return 0;
-			}
-			
-			
-			
-		}catch(SQLException e){
-			
-			System.out.println(e.getLocalizedMessage());
-			return -1;
 		
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		
+		pr.setString(1, email);
+		ResultSet res = pr.executeQuery();
+		if(res.next()) {
+			
+			int user_id = res.getInt("UT_id");
+			conn.close();
+			return user_id;
+			
+		}else {
+			conn.close();
+			throw new CredentialNotFoundException("no results in getUserIdAdmin");
 		}
+			
+			
+			
+		
 	}
 	
-	public int inserisciUtente(String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) {
+	public void inserisciUtente(String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) throws SQLException {
 		
 		establishConnection();
 		String prepared_query = "INSERT INTO utenti (UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 		
-		try(
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				){
-				
-				//pr.setString(1, username);
-				pr.setString(1, email);
-				pr.setString(2, password);
-				pr.setString(3, nome);
-				pr.setString(4, cognome);
-				pr.setString(5, data_nascita);
-				pr.setInt(6, classe);
-				pr.setString(7, indirizzo_scolastico);
-				pr.setString(8, localita);
-				
-				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
-				int check = pr.executeUpdate();
-				
-				conn.close();
-				
-				return check;
+	
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		//pr.setString(1, username);
+		pr.setString(1, email);
+		pr.setString(2, password);
+		pr.setString(3, nome);
+		pr.setString(4, cognome);
+		pr.setString(5, data_nascita);
+		pr.setInt(6, classe);
+		pr.setString(7, indirizzo_scolastico);
+		pr.setString(8, localita);
+		
+		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+		
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not create table");
+		}
+		conn.close();
+		
+		
 			
-			}catch(SQLException e){
-				
-				System.out.println(e.getLocalizedMessage());
-				return -1;
 			
-			}
 		
 	}
 	
