@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.security.auth.login.CredentialNotFoundException;
+
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
@@ -137,13 +139,11 @@ public class User extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
-			}catch(Exception e) {
+			} catch (CredentialNotFoundException e) {
 				
-				response.setStatus(400);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "nessun risultato");
-			}
-			finally {
+				e.printStackTrace();
+			}finally {
+				
 				out.println(jsonResponse.toString());
 			}
 		}else {
@@ -326,55 +326,50 @@ public class User extends HttpServlet {
 					String confirm_new_password = user.get("confirm_new_password").getAsString();
 					if(Checks.isValidPassword(new_password) && Checks.isConfirmedPassword(new_password, confirm_new_password)) {
 						
-						int checkPassword = queryUser.checkPass(user_id, old_password);
+						boolean checkPassword = queryUser.checkPass(user_id, old_password);
 						
-						if(checkPassword == 1) {
+						if(checkPassword) {
 						
-						/*
-						 * psw encryption
-						 */
-						String encryptedPass = passEncr(new_password);
-						
-						switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
-						
-						case 1:
+							/*
+							 * psw encryption
+							 */
+							String encryptedPass = passEncr(new_password);
 							
-							int cambio_psw = queryUser.changePass(user_id, encryptedPass);
+							switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
 							
-							if(cambio_psw == 1) {
+							case 1:
 								
-								response.setStatus(200);
-								jsonResponse.addProperty("stato", "confermato");
-								jsonResponse.addProperty("desc", "dati utente e psw modificati");
+								int cambio_psw = queryUser.changePass(user_id, encryptedPass);
 								
-							}else {
+								if(cambio_psw == 1) {
+									
+									response.setStatus(200);
+									jsonResponse.addProperty("stato", "confermato");
+									jsonResponse.addProperty("desc", "dati utente e psw modificati");
+									
+								}else {
+									response.setStatus(500);
+									jsonResponse.addProperty("stato", "errore server");
+									jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+								}
+								
+								break;
+								
+							default:
+								
 								response.setStatus(500);
 								jsonResponse.addProperty("stato", "errore server");
 								jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+								break;
+							
 							}
 							
-							break;
-							
-						default:
-							
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-							break;
-						
-						}
-						
-						}else if(checkPassword == 0) {
+						}else{
 							
 							response.setStatus(401);
 							jsonResponse.addProperty("stato", "errore client");
 							jsonResponse.addProperty("descrizione", "credenziali non valide");
 							
-						}else {
-							
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						}
 						
 					}else {
@@ -382,9 +377,7 @@ public class User extends HttpServlet {
 						jsonResponse.addProperty("stato", "errore client");
 						jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 					}
-					
-					
-					
+
 				}else{
 					
 					switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
@@ -406,34 +399,39 @@ public class User extends HttpServlet {
 							break;
 					
 						}
+					}
+			
+				}catch(InvalidParameterException e) {
+					
+					response.setStatus(403);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("descrizione", "non autorizzato");
+					System.out.println("not authorized token");
+					e.printStackTrace();
+			
+				} catch (CredentialNotFoundException e) {
+				
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("descrizione", "errore nella sintassi");
+					e.printStackTrace();
+					
+				} catch (SQLException e) {
+					
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					e.printStackTrace();
+					
+				}finally {
+					out.println(jsonResponse.toString());
 				}
 			
-			}catch(InvalidParameterException e) {
-				
-				response.setStatus(403);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "non autorizzato");
-				System.out.println("not authorized token");
-				e.printStackTrace();
-		
-			}catch(Exception e) {
-				
-				response.setStatus(400);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "nessun risultato");
-				
-				System.out.println("not created");
-				e.printStackTrace();
-				
-			}finally {
-				out.println(jsonResponse.toString());
+			}else {
+				 response.setStatus(400);
+				 jsonResponse.addProperty("stato", "errore client");
+				 jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 			}
-		}else {
-			 response.setStatus(400);
-			 jsonResponse.addProperty("stato", "errore client");
-			 jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
-		}
-		
 		
 		out.println(jsonResponse.toString());
 		

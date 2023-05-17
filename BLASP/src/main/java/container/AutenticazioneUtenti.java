@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.Properties;
 import jakarta.mail.*;
 import java.util.UUID;
+
+import javax.security.auth.login.CredentialNotFoundException;
+
 import org.eclipse.angus.mail.util.MailSSLSocketFactory;
 
 import com.auth0.jwt.exceptions.JWTCreationException;
@@ -136,9 +139,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 		//jwtFormat.addProperty("sub", username);
 		jwtFormat.addProperty("sub-email", email);
 		jwtFormat.addProperty("aud", "*");
-		
-		
-		
+
 		//controlli input
 		
 		if(Checks.isValidPassword(password) && Checks.isValidEmail(email)) {
@@ -146,6 +147,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 			QueryHandler queryForThis = new QueryHandler();
 			
 			try {
+				
 				boolean hasEmail = queryForThis.hasEmail(email);
 				
 				if(hasEmail) {
@@ -154,41 +156,33 @@ public class AutenticazioneUtenti extends HttpServlet{
 					String userStatus =  queryForThis.getUserStatus(user_id);
 					if(userStatus.equals("none")) {
 						
-						int checkPass = queryForThis.checkPass(user_id, password);
+						boolean checkPass = queryForThis.checkPass(user_id, password);
 						
-						if(checkPass == 1) {
+						if(checkPass) {
 								
 							//generazione jwt per la sessione
+							JwtGen generator = new JwtGen();
+							Map<String, String> claims = new HashMap<>();
 							
-								
-								JwtGen generator = new JwtGen();
-								Map<String, String> claims = new HashMap<>();
-								
-								jwtFormat.keySet().forEach(keyStr ->
-							    {
-							        String keyvalue = jwtFormat.get(keyStr).getAsString();
-							        claims.put(keyStr, keyvalue);
-							      
-							    });
-								
-								String token = generator.generateJwt(claims);
-								response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
-								response.setStatus(200);
-								jsonResponse.addProperty("stato", "confermato");
-								jsonResponse.addProperty("desc", "utente autorizzato");
+							jwtFormat.keySet().forEach(keyStr ->
+						    {
+						        String keyvalue = jwtFormat.get(keyStr).getAsString();
+						        claims.put(keyStr, keyvalue);
+						      
+						    });
+							
+							String token = generator.generateJwt(claims);
+							response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+							response.setStatus(200);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("desc", "utente autorizzato");
 						
-						}else if (checkPass == 0){
+						}else{
 							
 							response.setStatus(401);
 							jsonResponse.addProperty("stato", "errore client");
 							jsonResponse.addProperty("descrizione", "credenziali invalide");
-							
-						}else {
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						}
-						
 					
 					//pezzo nuovo da confermare
 					}else if (userStatus.equals("banned")) {
@@ -216,12 +210,13 @@ public class AutenticazioneUtenti extends HttpServlet{
 				}
 				
 				
-			}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+			}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException | CredentialNotFoundException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 				e.printStackTrace();
+				
 			}finally {
 				out.println(jsonResponse.toString());
 			}

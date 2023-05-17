@@ -1,10 +1,14 @@
 package classes;
 
+import java.rmi.NoSuchObjectException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
+import javax.security.auth.login.CredentialNotFoundException;
+
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
@@ -54,45 +58,35 @@ public class QueryHandler {
 		
 	}
 	
-	public int checkPass(int user_id, String password) {
+	public boolean checkPass(int user_id, String password) throws SQLException, CredentialNotFoundException {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_password FROM utenti WHERE UT_id = ?";
 		Argon2 argon2 = Argon2Factory.create(Argon2Types.ARGON2id);
+
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+
+		pr.setInt(1, user_id);
+		ResultSet res = pr.executeQuery();
 		
-		try(
-				
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				
-				){
-
-			 
-				pr.setInt(1, user_id);
-				ResultSet res = pr.executeQuery();
-				if(res.next()) {
-					
-
-					String hashedPass = res.getString("UT_password");
-					conn.close();
-					
-					if(argon2.verify(hashedPass, password)){
-						return 1;
-					}else {
-						System.out.println("password non verificata");
-						return 0;
-					}
-					
-				}else {
-					conn.close();
-					return -1;
-				}
-				
-			}catch(SQLException e){
-				
-				System.out.println(e.getLocalizedMessage());
-				return -1;
+		if(res.next()) {
 			
+
+			String hashedPass = res.getString("UT_password");
+			conn.close();
+			
+			if(argon2.verify(hashedPass, password)){
+				return true;
+			}else {
+				System.out.println("password non verificata");
+				return false;
 			}
+			
+		}else {
+			conn.close();
+			throw new CredentialNotFoundException("no results");
+		}
+		
 	}
 	
 	//RECUPERO USER ID DALLA MAIL
@@ -402,7 +396,7 @@ public class QueryHandler {
 		
 	}
 
-	public Utente getUserData(int user_id) throws Exception {
+	public Utente getUserData(int user_id) throws CredentialNotFoundException {
 
 
 		
@@ -433,7 +427,7 @@ public class QueryHandler {
 					return user_info;	
 				}
 				else
-					throw new Exception("utente non esistente");
+					throw new CredentialNotFoundException("utente non esistente");
 				
 						
 					
@@ -446,7 +440,7 @@ public class QueryHandler {
 		
 	}
 	
-	public ArrayList<Ticket> getUserTickets(int user_id) throws Exception {
+	public ArrayList<Ticket> getUserTickets(int user_id) throws CredentialNotFoundException {
 		
 		establishConnection();
 		
@@ -470,7 +464,7 @@ public class QueryHandler {
 					
 				}
 				if(tickets.isEmpty()) {
-					throw new Exception("utente non esistente");
+					throw new CredentialNotFoundException("utente non esistente");
 				}else {
 					return tickets;
 				}
@@ -482,7 +476,7 @@ public class QueryHandler {
 		
 	}
 
-	public int isUserAdmin(int user_id) throws Exception {
+	public int isUserAdmin(int user_id) throws CredentialNotFoundException {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_admin FROM utenti WHERE UT_id = ?";
@@ -506,7 +500,7 @@ public class QueryHandler {
 				
 			}else {
 				conn.close();
-				throw new Exception("no results");
+				throw new CredentialNotFoundException("no results");
 			}
 	
 		}catch(SQLException e){
@@ -518,7 +512,7 @@ public class QueryHandler {
 		
 	}
 	
-	public ArrayList<Utente> getToBlock() throws Exception{
+	public ArrayList<Utente> getToBlock() throws CredentialNotFoundException{
 
 		
 		establishConnection();
@@ -542,7 +536,7 @@ public class QueryHandler {
 				
 			}
 			if(toBlock.isEmpty()) {
-				throw new Exception("no results");
+				throw new CredentialNotFoundException("no results");
 			}else {
 				return toBlock;
 			}
@@ -586,7 +580,7 @@ public class QueryHandler {
 		
 	}
 	
-	public boolean checkCode(int user_id, String ver_code) throws SQLException, Exception {
+	public boolean checkCode(int user_id, String ver_code) throws SQLException, CredentialNotFoundException {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_ver_code FROM utenti WHERE UT_id = ?";
@@ -614,7 +608,7 @@ public class QueryHandler {
 					
 				}else {
 					conn.close();
-					throw new Exception("no results");
+					throw new CredentialNotFoundException("no results");
 				}
 			
 	}
