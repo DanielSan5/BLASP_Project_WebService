@@ -92,29 +92,46 @@ public class Tickets extends HttpServlet {
 				 */
 				List<Ticket> tickets = new ArrayList<Ticket>();
 				if(filters.containsKey("localita") && filters.containsKey("classe")) {
-					tickets = queryForThis.getLCM(filters.get("localita").toString(), filters.get("classe").toString(), 
-							filters.get("materia").toString());
+					String filtroLocalita = filters.get("localita").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					
+					tickets = queryForThis.getLCM(filtroLocalita, filters.get("classe").toString(), 
+							filtroMateria);
 					
 				}else if(filters.containsKey("localita") && filters.containsKey("nome")) {
-					tickets = queryForThis.getLNM(filters.get("localita").toString(), filters.get("nome").toString(), 
-							filters.get("materia").toString());
+					String filtroLocalita = filters.get("localita").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");					
+					
+					tickets = queryForThis.getLNM(filtroLocalita, filters.get("nome").toString(), 
+							filtroMateria);
 					
 				}else if(filters.containsKey("classe") && filters.containsKey("nome")) {
+					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
+					
 					tickets = queryForThis.getCNM(filters.get("classe").toString(), filters.get("nome").toString(), 
-							filters.get("materia").toString());
+							filtroMateria);
 					
 				}else if(filters.containsKey("localita")) {
-					tickets = queryForThis.getLM(filters.get("localita").toString(), filters.get("materia").toString());
+					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
+					String filtroLocalita = filters.get("localita").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					
+					tickets = queryForThis.getLM(filtroLocalita, filtroMateria);
 					
 				}else if(filters.containsKey("classe")) {
-					tickets = queryForThis.getCM(filters.get("classe").toString(), filters.get("materia").toString());
+					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					
+					tickets = queryForThis.getCM(filters.get("classe").toString(), filtroMateria);
 					
 				}else if(filters.containsKey("nome")) {
-					tickets = queryForThis.getNM(filters.get("nome").toString(), filters.get("materia").toString());
+					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					
+					tickets = queryForThis.getNM(filters.get("nome").toString(), filtroMateria);
 					
 				}
 				else {
-					tickets = queryForThis.getM(filters.get("materia").toString());
+					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					
+					tickets = queryForThis.getM(filtroMateria);
 				}
 				
 				if(tickets == null) {
