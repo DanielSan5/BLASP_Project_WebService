@@ -117,34 +117,8 @@ public class QueryHandler {
 			
 			
 	}
-	
-	
-	//RECUPERO USER ID DALLA MAIL --> SOLO SE ADMIN
-	public int getUserIdAdmin(String email) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
-		String prepared_query = "SELECT UT_id FROM utenti WHERE UT_email = ? AND UT_tipo = 'admin'";
-		
-		
-		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-		
-		pr.setString(1, email);
-		ResultSet res = pr.executeQuery();
-		if(res.next()) {
-			
-			int user_id = res.getInt("UT_id");
-			conn.close();
-			return user_id;
-			
-		}else {
-			conn.close();
-			throw new CredentialNotFoundException("no results in getUserIdAdmin");
-		}
-			
-			
-			
-		
-	}
+
 	
 	public void inserisciUtente(String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) throws SQLException {
 		
@@ -168,7 +142,7 @@ public class QueryHandler {
 		
 		if(pr.executeUpdate() != 1) {
 			conn.close();
-			throw new MySQLDataException("could not create table");
+			throw new MySQLDataException("could not create row in utenti");
 		}
 		conn.close();
 		
@@ -179,256 +153,211 @@ public class QueryHandler {
 	}
 	
 	//***UPDATE DATI UTENTE***
-	public int modificaDatiUtente(int user_id, String descrizione, String localita, int classe, String indirizzo) {
+	public void modificaDatiUtente(int user_id, String descrizione, String localita, int classe, String indirizzo) throws SQLException {
 		
 		establishConnection();
 		String prepared_query = "UPDATE utenti SET (UT_descrizione, UT_localita, UT_classe, UT_indirizzo_scolastico) = (?, ?, ?, ?) WHERE UT_id = ?";		
-		try(
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				){
-				
-				pr.setString(1, descrizione);
-				pr.setString(2, localita);
-				pr.setInt(3, classe);
-				pr.setString(4, indirizzo);
-				pr.setInt(5, user_id);
-	
-				//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
-				int check = pr.executeUpdate();
-				
-				conn.close();
-				
-				return check;
-			
-			}catch(SQLException e){
-				
-				System.out.println(e.getLocalizedMessage());
-				return -1;
-			
-			}
+
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		
+		
+		pr.setString(1, descrizione);
+		pr.setString(2, localita);
+		pr.setInt(3, classe);
+		pr.setString(4, indirizzo);
+		pr.setInt(5, user_id);
+
+		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not update table utenti");
+		}
+		conn.close();
+		
 		
 	}
 	
 	//***UPDATE PASSWORD UTENTE***
-	public int changePass(int user_id, String password_encr) {
+	public void changePass(int user_id, String password_encr) throws SQLException {
 			
 			establishConnection();
 			String prepared_query = "UPDATE utenti SET UT_password = ? WHERE UT_id = ?";		
-			try(
-					java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-					){
-					
-					pr.setString(1, password_encr);
-					pr.setInt(2, user_id);
-					
-					//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
-					int check = pr.executeUpdate();
-					
-					conn.close();
-					
-					return check;
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+
+			pr.setString(1, password_encr);
+			pr.setInt(2, user_id);
+			
+			//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+			
+			if(pr.executeUpdate() != 1) {
+				conn.close();
+				throw new MySQLDataException("could not update table utenti");
+			}
+			conn.close();
+			
 				
-				}catch(SQLException e){
-					
-					System.out.println(e.getLocalizedMessage());
-					return -1;
-				
-				}
+			
 			
 		}
 	
 	//***BLOCCAGGIO UTENTE***
-	public int blockUser(int user_id) {
+	public void blockUser(int user_id) throws  SQLException {
 				
 		establishConnection();
-		String prepared_query = "UPDATE utenti SET UT_stato = 'bloccato' WHERE UT_id = ?";		
-		try(
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				){
+		String prepared_query = "UPDATE utenti SET UT_stato = 'blocked' WHERE UT_id = ?";		
+	
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		
+		
+		pr.setInt(1, user_id);
+		
+		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+		
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not update table utenti");
+		}
+		conn.close();
 				
-				pr.setInt(1, user_id);
-				
-				//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
-				int check = pr.executeUpdate();
-				
-				conn.close();
-				
-				return check;
+	
 			
-			}catch(SQLException e){
-				
-				System.out.println(e.getLocalizedMessage());
-				return -1;
-			
-			}
 				
 	}
 			
 	//Controllo se la località inserita esiste
-	public int hasLocalita(String localita) {
+	public boolean hasLocalita(String localita) throws SQLException {
 		
 		establishConnection();
 		String prepared_query = "SELECT * FROM localita WHERE LC_descrizione = ?";
+
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+
+		pr.setString(1, localita);
 		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			pr.setString(1, localita);
-			
-			ResultSet res = pr.executeQuery();
-			//per controllare se la località esiste basta vedere il risultato di next(), sar� false se non esistono righe
-			boolean check = res.next();
-			
-			conn.close();
-			return check ? 1 : 0; //se check true returna 1 altrimenti 0
+		ResultSet res = pr.executeQuery();
+		//per controllare se la località esiste basta vedere il risultato di next(), sar� false se non esistono righe
+		boolean check = res.next();
+		conn.close();
 		
-		}catch(SQLException e){
-			
-			System.out.println(e.getLocalizedMessage());
-			return -1;
+		return check; 
 		
-		}
+		
 		
 	}
 	
 	//Controllo se l'indirizzo di studio inserito esiste
-	public int hasIndirizzo(String indirizzo) {
+	public boolean hasIndirizzo(String indirizzo) throws SQLException {
 			
 		establishConnection();
 		String prepared_query = "SELECT * FROM indirizzo_scolastico WHERE INS_nome = ?";
 		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			pr.setString(1, indirizzo);
-			
-			ResultSet res = pr.executeQuery();
-			
-			boolean check = res.next();
-			
-			conn.close();
-			return check ? 1 : 0; //se check true returna 1 altrimenti 0
+	
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 		
-		}catch(SQLException e){
-			
-			System.out.println(e.getLocalizedMessage());
-			return -1;
 		
-		}
+		pr.setString(1, indirizzo);
+		
+		ResultSet res = pr.executeQuery();
+		
+		boolean check = res.next();
+		
+		conn.close();
+		return check ; //se check true returna 1 altrimenti 0
+
+		
 			
 	}
 	
 	//Controllo lo stato dell'utente --> DA CONFERMARE
-	public String getUserStatus(int user_id) {
+	public String getUserStatus(int user_id) throws CredentialNotFoundException, SQLException {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_status FROM utenti WHERE UT_id = ?";
 		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			pr.setInt(1, user_id);
-			
-			ResultSet res = pr.executeQuery();
-			
-			if(res.next()) {
-				
-				
-				String user_status = res.getString("UT_status");
-				conn.close();
-				return user_status;
-				
-				
-			}else {
-				return "";
-			}
-			
 		
-		}catch(SQLException e){
-			
-			e.printStackTrace();
-			System.out.println(e.getLocalizedMessage());
-			return "";
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
 		
+		pr.setInt(1, user_id);
+		
+		ResultSet res = pr.executeQuery();
+		
+		if(res.next()) {
+	
+			String user_status = res.getString("UT_status");
+			conn.close();
+			return user_status;
+
+		}else {
+			conn.close();
+			throw new CredentialNotFoundException("no results in getUserStatus");
 		}
+			
+		
+		
 		
 	}
 
 	//CONTROLLO SE UNA MATERIA ESISTE NEL DATABASE
-	public int checkExistMateria(String materia) {
+	public boolean checkExistMateria(String materia) throws SQLException {
 		
 		establishConnection();
 		String prepared_query = "SELECT * FROM materia WHERE MAT_nome = ?";
 		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			pr.setString(1, materia);
-			ResultSet res = pr.executeQuery();
-			//per controllare se l'username esiste basta vedere il risultato di next(), sarà false se non esistono righe
-			boolean check = res.next();
-			
-			conn.close();
-			return check ? 1 : 0; //se check true returna 1 altrimenti 0
+
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		pr.setString(1, materia);
+		ResultSet res = pr.executeQuery();
+		//per controllare se l'username esiste basta vedere il risultato di next(), sarà false se non esistono righe
+		boolean check = res.next();
 		
-		}catch(SQLException e){
-			
-			System.out.println(e.getLocalizedMessage());
-			return -1;
-		
-		}
+		conn.close();
+		return check; 
+	
+	
 		
 	}
 
-	public Utente getUserData(int user_id) throws CredentialNotFoundException {
+	public Utente getUserData(int user_id) throws CredentialNotFoundException, SQLException {
 
 
 		
 		establishConnection();
 		
 		String getUser = "SELECT * FROM utenti WHERE UT_id = ?";
-		//String ticketLocalita = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE u.UT_localita = ?";
-		//String ticketClasse = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE u.UT_classe = ?";
 		ResultSet res;
 		
 		
-		try(
-			java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
-			//java.sql.PreparedStatement ticketLocalita_query = conn.prepareStatement(ticketLocalita);
-			//java.sql.PreparedStatement ticketClasse_query = conn.prepareStatement(ticketClasse);
-			){
+	
+		java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
+	
+		
+		
 			
+		getUser_query.setInt(1, user_id);
+		res = getUser_query.executeQuery();
+		
+		if(res.next()) {
 			
-				
-				getUser_query.setInt(1, user_id);
-				res = getUser_query.executeQuery();
-				
-				if(res.next()) {
-					
-					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
-					conn.close();
-					return user_info;	
-				}
-				else
-					throw new CredentialNotFoundException("utente non esistente");
-				
+			Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+					res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
+			conn.close();
+			return user_info;	
+		}
+		else
+			throw new CredentialNotFoundException("utente non esistente");
+			
 						
 					
 				
 				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
-		}
+	
 		
 	}
 	
-	public ArrayList<Ticket> getUserTickets(int user_id) throws CredentialNotFoundException {
+	public ArrayList<Ticket> getUserTickets(int user_id) throws CredentialNotFoundException, SQLException {
 		
 		establishConnection();
 		
@@ -436,71 +365,60 @@ public class QueryHandler {
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 		
-		try(
-			java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
-			){
+	
+		java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
+		
+		getUser_query.setInt(1, user_id);
+		res = getUser_query.executeQuery();
+		
+		while(res.next()) {
 			
-				getUser_query.setInt(1, user_id);
-				res = getUser_query.executeQuery();
-				
-				while(res.next()) {
-					
-					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
-							res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
-					
-					tickets.add(ticket);
-					
-				}
-				if(tickets.isEmpty()) {
-					throw new CredentialNotFoundException("utente non esistente");
-				}else {
-					return tickets;
-				}
-				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
+					res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
+			
+			tickets.add(ticket);
+			
 		}
+		if(tickets.isEmpty()) {
+			throw new CredentialNotFoundException("utente non esistente");
+		}else {
+			return tickets;
+		}
+
 		
 	}
 
-	public int isUserAdmin(int user_id) throws CredentialNotFoundException {
+	public boolean isUserAdmin(int user_id) throws CredentialNotFoundException, SQLException {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_admin FROM utenti WHERE UT_id = ?";
 		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
+
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		
+		pr.setInt(1, user_id);
+		ResultSet res = pr.executeQuery();
+		
+		if(res.next()) {
 			
-			pr.setInt(1, user_id);
-			ResultSet res = pr.executeQuery();
-			
-			if(res.next()) {
-				
-				if(res.getInt("UT_admin") == 1) {
-					conn.close();
-					return 1;
-				}else {
-					conn.close();
-					return 0;
-				}
-				
+			if(res.getInt("UT_admin") == 1) {
+				conn.close();
+				return true;
 			}else {
 				conn.close();
-				throw new CredentialNotFoundException("no results");
+				return false;
 			}
-	
-		}catch(SQLException e){
-			e.printStackTrace();
-			System.out.println("aa");
-			System.out.println(e.getLocalizedMessage());
-			return -1;
+			
+		}else {
+			conn.close();
+			throw new CredentialNotFoundException("no results");
 		}
+	
 		
 	}
 	
-	public ArrayList<Utente> getToBlock() throws CredentialNotFoundException{
+	public ArrayList<Utente> getToBlock() throws CredentialNotFoundException, SQLException{
 
 		
 		establishConnection();
@@ -508,63 +426,49 @@ public class QueryHandler {
 				+ " FROM utenti u INNER JOIN segnalazione s ON u.UT_id = s.UT_id_segnalato GROUP BY u.UT_id";
 		ArrayList<Utente> toBlock = new ArrayList<Utente>();
 		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			
-			ResultSet res = pr.executeQuery();
-			
-			while(res.next()) {
-				
-				Utente ut = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-						res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getInt("num_flags"));
-				
-				toBlock.add(ut);
-				
-			}
-			if(toBlock.isEmpty()) {
-				throw new CredentialNotFoundException("no results");
-			}else {
-				return toBlock;
-			}
+		
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 	
-		}catch(SQLException e){
-			e.printStackTrace();
-			System.out.println("aa");
-			System.out.println(e.getLocalizedMessage());
-			return null;
+		
+		
+		ResultSet res = pr.executeQuery();
+		
+		while(res.next()) {
+			
+			Utente ut = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+					res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getInt("num_flags"));
+			
+			toBlock.add(ut);
+			
 		}
+		if(toBlock.isEmpty()) {
+			throw new CredentialNotFoundException("no results");
+		}else {
+			return toBlock;
+		}
+	
+		
 	}
-	/*
-	 * da sistemare ogni metodo gestendo gli errori nel codice principale in modo da poter returnare un tipo boolean, non si chiude la connessione nel catch 
-	 */
-
-	public int inserisciCodice(int user_id, String ver_code) {
+	
+	public void inserisciCodice(int user_id, String ver_code) throws SQLException {
 		
 		establishConnection();
 		String prepared_query = "INSERT INTO utenti (UT_ver_code) VALUES (?) WHERE UT_id = ?";
+			
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		pr.setString(1, ver_code);
+		pr.setInt(2, user_id);
 		
-		try(
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				){
-				
-				//pr.setString(1, username);
-				pr.setString(1, ver_code);
-				pr.setInt(2, user_id);
-				
-				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
-				int check = pr.executeUpdate();
-				conn.close();
-				
-				return check;
-			
-			}catch(SQLException e){
-				
-				System.out.println(e.getLocalizedMessage());
-				return -1;
-			
-			}
+		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not create row in utenti");
+		}
+		conn.close();
+	
+	
 		
 	}
 	
@@ -573,31 +477,29 @@ public class QueryHandler {
 		establishConnection();
 		String prepared_query = "SELECT UT_ver_code FROM utenti WHERE UT_id = ?";
 		
+
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+
+		pr.setInt(1, user_id);
+		ResultSet res = pr.executeQuery();
 		
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				
-				
+		if(res.next()) {
 			
-				pr.setInt(1, user_id);
-				ResultSet res = pr.executeQuery();
+			if(res.getString("UT_ver_code").equals(ver_code)) {
 				
-				if(res.next()) {
-					
-					if(res.getString("UT_ver_code").equals(ver_code)) {
-						
-						conn.close();
-						return true;
-						
-					}else {
-						
-						conn.close();
-						return false;
-					}
-					
-				}else {
-					conn.close();
-					throw new CredentialNotFoundException("no results");
-				}
+				conn.close();
+				return true;
+				
+			}else {
+				
+				conn.close();
+				return false;
+			}
+			
+		}else {
+			conn.close();
+			throw new CredentialNotFoundException("no results");
+		}
 			
 	}
 

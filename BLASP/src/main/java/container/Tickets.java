@@ -191,12 +191,11 @@ public class Tickets extends HttpServlet {
 		//Estrazione del token dall'header
 		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		String[] toCheck = {jwtToken, materia, livello_materia, descrizione, dataStringa};
-		
-		if(Checks.isValidTag(livello_materia) && Checks.isValidMateria(materia) && Checks.isNotBlank(toCheck)) {
+		try {
 			
-			final JwtVal validator = new JwtVal();
+			if(Checks.isValidTag(livello_materia) && Checks.isValidMateria(materia) && Checks.isNotBlank(toCheck)) {
 			
-			try {
+				final JwtVal validator = new JwtVal();
 			
 				DecodedJWT jwt = validator.validate(jwtToken);
 				String email = jwt.getClaim("sub-email").asString();
@@ -257,34 +256,34 @@ public class Tickets extends HttpServlet {
 						}
 						break;		
 				}
-				
-				
-			}catch(InvalidParameterException e) {
-				
-				response.setStatus(403);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "non autorizzato");
-				System.out.println("not authorized token");
-				e.printStackTrace();
-		
-			}catch(Exception e) {
+			}else {
 				
 				response.setStatus(400);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "nessun risultato");
-				
-				System.out.println("not created");
-				e.printStackTrace();
-				
-			}finally {
-				out.println(jsonResponse.toString());
+				jsonResponse.addProperty("stato", "errore");
+				jsonResponse.addProperty("desc", "errore nella sintassi");
 			}
-		}else {
 				
+		}catch(InvalidParameterException e) {
+			
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+	
+		}catch(Exception e) {
+			
 			response.setStatus(400);
-			jsonResponse.addProperty("stato", "errore");
-			jsonResponse.addProperty("desc", "errore nella sintassi");
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
+			
+			System.out.println("not created");
+			e.printStackTrace();
+			
+		}finally {
+			out.println(jsonResponse.toString());
 		}
+	
 		
 		out.println(jsonResponse.toString());
 		
@@ -328,15 +327,15 @@ public class Tickets extends HttpServlet {
 		String valoreTag = user.get("to_edit").getAsJsonObject().get("tag").getAsString();
 		String[] toCheck = {jwtToken, valoreDescrizione, numeroTicket};
 		
-		if(Checks.isValidTag(valoreTag) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
+		try{
+			
+			if(Checks.isValidTag(valoreTag) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
 		
-			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-			int hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
-			
-			final JwtVal validator = new JwtVal();
-			
-			try{
+				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+				int hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
 				
+				final JwtVal validator = new JwtVal();
+
 				validator.validate(jwtToken);
 				
 				switch(hasTicketId) {
@@ -383,35 +382,31 @@ public class Tickets extends HttpServlet {
 						
 					
 				}
-				
-		
-			}catch(InvalidParameterException e) {
-			
-				response.setStatus(403);
+			}else {
+				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("desc", "utente non autorizzato");
-				System.out.println("not authorized token");
-				e.printStackTrace();
-			
-			}catch(Exception e) {
-				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-				System.out.println("no results");
-				e.printStackTrace();
-				
-			}finally {
-				out.println(jsonResponse.toString());
+				jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 			}
 		
-		}else {
-			response.setStatus(400);
-			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
-		}
+		}catch(InvalidParameterException e) {
 		
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("desc", "utente non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+		
+		}catch(Exception e) {
 			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+			System.out.println("no results");
+			e.printStackTrace();
+			
+		}finally {
+			out.println(jsonResponse.toString());
+		}
 		
 		out.println(jsonResponse.toString());
 		

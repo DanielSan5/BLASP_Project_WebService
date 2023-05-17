@@ -98,10 +98,7 @@ public class AutenticazioneUtenti extends HttpServlet{
         	
     	}
     		
-    	
-   
-    
-    	
+ 
     }
     
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -274,14 +271,12 @@ public class AutenticazioneUtenti extends HttpServlet{
 						if(hasEmail) {
 								
 							String ver_code = UUID.randomUUID().toString();
-							
-							if(queryForThis.inserisciCodice(user_id, ver_code) == 1) {
-								sendEmailCode(email, ver_code);
+							//void
+							queryForThis.inserisciCodice(user_id, ver_code);
+							//void
+							sendEmailCode(email, ver_code);
 								
-							}else {
-								//errore database
-							}
-							
+						
 						}else{
 							//email inesistente
 						}
@@ -292,7 +287,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 						
 						String code = user.get("code").getAsString();
 						
-						if( queryForThis.checkCode(user_id, code)) {
+						if(queryForThis.checkCode(user_id, code)) {
 							//success
 							
 						}else {
@@ -307,12 +302,8 @@ public class AutenticazioneUtenti extends HttpServlet{
 						if(Checks.isValidPassword(new_pass) && Checks.isConfirmedPassword(new_pass, conf_pass)) {
 							
 							String new_pass_encr = passEncr(new_pass);
-							int checkPass = queryForThis.changePass(user_id, new_pass_encr);
-							if(checkPass == 1) {
-								//password cambiata
-							}else {
-								//errore
-							}
+							//void
+							queryForThis.changePass(user_id, new_pass_encr);
 							
 						}else {
 							//errore input
