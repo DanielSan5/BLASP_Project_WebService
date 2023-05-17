@@ -222,7 +222,7 @@ public class QueryHandler_ticket {
 	
 	
 	//***RESTITUISCE L'ID UTENTE DALL'ID TICKET***
-	public int getUtenteId(int ticket_id) {
+	public int getUserIdFromTicket(int ticket_id) {
 			
 			establishConnection();
 			String prepared_query = "SELECT UT_id FROM tickets WHERE TIC_id = ?";

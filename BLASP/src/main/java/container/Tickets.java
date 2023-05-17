@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import classes.Checks;
 import classes.JwtVal;
 import classes.QueryHandler;
 import classes.QueryHandler_filters;
@@ -40,77 +41,7 @@ import org.json.JSONObject;;
 public class Tickets extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	private String jwtToken;
 	private QueryHandler_filters queryForThis = new QueryHandler_filters();
-	boolean check;
-	
-	 //Empty input check
-	   public boolean isNotBlank(String materia, String livello_materia, String descrizione, String dataStringa) {
-	  	   if(materia.isBlank() || livello_materia.isBlank() || descrizione.isBlank() || dataStringa.isBlank()) {
-	  		   return false;
-	  	   }
-	  	   return true;	   
-	     }
-	  
-	
-	//Authorization empty check
-	private boolean isValidAuthorization() {
-		if(jwtToken == null || jwtToken.isBlank())
-			return false;
-		else 
-			return true;
-	}
-       
-	//Filter check
-	private boolean isValidFilter(Set<String> filters) {
-		
-		if(filters.contains("materia")){
-		
-			filters.forEach((element) -> {
-				
-				if(element.equals("localita") || element.equals("classe") || element.equals("nome")){
-					
-					check = true;
-					
-				}else {
-					check = false;
-				}
-			
-			});
-				
-		}else {
-			return false;
-		}
-		return check;		
-			
-	}
-	
-	//Tag valid check
-	private boolean isValidTag(String tag) {
-
-		boolean result = false;
-		ArrayList<String> validStrings = new ArrayList<>(List.of("prima", "seconda", "terza", "quarta", "quinta"));
-		String[] tagSeparati = tag.split(",");
-		
-		for(String tagSingolo : tagSeparati) {
-			if(!validStrings.contains(tagSingolo.trim()))
-				result = true;
-			else
-				result = false;
-				break;
-		}
-		return result;
-	}
-	
-	//Materia valid check
-	private boolean isValidMateria(String materia) {
-		
-		QueryHandler queryForThis = new QueryHandler();
-		if(queryForThis.checkExistMateria(materia) == 1)
-			return true;
-		else
-			return false;
-	}
 			
 				
     /**
@@ -132,11 +63,12 @@ public class Tickets extends HttpServlet {
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
 		//Estrazione del token dall'header
-		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		Map<String, String[]> filters = request.getParameterMap();
 		Set<String> types = filters.keySet();
 		
-		if(isValidFilter(types) && isValidAuthorization() ) {
+		String[] toCheck = {jwtToken};
+		if(Checks.isValidFilter(types) && Checks.isNotBlank(toCheck) ) {
 			
 			final JwtVal validator = new JwtVal();
 			
@@ -257,9 +189,10 @@ public class Tickets extends HttpServlet {
 		String dataStringa = formatter.format(dataOdierna);
 		
 		//Estrazione del token dall'header
-		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String[] toCheck = {jwtToken, materia, livello_materia, descrizione, dataStringa};
 		
-		if(isValidTag(livello_materia) && isValidAuthorization() && isValidMateria(materia) && isNotBlank(materia, livello_materia, descrizione, dataStringa)) {
+		if(Checks.isValidTag(livello_materia) && Checks.isValidMateria(materia) && Checks.isNotBlank(toCheck)) {
 			
 			final JwtVal validator = new JwtVal();
 			
@@ -385,32 +318,32 @@ public class Tickets extends HttpServlet {
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
 		//Estrazione del token dall'header
-		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		
 		//acquisizione delle chiavi
-		int numeroTicket = user.get("numero_ticket").getAsInt();	
-		
+		String numeroTicket = user.get("numero_ticket").getAsString();	
 		//acquisizione chiavi dell'ogetto "to_edit"
 		String valoreMateria = user.get("to_edit").getAsJsonObject().get("materia").getAsString();
 		String valoreDescrizione = user.get("to_edit").getAsJsonObject().get("descrizione").getAsString();
 		String valoreTag = user.get("to_edit").getAsJsonObject().get("tag").getAsString();
+		String[] toCheck = {jwtToken, valoreDescrizione, numeroTicket};
 		
-		if(isValidTag(valoreTag) && isValidAuthorization() && isValidMateria(valoreMateria)) {
+		if(Checks.isValidTag(valoreTag) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
 		
 			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-			int hasTicketId = queryForThis.hasTicketId(numeroTicket);
+			int hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
 			
 			final JwtVal validator = new JwtVal();
 			
 			try{
 				
-				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
+				validator.validate(jwtToken);
 				
 				switch(hasTicketId) {
 					case 1:
 						
 						//esecuzione della query
-						int modificaDatiTicket = queryForThis.modificaDatiTicket(numeroTicket, valoreMateria, valoreDescrizione, valoreTag);
+						int modificaDatiTicket = queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTag);
 						
 						if(modificaDatiTicket == 1) {
 							response.setStatus(200);
@@ -422,7 +355,7 @@ public class Tickets extends HttpServlet {
 							jsonResponse.addProperty("stato", "errore");
 						}
 						
-						Ticket ticket_info = queryForThis.getTicketFromId(numeroTicket);
+						Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
 						
 						if(ticket_info == null) {
 							response.setStatus(400);
@@ -506,67 +439,75 @@ public class Tickets extends HttpServlet {
 		JsonObject ticket = g.fromJson(body, JsonObject.class);
 		
 		//Estrazione del token dall'header
-		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-		
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		//acquisizione delle chiavi
-		int numeroTicket = ticket.get("numero_ticket").getAsInt();	
+		String  numeroTicket = ticket.get("numero_ticket").getAsString();	
+		String[] toCheck = {jwtToken, numeroTicket};
 		
-		QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-		int hasTicketId = queryForThis.hasTicketId(numeroTicket);
-		
-		final JwtVal validator = new JwtVal();
-		
-		try{
+		if(Checks.isNotBlank(toCheck)) {
 			
-			DecodedJWT jwtDecoded =  validator.validate(jwtToken);
+			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+			int hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
 			
-			switch(hasTicketId) {
+			final JwtVal validator = new JwtVal();
 			
-			case 1:
+			try{
 				
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("desc", "ticket cancellato");
-			
-				break;
-			
-			case 0:
+				validator.validate(jwtToken);
 				
-				response.setStatus(400);
+				switch(hasTicketId) {
+				
+					case 1:
+						
+						response.setStatus(200);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("desc", "ticket cancellato");
+					
+						break;
+					
+					case 0:
+						
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+						
+						
+						break;
+						
+					case -1:
+						
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+						
+						break;
+					
+				}
+			
+			}catch(InvalidParameterException e) {
+				
+				response.setStatus(403);
 				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
-				
-				
-				break;
-				
-			case -1:
+				jsonResponse.addProperty("desc", "utente non autorizzato");
+				System.out.println("not authorized token");
+				e.printStackTrace();
+			
+			}catch(Exception e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+				System.out.println("no results");
+				e.printStackTrace();
 				
-				break;
-				
+			}finally {
+				out.println(jsonResponse.toString());
 			}
-		
-		}catch(InvalidParameterException e) {
 			
-			response.setStatus(403);
+		}else {
+			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("desc", "utente non autorizzato");
-			System.out.println("not authorized token");
-			e.printStackTrace();
-		
-		}catch(Exception e) {
-			
-			response.setStatus(500);
-			jsonResponse.addProperty("stato", "errore server");
-			jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-			System.out.println("no results");
-			e.printStackTrace();
-			
-		}finally {
-			out.println(jsonResponse.toString());
+			jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 		}
 		
 		out.println(jsonResponse.toString());

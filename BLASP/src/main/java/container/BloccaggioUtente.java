@@ -15,6 +15,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import classes.Checks;
 import classes.JwtVal;
 import classes.QueryHandler;
 
@@ -25,20 +26,6 @@ import classes.QueryHandler;
 public class BloccaggioUtente extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	private String jwtToken;  
-	
-	
-	 //Email check (Aldini email)
-    private boolean isValidEmail(String email) {
-     	
-     	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
-     	
-     	if((email.isBlank()) || (email.matches(regexPattern) == false))
-     		return false;
-     	else 	
-     		return true;
-     }
-	
 	
     /**
      * @see HttpServlet#HttpServlet()
@@ -65,33 +52,32 @@ public class BloccaggioUtente extends HttpServlet {
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 	
-	response.addHeader("Access-Control-Allow-Methods", "PUT");
-	response.setContentType("application/json");
-	PrintWriter out = response.getWriter(); 
-	BufferedReader in_body = request.getReader();
-	JsonObject jsonResponse = new JsonObject();
-	
-	//stringBuilder per costruire una stringa dal messaggio in formato json
-	StringBuilder sb = new StringBuilder();
-	String line;
-	String body;
-	
-	while((line = in_body.readLine()) != null) {
-		sb.append(line);
-	}
-	
-	body = sb.toString();
-	
-	Gson g = new Gson();
-	JsonObject user = g.fromJson(body, JsonObject.class);
-	
-	//Estrazione del token dall'header
-	jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-	
-	//acquisizione delle chiavi
-	String toBlock_email = user.get("email").getAsString();
-	
-		if(isValidEmail(toBlock_email)) {
+		response.addHeader("Access-Control-Allow-Methods", "PUT");
+		response.setContentType("application/json");
+		PrintWriter out = response.getWriter(); 
+		BufferedReader in_body = request.getReader();
+		JsonObject jsonResponse = new JsonObject();
+		
+		//stringBuilder per costruire una stringa dal messaggio in formato json
+		StringBuilder sb = new StringBuilder();
+		String line;
+		String body;
+		
+		while((line = in_body.readLine()) != null) {
+			sb.append(line);
+		}
+		
+		body = sb.toString();
+		
+		Gson g = new Gson();
+		JsonObject user = g.fromJson(body, JsonObject.class);
+		
+		//Estrazione del token dall'header
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String toBlock_email = user.get("email").getAsString();
+		
+		String [] toCheck = {jwtToken};
+		if(Checks.isValidEmail(toBlock_email) && Checks.isNotBlank(toCheck)) {
 		
 			final JwtVal validator = new JwtVal();
 			

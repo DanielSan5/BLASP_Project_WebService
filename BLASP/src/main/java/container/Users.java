@@ -14,6 +14,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import classes.Checks;
 import classes.JwtVal;
 import classes.QueryHandler;
 import classes.Ticket;
@@ -48,51 +49,58 @@ public class Users extends HttpServlet {
 		Gson g = new Gson();
 		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		
-		final JwtVal validator = new JwtVal();
-		
-		try{
+		String[] toCheck = {jwtToken};
+		if(Checks.isNotBlank(toCheck)) {
+			final JwtVal validator = new JwtVal();
 			
-			//se non viene autorizzato lancia eccezzione gestita nel catch sotto
-			validator.validate(jwtToken);
-		
-			String email = request.getParameter("email");
-			QueryHandler queryForThis = new QueryHandler();
-			int user_id = queryForThis.getUserId(email);
-			Utente userData = queryForThis.getUserData(user_id);
+			try{
+				
+				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
+				validator.validate(jwtToken);
 			
-			ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
-			
-			if(userData != null) {
+				String email = request.getParameter("email");
+				QueryHandler queryForThis = new QueryHandler();
+				int user_id = queryForThis.getUserId(email);
+				Utente userData = queryForThis.getUserData(user_id);
 				
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("desc", " ottenimento profilo dell'utente");
-				jsonResponse.add("user_info", g.toJsonTree(userData));
-				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
+				ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
 				
-			}else {
+				if(userData != null) {
+					
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", " ottenimento profilo dell'utente");
+					jsonResponse.add("user_info", g.toJsonTree(userData));
+					jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
+					
+				}else {
+					
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				}
 				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+			}catch(InvalidParameterException e) {
+				
+				response.setStatus(403);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "non autorizzato");
+				System.out.println("not authorized token");
+				e.printStackTrace();
+				
+			}catch(Exception e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
 			}
-			
-		}catch(InvalidParameterException e) {
-			
-			response.setStatus(403);
-			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "non autorizzato");
-			System.out.println("not authorized token");
-			e.printStackTrace();
-			
-		}catch(Exception e) {
-			
+			finally {
+				out.println(jsonResponse.toString());
+			}
+		}else {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "nessun risultato");
-		}
-		finally {
-			out.println(jsonResponse.toString());
+			jsonResponse.addProperty("descrizione", "sintassi errata");
 		}
 		
 		out.println(jsonResponse.toString());

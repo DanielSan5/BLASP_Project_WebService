@@ -22,6 +22,7 @@ import classes.QueryHandler_ticket;
 import classes.QueryHandler_flags;
 import classes.Ticket;
 import classes.Avviso;
+import classes.Checks;
 import classes.JwtVal;
 import classes.QueryHandler;
 
@@ -40,14 +41,7 @@ public class Avvisi extends HttpServlet {
     public Avvisi() {
         super();
     }
-    //Empty input check
-    public boolean isNotBlank(String avviso, int id_ticket) {
-	
-	 if(avviso.isBlank() || id_ticket == 0) {
-	  	return false;
-	  }
-	   return true;	   
-    }
+   
    
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -63,67 +57,74 @@ public class Avvisi extends HttpServlet {
 		
 		//Estrazione del token dall'header
 		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-	
-		final JwtVal validator = new JwtVal();
-		
-		try {
-		
-			DecodedJWT jwt = validator.validate(jwtToken);
-			QueryHandler queryUser = new QueryHandler();
-			int utente_id = queryUser.getUserId(jwt.getClaim("sub-email").asString());
+		String[] toCheck = {jwtToken};
+		if(Checks.isNotBlank(toCheck)) {
 			
-			//controllo sull'ID utente del ticket
-			if(utente_id == 0){
-		
+			final JwtVal validator = new JwtVal();
+			
+			try {
+			
+				DecodedJWT jwt = validator.validate(jwtToken);
+				QueryHandler queryUser = new QueryHandler();
+				int utente_id = queryUser.getUserId(jwt.getClaim("sub-email").asString());
+				
+				//controllo sull'ID utente del ticket
+				if(utente_id == 0){
+			
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("descrizione", "nessun risultato");
+					
+				}else if(utente_id == -1) {
+					
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					
+				}else{
+				
+					QueryHandler_flags queryAvviso = new QueryHandler_flags();
+					ArrayList<Avviso> avvisi = queryAvviso.getAvvisi(utente_id);
+					
+					if(avvisi != null) {
+						response.setStatus(200);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("descrizione", "ottenimento avvisi");
+						jsonResponse.add("avvisi", g.toJsonTree(avvisi));
+					}else {
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					}
+					
+				} 
+						
+			}catch(InvalidParameterException e) {
+				
+				response.setStatus(403);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "non autorizzato");
+				System.out.println("not authorized token");
+				e.printStackTrace();
+			
+			}catch(Exception e) {
+				
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("descrizione", "nessun risultato");
 				
-			}else if(utente_id == -1) {
+				System.out.println("no results");
+				e.printStackTrace();
 				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				
-			}else{
-			
-				QueryHandler_flags queryAvviso = new QueryHandler_flags();
-				ArrayList<Avviso> avvisi = queryAvviso.getAvvisi(utente_id);
-				
-				if(avvisi != null) {
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("descrizione", "ottenimento avvisi");
-					jsonResponse.add("avvisi", g.toJsonTree(avvisi));
-				}else {
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				}
-				
-			} 
-					
-		}catch(InvalidParameterException e) {
-			
-			response.setStatus(403);
-			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "non autorizzato");
-			System.out.println("not authorized token");
-			e.printStackTrace();
-		
-		}catch(Exception e) {
-			
+			}finally {
+				out.println(jsonResponse.toString());
+			}
+		}else {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "nessun risultato");
-			
-			System.out.println("no results");
-			e.printStackTrace();
-			
-		}finally {
-			out.println(jsonResponse.toString());
+			jsonResponse.addProperty("descrizione", "errore input");
 		}
-		
+			
 		out.println(jsonResponse.toString());
 	}
 
@@ -152,62 +153,63 @@ public class Avvisi extends HttpServlet {
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
 		String avviso = user.get("avviso").getAsString();
-		int ticket_id = user.get("numero_ticket").getAsInt();
-		
+		String ticket_id = user.get("numero_ticket").getAsString();
 		//Estrazione del token dall'header
 		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		
-		if(isNotBlank(avviso, ticket_id)) {
+		String [] toCheck = {ticket_id, avviso, jwtToken};
+		
+		if(Checks.isNotBlank(toCheck)) {
 			
-
 			final JwtVal validator = new JwtVal();
 			
 			try {
 			
-				DecodedJWT jwt = validator.validate(jwtToken);
+				validator.validate(jwtToken);
+				
 				
 				QueryHandler_ticket queryTicket = new QueryHandler_ticket();
 					
-					int utente_id = queryTicket.getUtenteId(ticket_id);
+				int utente_id = queryTicket.getUserIdFromTicket(Integer.parseInt(ticket_id));
+				
+				//controllo sull'ID utente del ticket
+				if(utente_id == 0){
 					
-					//controllo sull'ID utente del ticket
-					if(utente_id == 0){
-						
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("descrizione", "nessun risultato");
-						
-					}else if(utente_id == -1) {
-						
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						
-					}else{
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("descrizione", "nessun risultato");
 					
+				}else if(utente_id == -1) {
+					
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					
+				}else{
+				
 					QueryHandler_flags queryUtenteAvviso = new QueryHandler_flags();
 					
-					switch(queryUtenteAvviso.inserisciAvviso(avviso,ticket_id, utente_id)) {
+					switch(queryUtenteAvviso.inserisciAvviso(avviso,Integer.parseInt(ticket_id), utente_id)) {
 					
-					case 0:
+						case 0:
+							
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+							break;
+							
+						case -1:
 						
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						break;
-						
-					case -1:
-					
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						break;
-						
-					default:
-						
-						response.setStatus(201);
-						jsonResponse.addProperty("stato", "confermato");
-						jsonResponse.addProperty("desc", "avviso creato");
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+							break;
+							
+						default:
+							
+							response.setStatus(201);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("desc", "avviso creato");
 					
 					}
 					

@@ -15,6 +15,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import classes.Avviso;
+import classes.Checks;
 import classes.JwtVal;
 import classes.QueryHandler;
 import classes.QueryHandler_flags;
@@ -48,66 +49,75 @@ public class Segnalazioni extends HttpServlet {
 		
 		//Estrazione del token dall'header
 		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-	
-		final JwtVal validator = new JwtVal();
 		
-		try {
-		
-			DecodedJWT jwt = validator.validate(jwtToken);
-			QueryHandler queryUser = new QueryHandler();
-			int utente_id = queryUser.getUserId(jwt.getClaim("sub-email").asString());
+		String [] toCheck = {jwtToken};
+		if(Checks.isNotBlank(toCheck)) {
+			final JwtVal validator = new JwtVal();
 			
-			//controllo sull'ID utente del ticket
-			if(utente_id == 0){
-		
+			try {
+			
+				DecodedJWT jwt = validator.validate(jwtToken);
+				QueryHandler queryUser = new QueryHandler();
+				int utente_id = queryUser.getUserId(jwt.getClaim("sub-email").asString());
+				
+				//controllo sull'ID utente del ticket
+				if(utente_id == 0){
+			
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("descrizione", "nessun risultato");
+					
+				}else if(utente_id == -1) {
+					
+					response.setStatus(500);
+					jsonResponse.addProperty("stato", "errore server");
+					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					
+				}else{
+				
+					QueryHandler_flags queryFlags = new QueryHandler_flags();
+					ArrayList<String> flagsDesc = queryFlags.getFlags(utente_id);
+					
+					if(flagsDesc != null) {
+						response.setStatus(200);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("descrizione", "ottenimento segnalazioni");
+						jsonResponse.add("avvisi", g.toJsonTree(flagsDesc));
+					}else {
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					}
+					
+				} 
+						
+			}catch(InvalidParameterException e) {
+				
+				response.setStatus(403);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "non autorizzato");
+				System.out.println("not authorized token");
+				e.printStackTrace();
+			
+			}catch(Exception e) {
+				
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("descrizione", "nessun risultato");
 				
-			}else if(utente_id == -1) {
+				System.out.println("no results");
+				e.printStackTrace();
 				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				
-			}else{
-			
-				QueryHandler_flags queryFlags = new QueryHandler_flags();
-				ArrayList<String> flagsDesc = queryFlags.getFlags(utente_id);
-				
-				if(flagsDesc != null) {
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("descrizione", "ottenimento segnalazioni");
-					jsonResponse.add("avvisi", g.toJsonTree(flagsDesc));
-				}else {
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				}
-				
-			} 
-					
-		}catch(InvalidParameterException e) {
-			
-			response.setStatus(403);
-			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "non autorizzato");
-			System.out.println("not authorized token");
-			e.printStackTrace();
-		
-		}catch(Exception e) {
-			
+			}finally {
+				out.println(jsonResponse.toString());
+			}
+		}else {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "nessun risultato");
-			
-			System.out.println("no results");
-			e.printStackTrace();
-			
-		}finally {
-			out.println(jsonResponse.toString());
+			jsonResponse.addProperty("descrizione", "errore nella sintassi");
+		
 		}
+		
 		
 		out.println(jsonResponse.toString());
 	}
@@ -117,7 +127,7 @@ public class Segnalazioni extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		doGet(request, response);
+	
 	}
 
 }

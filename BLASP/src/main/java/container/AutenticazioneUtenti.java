@@ -20,11 +20,10 @@ import java.util.Map;
 import java.util.Properties;
 import jakarta.mail.*;
 import java.util.UUID;
-
 import org.eclipse.angus.mail.util.MailSSLSocketFactory;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import classes.Checks;
 import classes.JwtGen;
 import classes.QueryHandler;
 import de.mkammerer.argon2.Argon2;
@@ -32,7 +31,7 @@ import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 
 @WebServlet("/auth")
-public class AutenticazioneUtenti extends HttpServlet {
+public class AutenticazioneUtenti extends HttpServlet{
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -46,14 +45,12 @@ public class AutenticazioneUtenti extends HttpServlet {
     
 	private String passEncr(String password) {
 	    	
-	    	Argon2 argon2 = Argon2Factory.create(Argon2Types.ARGON2id);
-	    	String hash = argon2.hash(4, 1024 * 1024, 8, password);
-	
-	    	return hash;
-	  
+    	Argon2 argon2 = Argon2Factory.create(Argon2Types.ARGON2id);
+    	String hash = argon2.hash(4, 1024 * 1024, 8, password);
+
+    	return hash;	
 	    	
-	    	
-	    }
+	}
     
     public void sendEmailCode(String email, String code) throws GeneralSecurityException, MessagingException{
     	
@@ -99,62 +96,12 @@ public class AutenticazioneUtenti extends HttpServlet {
     	
     }
     
-    private boolean isConfirmedPassword(String password, String confirm_password) {
-  	   if(!password.equals(confirm_password)) {
-  		  System.out.println("password non coincidono ");
-  		   return false;
-     	   }
-  	   
-  	   return true;
-     }
-    
-    private boolean isValidEmail(String email) {
-     	
-     	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
-     	
-     	if((email.isBlank()) || (email.matches(regexPattern) == false)) {
-     		System.out.println("email errata");
-     		return false;
-     	}
-     	else 	
-     		return true;
-     }
-    
-    //Password check
-    public boolean isValidPassword(String password) {
-    	
-    	boolean hasLowerCase = false;
-    	boolean hasUpperCase = false;
-    	boolean hasDigit = false;
-    	boolean hasSpecialChar = false;
-    	String specialChars = "!?&$";
-    	
-    	for(int i=0; i < password.length(); i++) {
-    		char passwordChar = password.charAt(i);
-    		if(Character.isLowerCase(passwordChar))
-    			hasLowerCase = true;
-    		else if (Character.isUpperCase(passwordChar))
-    			hasUpperCase = true;
-    		else if(Character.isDigit(passwordChar)) 
-                hasDigit = true;
-            else if(specialChars.indexOf(passwordChar) != -1)
-                hasSpecialChar = true;
-      }
-    	
-    	if(password.length() > 8 && hasLowerCase && hasUpperCase && hasDigit && hasSpecialChar) 
-    		return true;
-    	else 
-    		return false;
-    	
-    }
-    
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		response.setStatus(405);
 	}
 
-	
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
@@ -190,19 +137,20 @@ public class AutenticazioneUtenti extends HttpServlet {
 		
 		
 		//controlli input
-		if(isValidPassword(password)) {
+		
+		if(Checks.isValidPassword(password) && Checks.isValidEmail(email)) {
 			
 			QueryHandler queryForThis = new QueryHandler();
 			
 			int hasEmail = queryForThis.hasEmail(email);
-			int user_id = queryForThis.getUserId(email);
-			String userStatus =  queryForThis.getUserStatus(user_id);
+			
 			
 			switch(hasEmail) {
 			
 				case 1:
-					
-					//pezzo da confermare
+				
+					int user_id = queryForThis.getUserId(email);
+					String userStatus =  queryForThis.getUserStatus(user_id);
 					if(userStatus.equals("none")) {
 						
 						int checkPass = queryForThis.checkPass(user_id, password);
@@ -319,7 +267,9 @@ public class AutenticazioneUtenti extends HttpServlet {
 		String action = user.get("action").getAsString();
 		String email = user.get("email").getAsString();
 		
-		if(isValidEmail(email)) {
+		String [] toCheck = {action};
+		
+		if(Checks.isValidEmail(email) && Checks.isNotBlank(toCheck)) {
 			
 			QueryHandler queryForThis = new QueryHandler();
 			int user_id = queryForThis.getUserId(email);
@@ -381,7 +331,7 @@ public class AutenticazioneUtenti extends HttpServlet {
 					
 					String new_pass = user.get("new_pass").getAsString();
 					String conf_pass = user.get("conf_new_pass").getAsString();
-					if(isValidPassword(new_pass) && isConfirmedPassword(new_pass, conf_pass)) {
+					if(Checks.isValidPassword(new_pass) && Checks.isConfirmedPassword(new_pass, conf_pass)) {
 						
 						String new_pass_encr = passEncr(new_pass);
 						int checkPass = queryForThis.changePass(user_id, new_pass_encr);

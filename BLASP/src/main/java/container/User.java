@@ -30,6 +30,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import classes.Checks;
 import classes.JwtGen;
 import classes.JwtVal;
 import classes.QueryHandler;
@@ -44,7 +45,6 @@ import classes.Utente;
 public class User extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;	
-	private String jwtToken;
 	
     /**
      * @see HttpServlet#HttpServlet()
@@ -60,206 +60,7 @@ public class User extends HttpServlet {
     	String hash = argon2.hash(4, 1024 * 1024, 8, password);
 
     	return hash;
-  
-    	
-    	
     }
-    
-    //Data format check
-    private boolean isValidDateOfBirth(String strDate)
-    {
-	 	/* Check if date is 'null' */
-	 	if (strDate.trim().equals(""))
-	 	{
-	 	    return false;
-	 	}
-	 	/* Date is not 'null' */
-	 	else
-	 	{
-	 	    /*
-	 	     * Set preferred date format,
-	 	     * For example MM-dd-yyyy, MM.dd.yyyy,dd.MM.yyyy etc.*/
-	 	    SimpleDateFormat sdfrmt = new SimpleDateFormat("yyyy-MM-dd");
-	 	    sdfrmt.setLenient(false);
-	 	    /* Create Date object
-	 	     * parse the string into date 
-	              */
-	 	    try
-	 	    {
-	 	        sdfrmt.parse(strDate); 
-	 	        System.out.println(strDate+" is valid date format");
-	 	    }
-	 	    /* Date format is invalid */
-	 	    catch (ParseException e)
-	 	    {
-	 	        System.out.println(strDate+" is Invalid Date format");
-	 	        return false;
-	 	    }
-	 	    /* Return true if date format is valid */
-	 	    return true;
-	 	}
-    }
-
-    //Age valid check
-    private boolean isValidAge(String date, int classe) {
-    	boolean result = false;
-    	int annoDataInput = Integer.parseInt(date.substring(0, 4)); //prende solo il primo valore (prime 4 cifre) quindi l'anno
-    	int currentYear = LocalDate.now().getYear();
-    	
-    	switch(classe) {
-    	case 5:
-    		if((currentYear - annoDataInput) >= 17)		
-    			result = true;
-    		break;
-    	case 4:
-    		if((currentYear - annoDataInput) >= 16)		
-    			result = true;
-    		break;
-    	case 3:
-    		if((currentYear - annoDataInput) >= 15)		
-    			result = true;
-    		break;
-    	case 2:
-    		if((currentYear - annoDataInput) >= 14)		
-    			result = true;
-    		break;
-    	case 1:
-    		if((currentYear - annoDataInput) >= 13)		
-    			result = true;
-    		break;
-    	}
-    	
-    	return result;
-    	
-    }
-    
-    //Location check
-    private boolean isValidLocation(String localita) {
-    	QueryHandler queryLocalita = new QueryHandler();
-    	
-    	switch(queryLocalita.hasLocalita(localita)) {
-    	
-    	case 1:
-    		return true;
-    	default:
-    		System.out.println("localita errata");
-    		return false;
-    	
-    	}
-    }
-        
-    
-  //School address check
-    private boolean isValidSTA(String indirizzo_scolastico) {
-    	
-		QueryHandler queryIndirizzo = new QueryHandler();
-    	String indirizzo_upperCase = indirizzo_scolastico.toUpperCase();
-    	switch(queryIndirizzo.hasIndirizzo(indirizzo_upperCase)) {
-    	
-    	case 1:
-    		return true;
-    	default:
-    		System.out.println("sta errata");
-    		return false;
-    	
-    	}
-    }
-    
-    //Email check (Aldini email)
-    private boolean isValidEmail(String email) {
-     	
-     	String regexPattern = "^[a-zA-Z]+\\.[a-zA-Z]+@(aldini\\.istruzioneer\\.it|avbo\\.it)$";
-     	
-     	if((email.isBlank()) || (email.matches(regexPattern) == false)) {
-     		System.out.println("email errata");
-     		return false;
-     	}
-     	else 	
-     		return true;
-     }
-    
-    //Confirm password check
-    private boolean isConfirmedPassword(String password, String confirm_password) {
- 	   if(!password.equals(confirm_password)) {
- 		  System.out.println("password non coincidono ");
- 		   return false;
-    	   }
- 	   
- 	   return true;
-    }
-    
-    //Name and Surname check
-    private boolean isValidNameAndSurname(String nome, String cognome, String email) {
-    	String nomeNormalizzato = Normalizer.normalize(nome.toLowerCase(), Normalizer.Form.NFD);
-    	String cognomeNormalizzato = Normalizer.normalize(cognome.toLowerCase(), Normalizer.Form.NFD);
-    	
-    	String nomeNoAccenti = nomeNormalizzato.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-    	String cognomeNoAccenti = cognomeNormalizzato.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-    	
-    	String nomeNoSpazi = nomeNoAccenti.replaceAll("\\s+","");
-    	String cognomeNoSpazi = cognomeNoAccenti.replaceAll("\\s+","");
-    	
-    	String nomeNoApostrofo = nomeNoSpazi.replaceAll("'", "");
-    	String cognomeNoApostrofo = cognomeNoSpazi.replaceAll("'", "");
-    	
-    	
-    	if(email.contains(nomeNoApostrofo) && email.contains(cognomeNoApostrofo))
-    		return true;
-    	else 
-    		System.out.println("nome errato");
-    		return false;
-    }
- 
-    
-    //Class check
-    private boolean isValidClass(int classe) {
-    	
-    	if(classe < 1 || classe > 5) {
-    		System.out.println("classe errata");
-    		return false;
-    	}else
-    		return true;
-    	
-    }
-    
-  //Empty input check
-   public boolean isNotBlank(String nome, String cognome) {
-  	   if(nome.isBlank() || cognome.isBlank()) {
-  		   System.out.println("campi vuoti");
-  		   return false;
-  	   }
-  	   return true;	   
-     }
-  
-    
-    //Password check
-    public boolean isValidPassword(String password) {
-    	
-    	boolean hasLowerCase = false;
-    	boolean hasUpperCase = false;
-    	boolean hasDigit = false;
-    	boolean hasSpecialChar = false;
-    	String specialChars = "!@#$%^&*(),.?\":{}|<>";
-    	
-    	for(int i=0; i < password.length(); i++) {
-    		char passwordChar = password.charAt(i);
-    		if(Character.isLowerCase(passwordChar))
-    			hasLowerCase = true;
-    		else if (Character.isUpperCase(passwordChar))
-    			hasUpperCase = true;
-    		else if(Character.isDigit(passwordChar)) 
-                hasDigit = true;
-            else if(specialChars.indexOf(passwordChar) != -1)
-                hasSpecialChar = true;
-      }
-    	
-    	if(password.length() > 8 && hasLowerCase && hasUpperCase && hasDigit && hasSpecialChar) 
-    		return true;
-    	else 
-    		System.out.println("password non conforme");
-    		return false;
-    }
-    
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -275,69 +76,78 @@ public class User extends HttpServlet {
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
 		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String [] toCheck = {jwtToken};
 		
-		final JwtVal validator = new JwtVal();
-		
-		try{
+		if(Checks.isNotBlank(toCheck)) {
 			
-			//se non viene autorizzato lancia eccezzione gestita nel catch sotto
-			DecodedJWT jwtDecoded = validator.validate(jwtToken);
+			final JwtVal validator = new JwtVal();
 			
-			String email = jwtDecoded.getClaim("sub-email").asString();
-			QueryHandler queryForThis = new QueryHandler();
-			int user_id = queryForThis.getUserId(email);
-			Utente userData = queryForThis.getUserData(user_id);
-			ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
-			int isAdmin = queryForThis.isUserAdmin(user_id);
-			
-			if(userData != null) {
+			try{
 				
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("desc", " ottenimento dati personali");
-				jsonResponse.add("user_info", g.toJsonTree(userData));
-				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
+				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
+				DecodedJWT jwtDecoded = validator.validate(jwtToken);
 				
-				switch(isAdmin) {
+				String email = jwtDecoded.getClaim("sub-email").asString();
+				QueryHandler queryForThis = new QueryHandler();
+				int user_id = queryForThis.getUserId(email);
+				Utente userData = queryForThis.getUserData(user_id);
+				ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
+				int isAdmin = queryForThis.isUserAdmin(user_id);
 				
-				case 0:
-					break;
+				if(userData != null) {
 					
-				case 1:
-					ArrayList<Utente> toBlock = queryForThis.getToBlock();
-					jsonResponse.add("to_block", g.toJsonTree(toBlock));
-					break;
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", " ottenimento dati personali");
+					jsonResponse.add("user_info", g.toJsonTree(userData));
+					jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
 					
-				default:
+					switch(isAdmin) {
+					
+					case 0:
+						break;
+						
+					case 1:
+						ArrayList<Utente> toBlock = queryForThis.getToBlock();
+						jsonResponse.add("to_block", g.toJsonTree(toBlock));
+						break;
+						
+					default:
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+						break;
+					}
+					
+				}else {
+					
 					response.setStatus(500);
 					jsonResponse.addProperty("stato", "errore server");
 					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-					break;
 				}
+			}catch(InvalidParameterException e) {
 				
-			}else {
+				response.setStatus(403);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "non autorizzato");
+				System.out.println("not authorized token");
+				e.printStackTrace();
 				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+			}catch(Exception e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
 			}
-		}catch(InvalidParameterException e) {
-			
-			response.setStatus(403);
-			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "non autorizzato");
-			System.out.println("not authorized token");
-			e.printStackTrace();
-			
-		}catch(Exception e) {
-			
+			finally {
+				out.println(jsonResponse.toString());
+			}
+		}else {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "nessun risultato");
+			jsonResponse.addProperty("descrizione", "sintassi errata");
 		}
-		finally {
-			out.println(jsonResponse.toString());
-		}
+		
 		
 		out.println(jsonResponse.toString());
 	}
@@ -380,7 +190,9 @@ public class User extends HttpServlet {
 		String indirizzo_scolastico = user.get("indirizzo").getAsString();
 		String localita = user.get("localita").getAsString();
 		
-		if(isNotBlank(nome, cognome) && isValidDateOfBirth(data_nascita) && isValidPassword(password) && isValidEmail(email) && isValidClass(classe) && isConfirmedPassword(password, confirm_password) && isValidNameAndSurname(nome, cognome, email) && isValidAge(data_nascita, classe) && isValidLocation(localita) && isValidSTA(indirizzo_scolastico)) {
+		if(Checks.isValidDateOfBirth(data_nascita) && Checks.isValidPassword(password) && Checks.isValidEmail(email) && Checks.isValidClass(classe) && 
+				Checks.isConfirmedPassword(password, confirm_password) && Checks.isValidNameAndSurname(nome, cognome, email) && 
+				Checks.isValidAge(data_nascita, classe) && Checks.isValidLocation(localita) && Checks.isValidSTA(indirizzo_scolastico)) {
 				/*
 				 * psw encryption
 				 */
@@ -489,159 +301,143 @@ public class User extends HttpServlet {
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		//acquisizione valore delle chiavi
 		boolean action_modifica_password = user.get("action_modificaPassword").getAsBoolean();
-		
+		String descrizione = user.get("descrizione").getAsString();
+		String localita = user.get("localita").getAsString();
+		int classe = user.get("classe").getAsInt();
+		String indirizzo = user.get("indirizzo").getAsString();
 		//Estrazione del token dall'header
-		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String[] toCheck = {jwtToken};
 		
-		final JwtVal validator = new JwtVal();
-		
-		try {
+		if( Checks.isValidClass(classe) && Checks.isValidLocation(localita) && Checks.isValidSTA(indirizzo) && Checks.isNotBlank(toCheck)/*altri controlli*/) {
 			
-			DecodedJWT jwt = validator.validate(jwtToken);
-		
-			String email = jwt.getClaim("sub-email").asString();
-			QueryHandler queryUser = new QueryHandler();
-			int user_id = queryUser.getUserId(email);
+			final JwtVal validator = new JwtVal();
 			
-		if(action_modifica_password) {
+			try {
+				
+				DecodedJWT jwt = validator.validate(jwtToken);
 			
-			//acquisizione valore delle chiavi
-			String descrizione = user.get("descrizione").getAsString();
-			String localita = user.get("localita").getAsString();
-			int classe = user.get("classe").getAsInt();
-			String indirizzo = user.get("indirizzo").getAsString();
-			String old_password = user.get("old_password").getAsString();
-			String new_password = user.get("new_password").getAsString();
-			String confirm_new_password = user.get("confirm_new_password").getAsString();
-			
-			if(isValidPassword(new_password) && isConfirmedPassword(new_password, confirm_new_password) && isValidClass(classe) && isValidLocation(localita)/* && isValidIndirizzo(indirizzo)*//*altri controlli*/) {
+				String email = jwt.getClaim("sub-email").asString();
+				QueryHandler queryUser = new QueryHandler();
+				int user_id = queryUser.getUserId(email);
 				
-				int checkPassword = queryUser.checkPass(user_id, old_password);
-				
-				if(checkPassword == 1) {
-				
-				/*
-				 * psw encryption
-				 */
-				String encryptedPass = passEncr(new_password);
-				
-				switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
-				
-				case 1:
+				if(action_modifica_password) {
 					
-					int cambio_psw = queryUser.changePass(user_id, encryptedPass);
+					//acquisizione valore delle chiavi
 					
-					if(cambio_psw == 1) {
+					String old_password = user.get("old_password").getAsString();
+					String new_password = user.get("new_password").getAsString();
+					String confirm_new_password = user.get("confirm_new_password").getAsString();
+					if(Checks.isValidPassword(new_password) && Checks.isConfirmedPassword(new_password, confirm_new_password)) {
 						
-						response.setStatus(200);
-						jsonResponse.addProperty("stato", "confermato");
-						jsonResponse.addProperty("desc", "dati utente e psw modificati");
+						int checkPassword = queryUser.checkPass(user_id, old_password);
+						
+						if(checkPassword == 1) {
+						
+						/*
+						 * psw encryption
+						 */
+						String encryptedPass = passEncr(new_password);
+						
+						switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
+						
+						case 1:
+							
+							int cambio_psw = queryUser.changePass(user_id, encryptedPass);
+							
+							if(cambio_psw == 1) {
+								
+								response.setStatus(200);
+								jsonResponse.addProperty("stato", "confermato");
+								jsonResponse.addProperty("desc", "dati utente e psw modificati");
+								
+							}else {
+								response.setStatus(500);
+								jsonResponse.addProperty("stato", "errore server");
+								jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+							}
+							
+							break;
+							
+						default:
+							
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+							break;
+						
+						}
+						
+						}else if(checkPassword == 0) {
+							
+							response.setStatus(401);
+							jsonResponse.addProperty("stato", "errore client");
+							jsonResponse.addProperty("descrizione", "credenziali non valide");
+							
+						}else {
+							
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+						}
 						
 					}else {
-						
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 					}
 					
-					break;
 					
-				default:
 					
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				}else{
 					
-					break;
+					switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
 					
-				
-				
+						case 1:
+							
+							response.setStatus(200);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("desc", "dati utente e psw modificati");
+							
+							break;
+							
+						default:
+								
+							response.setStatus(500);
+							jsonResponse.addProperty("stato", "errore server");
+							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+							
+							break;
+					
+						}
 				}
+			
+			}catch(InvalidParameterException e) {
 				
-				}else if(checkPassword == 0) {
-					
-					response.setStatus(401);
-					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("descrizione", "credenziali non valide");
-					
-				}else {
-					
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-					
-				}
-				
-			}else {
+				response.setStatus(403);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "non autorizzato");
+				System.out.println("not authorized token");
+				e.printStackTrace();
+		
+			}catch(Exception e) {
 				
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
 				
+				System.out.println("not created");
+				e.printStackTrace();
+				
+			}finally {
+				out.println(jsonResponse.toString());
 			}
-			
-			
-		}else{
-			
-			//acquisizione valore delle chiavi
-			String descrizione = user.get("descrizione").getAsString();
-			String localita = user.get("localita").getAsString();
-			int classe = user.get("classe").getAsInt();
-			String indirizzo = user.get("indirizzo").getAsString();
-			
-			if(isValidLocation(localita)) {
-			
-			switch(queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo)) {
-			
-			case 1:
-				
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("desc", "dati utente e psw modificati");
-				
-				break;
-				
-			default:
-					
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				
-				break;
-			
-			}
-			
-			
-			}else {
-			
+		}else {
 			 response.setStatus(400);
 			 jsonResponse.addProperty("stato", "errore client");
 			 jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
-			
-			}	
 		}
 		
-		}catch(InvalidParameterException e) {
-			
-			response.setStatus(403);
-			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "non autorizzato");
-			System.out.println("not authorized token");
-			e.printStackTrace();
-	
-		}catch(Exception e) {
-			
-			response.setStatus(400);
-			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "nessun risultato");
-			
-			System.out.println("not created");
-			e.printStackTrace();
-			
-		}finally {
-			out.println(jsonResponse.toString());
-		}
 		
 		out.println(jsonResponse.toString());
 		

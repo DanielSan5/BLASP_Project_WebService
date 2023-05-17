@@ -266,33 +266,32 @@ public class QueryHandler {
 		}
 	
 	//***BLOCCAGGIO UTENTE***
-		public int blockUser(int user_id) {
+	public int blockUser(int user_id) {
 				
-				establishConnection();
-				String prepared_query = "UPDATE utenti SET UT_stato = 'bloccato' WHERE UT_id = ?";		
-				try(
-						java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-						){
-						
-						pr.setInt(1, user_id);
-						
-						//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
-						int check = pr.executeUpdate();
-						
-						conn.close();
-						
-						return check;
-					
-					}catch(SQLException e){
-						
-						System.out.println(e.getLocalizedMessage());
-						return -1;
-					
-					}
+		establishConnection();
+		String prepared_query = "UPDATE utenti SET UT_stato = 'bloccato' WHERE UT_id = ?";		
+		try(
+				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+				){
 				
+				pr.setInt(1, user_id);
+				
+				//executeUpdate returna o 1 se � andato a buonfine o 0 se non � andato a buonfine
+				int check = pr.executeUpdate();
+				
+				conn.close();
+				
+				return check;
+			
+			}catch(SQLException e){
+				
+				System.out.println(e.getLocalizedMessage());
+				return -1;
+			
 			}
-		
-	
+				
+	}
+			
 	//Controllo se la località inserita esiste
 	public int hasLocalita(String localita) {
 		
@@ -322,32 +321,32 @@ public class QueryHandler {
 	}
 	
 	//Controllo se l'indirizzo di studio inserito esiste
-		public int hasIndirizzo(String indirizzo) {
+	public int hasIndirizzo(String indirizzo) {
 			
-			establishConnection();
-			String prepared_query = "SELECT * FROM indirizzo_scolastico WHERE INS_nome = ?";
+		establishConnection();
+		String prepared_query = "SELECT * FROM indirizzo_scolastico WHERE INS_nome = ?";
+		
+		try(
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			){
 			
-			try(
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				){
-				
-				pr.setString(1, indirizzo);
-				
-				ResultSet res = pr.executeQuery();
-				
-				boolean check = res.next();
-				
-				conn.close();
-				return check ? 1 : 0; //se check true returna 1 altrimenti 0
+			pr.setString(1, indirizzo);
 			
-			}catch(SQLException e){
-				
-				System.out.println(e.getLocalizedMessage());
-				return -1;
+			ResultSet res = pr.executeQuery();
 			
-			}
+			boolean check = res.next();
 			
+			conn.close();
+			return check ? 1 : 0; //se check true returna 1 altrimenti 0
+		
+		}catch(SQLException e){
+			
+			System.out.println(e.getLocalizedMessage());
+			return -1;
+		
 		}
+			
+	}
 	
 	//Controllo lo stato dell'utente --> DA CONFERMARE
 	public String getUserStatus(int user_id) {

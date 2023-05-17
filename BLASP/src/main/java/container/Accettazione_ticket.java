@@ -15,6 +15,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import classes.Checks;
 import classes.JwtVal;
 import classes.QueryHandler;
 import classes.QueryHandler_filters;
@@ -27,24 +28,7 @@ import classes.Ticket;
 public class Accettazione_ticket extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	private String jwtToken;   
-	
-	
-	 //Empty input check
-	   public boolean isNotBlank(int numero_ticket) {
-	  	   if(numero_ticket == 0) {
-	  		   return false;
-	  	   }
-	  	   return true;	   
-	     }
-	
-	 //Authorization empty check
-		private boolean isValidAuthorization() {
-			if(jwtToken == null || jwtToken.isBlank())
-				return false;
-			else 
-				return true;
-		}
+	  
     /**
      * @see HttpServlet#HttpServlet()
      */
@@ -91,15 +75,17 @@ public class Accettazione_ticket extends HttpServlet {
 		JsonObject user = g.fromJson(body, JsonObject.class);
 		
 		//Estrazione del token dall'header
-		jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		
 		//acquisizione delle chiavi
-		int numeroTicket = user.get("numero_ticket").getAsInt();	
+		String numeroTicket = user.get("numero_ticket").getAsString();	
 		
-		if(isValidAuthorization() && isNotBlank(numeroTicket)) {
+		String [] toCheck = {jwtToken, numeroTicket};
+		
+		if(Checks.isNotBlank(toCheck)) {
 		
 			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-			int hasTicketId = queryForThis.hasTicketId(numeroTicket);
+			int hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
 			
 			final JwtVal validator = new JwtVal();
 			
@@ -120,14 +106,14 @@ public class Accettazione_ticket extends HttpServlet {
 					case 1:
 						
 						//esecuzione della query
-						int accettazioneTicket = queryForThis.modificaStatoTicket(user_id, numeroTicket);
+						int accettazioneTicket = queryForThis.modificaStatoTicket(user_id, Integer.parseInt(numeroTicket));
 						
 						if(accettazioneTicket == 1) {
 							response.setStatus(200);
 							jsonResponse.addProperty("stato", "confermato");
 							jsonResponse.addProperty("desc", "stato modificato");
 							
-							Ticket ticket_info = queryForThis.getTicketFromId(numeroTicket);
+							Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
 							
 							if(ticket_info == null) {
 								response.setStatus(400);
