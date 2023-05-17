@@ -38,29 +38,19 @@ public class QueryHandler {
 		
 	}
 	
-	public int hasEmail(String email) {
+	public boolean hasEmail(String email) throws SQLException {
 
 		
 		establishConnection();
 		String prepared_query = "SELECT * FROM utenti WHERE UT_email = ?";
-		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			pr.setString(1, email);
-			ResultSet res = pr.executeQuery();
-			//per controllare se l'email esiste basta vedere il risultato di next(), sar� false se non esistono righe
-			boolean check = res.next();
-			conn.close();
-			return check ? 1 : 0; //se check true returna 1 altrimenti 0
-		
-		}catch(SQLException e){
-			e.printStackTrace();
-			System.out.println("aa");
-			System.out.println(e.getLocalizedMessage());
-			return -1;
-		}
+	
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		pr.setString(1, email);
+		ResultSet res = pr.executeQuery();
+		//per controllare se l'email esiste basta vedere il risultato di next(), sar� false se non esistono righe
+		boolean check = res.next();
+		conn.close();
+		return check; 
 		
 	}
 	

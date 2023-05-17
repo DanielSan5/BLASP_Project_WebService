@@ -11,6 +11,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -26,6 +29,7 @@ import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 
+import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -196,71 +200,64 @@ public class User extends HttpServlet {
 				/*
 				 * psw encryption
 				 */
-				String encryptedPass = passEncr(password);
-				QueryHandler queryForThis = new QueryHandler();
+			String encryptedPass = passEncr(password);
+			QueryHandler queryForThis = new QueryHandler();
+			
+			try {
 				
-				int hasEmail = queryForThis.hasEmail(email); 
+				boolean hasEmail = queryForThis.hasEmail(email); 
 				
-				switch(hasEmail) {
-				
-					case 1:
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("descrizione", "utente gia esistente");
-						break;
-					case 0:
-						int inserted = queryForThis.inserisciUtente(email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+				if(hasEmail) {
+					
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("descrizione", "utente gia esistente");
 						
-						if(inserted != -1) {
-							
-							JsonObject jwtFormat = new JsonObject();
-							//jwtFormat.addProperty("sub", username);
-							jwtFormat.addProperty("sub-email", email);
-							jwtFormat.addProperty("aud", "*");
-							
-							try {
-								
-								JwtGen generator = new JwtGen();
-								Map<String, String> claims = new HashMap<>();
-								
-								jwtFormat.keySet().forEach(keyStr ->
-							    {
-							        String keyvalue = jwtFormat.get(keyStr).getAsString();
-							        claims.put(keyStr, keyvalue);
-							      
-							    });
-								
-								String token = generator.generateJwt(claims);
-								response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
-								response.setStatus(201);
-								jsonResponse.addProperty("stato", "confermato");
-								jsonResponse.addProperty("desc", "utente creato");
-								
-							} catch (Exception e) {
-								
-								response.setStatus(500);
-								jsonResponse.addProperty("stato", "errore server");
-								jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-								e.printStackTrace();
-							}finally {
-								
-								out.println(jsonResponse.toString());
-							}
-						}else {
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-							out.println(jsonResponse.toString());
-						}
-						break;
+				}else {
+					
+					int inserted = queryForThis.inserisciUtente(email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+					
+					if(inserted == 1) {
 						
-					default:
+						JsonObject jwtFormat = new JsonObject();
+						//jwtFormat.addProperty("sub", username);
+						jwtFormat.addProperty("sub-email", email);
+						jwtFormat.addProperty("aud", "*");
+						
+						JwtGen generator = new JwtGen();
+						Map<String, String> claims = new HashMap<>();
+						
+						jwtFormat.keySet().forEach(keyStr ->
+					    {
+					        String keyvalue = jwtFormat.get(keyStr).getAsString();
+					        claims.put(keyStr, keyvalue);
+					      
+					    });
+						
+						String token = generator.generateJwt(claims);
+						response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+						response.setStatus(201);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("desc", "utente creato");
+							
+						
+					}else {
 						response.setStatus(500);
 						jsonResponse.addProperty("stato", "errore server");
 						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						out.println(jsonResponse.toString());
-						break;
+						
+					}
 				}
+				
+			}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				e.printStackTrace();
+			}finally {
+				out.println(jsonResponse.toString());
+			}
+			
 		}else {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
@@ -268,7 +265,6 @@ public class User extends HttpServlet {
 			out.println(jsonResponse.toString());
 		}
 		
-	
 		out.println(jsonResponse.toString());
 			
 				

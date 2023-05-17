@@ -13,6 +13,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
+import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,6 +24,8 @@ import java.util.Properties;
 import jakarta.mail.*;
 import java.util.UUID;
 import org.eclipse.angus.mail.util.MailSSLSocketFactory;
+
+import com.auth0.jwt.exceptions.JWTCreationException;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import classes.Checks;
@@ -96,12 +101,10 @@ public class AutenticazioneUtenti extends HttpServlet{
     	
     }
     
-
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		response.setStatus(405);
 	}
-
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
@@ -142,12 +145,10 @@ public class AutenticazioneUtenti extends HttpServlet{
 			
 			QueryHandler queryForThis = new QueryHandler();
 			
-			int hasEmail = queryForThis.hasEmail(email);
-			
-			
-			switch(hasEmail) {
-			
-				case 1:
+			try {
+				boolean hasEmail = queryForThis.hasEmail(email);
+				
+				if(hasEmail) {
 				
 					int user_id = queryForThis.getUserId(email);
 					String userStatus =  queryForThis.getUserStatus(user_id);
@@ -158,7 +159,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 						if(checkPass == 1) {
 								
 							//generazione jwt per la sessione
-							try {
+							
 								
 								JwtGen generator = new JwtGen();
 								Map<String, String> claims = new HashMap<>();
@@ -175,15 +176,6 @@ public class AutenticazioneUtenti extends HttpServlet{
 								response.setStatus(200);
 								jsonResponse.addProperty("stato", "confermato");
 								jsonResponse.addProperty("desc", "utente autorizzato");
-								
-							} catch (Exception e) {
-								response.setStatus(500);
-								jsonResponse.addProperty("stato", "errore server");
-								jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-								e.printStackTrace();
-							}finally {
-								out.println(jsonResponse.toString());
-							}
 						
 						}else if (checkPass == 0){
 							
@@ -216,27 +208,29 @@ public class AutenticazioneUtenti extends HttpServlet{
 						jsonResponse.addProperty("stato", "errore server");
 						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 					}
-					break;
-				case 0:
+				}else {
 					response.setStatus(400);
 					jsonResponse.addProperty("stato", "errore client");
 					jsonResponse.addProperty("descrizione", "errore nella sintassi");
-					break;
-					
-				default:
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-					break;
+						
+				}
+				
+				
+			}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				e.printStackTrace();
+			}finally {
+				out.println(jsonResponse.toString());
 			}
-			
-			
+
 		}else {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "errore nella sintassi");
 		}
-
 		
 		out.println(jsonResponse.toString());
 		
@@ -279,33 +273,30 @@ public class AutenticazioneUtenti extends HttpServlet{
 			
 				case "email_info":
 					
-					int check = queryForThis.hasEmail(email);
-					
-					if(check == 1) {
+					try {
 						
+						boolean hasEmail = queryForThis.hasEmail(email);
 						
-						String ver_code = UUID.randomUUID().toString();
-						
-						if(queryForThis.inserisciCodice(user_id, ver_code) == 1) {
-							
-							try {
+						if(hasEmail) {
 								
+							String ver_code = UUID.randomUUID().toString();
+							
+							if(queryForThis.inserisciCodice(user_id, ver_code) == 1) {
 								sendEmailCode(email, ver_code);
-								//da testare
-							} catch (GeneralSecurityException | MessagingException e) {
+								
+							}else {
 								//errore database
-								e.printStackTrace();
 							}
 							
-						}else {
-							//errore database
+						}else{
+							//email inesistente
 						}
 						
-					}else if(check == 0){
-						//email inesistente
-					}else {
+					}catch(GeneralSecurityException | MessagingException | SQLException e) {
 						//errore database
+						e.printStackTrace();
 					}
+						
 					break;
 					
 				case "ver_code":
