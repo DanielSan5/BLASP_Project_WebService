@@ -12,6 +12,8 @@ import java.io.PrintWriter;
 import java.security.InvalidParameterException;
 import java.sql.SQLException;
 
+import javax.security.auth.login.CredentialNotFoundException;
+
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -106,28 +108,20 @@ public class Accettazione_ticket extends HttpServlet {
 						case 1:
 							
 							//esecuzione della query
-							int accettazioneTicket = queryForThis.modificaStatoTicket(user_id, Integer.parseInt(numeroTicket));
+							queryForThis.modificaStatoTicket(user_id, Integer.parseInt(numeroTicket));
 							
-							if(accettazioneTicket == 1) {
-								response.setStatus(200);
-								jsonResponse.addProperty("stato", "confermato");
-								jsonResponse.addProperty("desc", "stato modificato");
-								
-								Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
-								
-								if(ticket_info == null) {
-									response.setStatus(400);
-									jsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
-								}
-								
-								jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
-								
-							}else if(accettazioneTicket == 0 || accettazioneTicket == -1) {
+							response.setStatus(200);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("desc", "stato modificato");
+							
+							Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
+							
+							if(ticket_info == null) {
 								response.setStatus(400);
-								jsonResponse.addProperty("stato", "errore client");
-								jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+								jsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
 							}
 							
+							jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
 							break;
 						case 0:
 							response.setStatus(400);
@@ -158,20 +152,13 @@ public class Accettazione_ticket extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			}catch(SQLException e) {
+			}catch(SQLException | NumberFormatException | CredentialNotFoundException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-				System.out.println("no results");
 				e.printStackTrace();
 				
-			} catch (NumberFormatException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}finally {
 				out.println(jsonResponse.toString());
 			}

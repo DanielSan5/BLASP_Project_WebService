@@ -10,11 +10,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import javax.security.auth.login.CredentialNotFoundException;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -91,6 +94,7 @@ public class Tickets extends HttpServlet {
 				 * CNM -> classe, nome e materia
 				 */
 				List<Ticket> tickets = new ArrayList<Ticket>();
+				
 				if(filters.containsKey("localita") && filters.containsKey("classe")) {
 					tickets = queryForThis.getLCM(filters.get("localita").toString(), filters.get("classe").toString(), 
 							filters.get("materia").toString());
@@ -117,23 +121,14 @@ public class Tickets extends HttpServlet {
 					tickets = queryForThis.getM(filters.get("materia").toString());
 				}
 				
-				if(tickets == null) {
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				}else if(tickets.isEmpty()){
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("descrizione", "ricerca filtrata");
-					jsonResponse.addProperty("filtered", "nessun risultato");
-				}else {
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("descrizione", "ricerca filtrata");
-					jsonResponse.add("filtered", g.toJsonTree(tickets));	
-				}
+			
+				response.setStatus(200);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("descrizione", "ricerca filtrata");
+				jsonResponse.add("filtered", g.toJsonTree(tickets));	
 				
-			}catch(InvalidParameterException e) {
+				
+			}catch(InvalidParameterException  e) {
 				
 				response.setStatus(403);
 				jsonResponse.addProperty("stato", "errore client");
@@ -141,7 +136,23 @@ public class Tickets extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
-			}finally {
+			}catch(SQLException e) {
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+			
+				e.printStackTrace();
+				
+			} catch (NoSuchFieldException e) {
+				
+				response.setStatus(200);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("descrizione", "ricerca filtrata");
+				jsonResponse.addProperty("filtered", "nessun risultato");
+				e.printStackTrace();
+			}
+			finally {
 				out.println(jsonResponse.toString());
 			}
 			
@@ -341,30 +352,19 @@ public class Tickets extends HttpServlet {
 				if(hasTicketId) {
 					
 					//esecuzione della query (void)
-					int modificaDatiTicket = queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTag);
-					
-					if(modificaDatiTicket == 1) {
-						response.setStatus(200);
-						jsonResponse.addProperty("desc", "ticket modificato");
-						jsonResponse.addProperty("stato", "confermato");
-					}else if(modificaDatiTicket == 0 || modificaDatiTicket == -1) {
-						response.setStatus(400);
-						jsonResponse.addProperty("desc", "errore modifica ticket");
-						jsonResponse.addProperty("stato", "errore");
-					}
+					queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTag);
+
+					response.setStatus(200);
+					jsonResponse.addProperty("desc", "ticket modificato");
+					jsonResponse.addProperty("stato", "confermato");
 					
 					Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
-					
-					if(ticket_info == null) {
-						response.setStatus(400);
-						jsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
-					}
 					jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
 	
 				}else {
 					
 					response.setStatus(400);
-					jsonResponse.addProperty("stato", "errore");
+					jsonResponse.addProperty("stato", "errore client");
 					jsonResponse.addProperty("desc", "ticket inesistente");
 					
 				}
@@ -383,14 +383,11 @@ public class Tickets extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		}catch(Exception e) {
-			
+		} catch (NumberFormatException | SQLException | CredentialNotFoundException e) {
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
-			jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-			System.out.println("no results");
+			jsonResponse.addProperty("desc", "errore nell'elaborazione della richiesta");
 			e.printStackTrace();
-			
 		}finally {
 			out.println(jsonResponse.toString());
 		}
