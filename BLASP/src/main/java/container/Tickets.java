@@ -218,7 +218,7 @@ public class Tickets extends HttpServlet {
 					default:
 						QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
 						
-						int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa, user_id);
+						int id_ticket = queryForThis.inserisciTicketOttieniID(materia, livello_materia, descrizione, dataStringa, user_id);
 						
 						if(id_ticket == 0){
 							response.setStatus(500);
@@ -332,56 +332,43 @@ public class Tickets extends HttpServlet {
 			if(Checks.isValidTag(valoreTag) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
 		
 				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-				int hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
+				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
 				
 				final JwtVal validator = new JwtVal();
 
 				validator.validate(jwtToken);
 				
-				switch(hasTicketId) {
-					case 1:
-						
-						//esecuzione della query
-						int modificaDatiTicket = queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTag);
-						
-						if(modificaDatiTicket == 1) {
-							response.setStatus(200);
-							jsonResponse.addProperty("desc", "ticket modificato");
-							jsonResponse.addProperty("stato", "confermato");
-						}else if(modificaDatiTicket == 0 || modificaDatiTicket == -1) {
-							response.setStatus(400);
-							jsonResponse.addProperty("desc", "errore modifica ticket");
-							jsonResponse.addProperty("stato", "errore");
-						}
-						
-						Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
-						
-						if(ticket_info == null) {
-							response.setStatus(400);
-							jsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
-						}
-						jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
-						break;
+				if(hasTicketId) {
 					
-					case 0:
-						
+					//esecuzione della query (void)
+					int modificaDatiTicket = queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTag);
+					
+					if(modificaDatiTicket == 1) {
+						response.setStatus(200);
+						jsonResponse.addProperty("desc", "ticket modificato");
+						jsonResponse.addProperty("stato", "confermato");
+					}else if(modificaDatiTicket == 0 || modificaDatiTicket == -1) {
 						response.setStatus(400);
+						jsonResponse.addProperty("desc", "errore modifica ticket");
 						jsonResponse.addProperty("stato", "errore");
-						jsonResponse.addProperty("desc", "ticket inesistente");
-						
-						
-						break;
-						
-					case -1:
-						
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-						
-						break;
-						
+					}
+					
+					Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
+					
+					if(ticket_info == null) {
+						response.setStatus(400);
+						jsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
+					}
+					jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
+	
+				}else {
+					
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore");
+					jsonResponse.addProperty("desc", "ticket inesistente");
 					
 				}
+				
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -442,41 +429,26 @@ public class Tickets extends HttpServlet {
 		if(Checks.isNotBlank(toCheck)) {
 			
 			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-			int hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
-			
-			final JwtVal validator = new JwtVal();
 			
 			try{
+					
+				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
+				
+				final JwtVal validator = new JwtVal();
+			
 				
 				validator.validate(jwtToken);
 				
-				switch(hasTicketId) {
+				if(hasTicketId) {
+			
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "ticket cancellato");
 				
-					case 1:
-						
-						response.setStatus(200);
-						jsonResponse.addProperty("stato", "confermato");
-						jsonResponse.addProperty("desc", "ticket cancellato");
-					
-						break;
-					
-					case 0:
-						
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
-						
-						
-						break;
-						
-					case -1:
-						
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-						
-						break;
-					
+				}else {
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 				}
 			
 			}catch(InvalidParameterException e) {

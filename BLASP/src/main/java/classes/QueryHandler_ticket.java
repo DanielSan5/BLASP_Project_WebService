@@ -7,6 +7,7 @@ import java.sql.SQLException;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mysql.jdbc.exceptions.MySQLDataException;
 
 import container.Tickets;
 
@@ -37,95 +38,86 @@ public class QueryHandler_ticket {
 		
 	}
 	
-//***INSERISCI TICKET***
-	public int inserisciTicket(String materia, String livello_materia, String descrizione, String dataCreazione, int userID) {
+	//***INSERISCI TICKET***
+	public int inserisciTicketOttieniID(String materia, String livello_materia, String descrizione, String dataCreazione, int userID) throws SQLException {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO utenti (TIC_materia, TIC_livello_materia, TIC_descrizione, TIC_data_cr, UT_id_apertura) VALUES (?, ?, ?, ?, ?)";
+		String prepared_query = "INSERT INTO tickets (TIC_materia, TIC_livello_materia, TIC_descrizione, TIC_data_cr, UT_id_apertura) VALUES (?, ?, ?, ?, ?)";
 		
-		try(
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				){
-				
-				pr.setString(1, materia);
-				pr.setString(2, livello_materia);
-				pr.setString(3, descrizione);
-				pr.setString(4, dataCreazione);
-				pr.setInt(5, userID);
-				//DA CAPIRE LA DATA DI CREAZIONE
-				
-				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
-				int check = pr.executeUpdate();
-				
-				if (check == 1) {
-					if(pr.getGeneratedKeys().next()) {
-						conn.close();
-						return pr.getGeneratedKeys().getInt(1);
-					}else {
-						conn.close();
-						return 0;
-					}
-				
-				}else {
-					return 0;
-				}
+
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		
+		pr.setString(1, materia);
+		pr.setString(2, livello_materia);
+		pr.setString(3, descrizione);
+		pr.setString(4, dataCreazione);
+		pr.setInt(5, userID);
+		//DA CAPIRE LA DATA DI CREAZIONE
+		
+		
+		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+		
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not create row in utenti");
+		}else {
 			
-			}catch(SQLException e){
-				
-				System.out.println(e.getLocalizedMessage());
-				return -1;
-			
+			if(pr.getGeneratedKeys().next()) {
+				conn.close();
+				return pr.getGeneratedKeys().getInt(1);
+			}else {
+				conn.close();
+				return 0;
 			}
+		}
+		
+		
+	
+			
+			
 		
 	}
 	
-	public int saveFavourites(int ticket_id, int user_id) {
+	public void saveFavourites(int ticket_id, int user_id) throws SQLException {
 		
 		establishConnection();
 		String prepared_query = "INSERT INTO preferiti (UT_id, TIC_id) VALUES (?, ?)";
 		
-		try(
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				){
-				
-				pr.setInt(1, ticket_id);
-				pr.setInt(2, user_id);
-				
-				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
-				return pr.executeUpdate();
+		
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		
+		pr.setInt(1, ticket_id);
+		pr.setInt(2, user_id);
+		
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not create row in utenti");
+		}
+	
 			
-			}catch(SQLException e){
-				
-				System.out.println(e.getLocalizedMessage());
-				return -1;
-			
-			}
 	}
 
 	//***CONTROLLA SE ESISTE L'ID DI UN TICKET***
-	public int hasTicketId(int ticket_id) {
+	public boolean hasTicketId(int ticket_id) throws SQLException {
 		
 		establishConnection();
 		String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ?";
 		
-		try(
-			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
-			
-			pr.setInt(1, ticket_id);
-			ResultSet res = pr.executeQuery();
-			//per controllare se il ticket esiste basta vedere il risultato di next(), sar  false se non esistono righe
-			boolean check = res.next();
-			conn.close();
-			return check ? 1 : 0; //se check true returna 1 altrimenti 0
+		
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		
+		
+		pr.setInt(1, ticket_id);
+		ResultSet res = pr.executeQuery();
+		//per controllare se il ticket esiste basta vedere il risultato di next(), sar  false se non esistono righe
+		boolean check = res.next();
+		conn.close();
+		
+		return check; //se check true returna 1 altrimenti 0
 			
 			
 		
-		}catch(SQLException e){
-			e.printStackTrace();
-			System.out.println(e.getLocalizedMessage());
-			return -1;
-		}
 		
 	}
 	
