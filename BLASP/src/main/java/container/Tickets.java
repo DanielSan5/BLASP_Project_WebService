@@ -132,6 +132,7 @@ public class Tickets extends HttpServlet {
 					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 					
 					tickets = queryForThis.getM(filtroMateria);
+					
 				}
 				
 				if(tickets == null) {
