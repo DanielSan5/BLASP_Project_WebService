@@ -169,6 +169,28 @@ public class QueryHandler_flags {
 		
 	}
 	
+	public boolean hasNotThreeFlags(int user_id) throws SQLException{
+		
+		establishConnection();
+		String prepared_query = "SELECT COUNT(*) as numeroSegnalazioni FROM segnalazione WHERE UT_id_segnalato = ? GROUP BY UT_id_segnalato";
+		
+		
+			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			
+			
+			pr.setInt(1, user_id);
+			ResultSet res = pr.executeQuery();
+			
+			if(res.getInt("numeroSegnalazioni") >= 3) {
+				return false;
+			
+			}else {
+				return true;
+			}
+			
+		
+	}
+	
 	//***INSERISCI SEGNALAZIONE***
 	public int inserisciSegnalazioneGetId(int user_segnalato_id, int user_segnalatore_id, String segnalazioni) throws SQLException, CredentialNotFoundException{
 		

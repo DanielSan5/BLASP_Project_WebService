@@ -19,6 +19,9 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,6 +46,7 @@ import classes.JwtVal;
 import classes.QueryHandler;
 import classes.Ticket;
 import classes.Utente;
+
 
 /**
  * Servlet implementation class RegistrazioneUtenti
@@ -228,8 +232,13 @@ public class User extends HttpServlet {
 				      
 				    });
 					
+					LocalDate oggi = LocalDate.now();
+					LocalDate domani = oggi.plusDays(1);
+					ZonedDateTime domaniUTC = domani.atStartOfDay(ZoneId.of("UTC"));
+					String domaniUTCFormatted = domaniUTC.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+					
 					String token = generator.generateJwt(claims);
-					response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+					response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure; exp=" + domaniUTCFormatted);
 					response.setStatus(201);
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("desc", "utente creato");

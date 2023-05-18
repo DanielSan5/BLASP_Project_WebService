@@ -117,6 +117,30 @@ public class QueryHandler {
 			
 			
 	}
+	
+	//CONTROLLO SE L'UTENTE È BLOCCATO
+	public boolean isNotBlockedUser(int user_id) throws SQLException{
+			
+		establishConnection();
+		String prepared_query = "SELECT UT_email FROM utenti WHERE UT_id = ? AND UT_stato = 'blocked'";
+			
+			
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			
+			
+		pr.setInt(1, user_id);
+		ResultSet res = pr.executeQuery();
+		if(res.next()) {
+				
+			return false;
+				
+		}else {
+			return true;
+		}
+				
+				
+				
+	}
 		
 
 	

@@ -79,6 +79,8 @@ public class BloccaggioUtente extends HttpServlet {
 			//Estrazione del token dall'header
 			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String toBlock_email = user.get("email").getAsString();
+			QueryHandler queryUser = new QueryHandler();
+			
 			
 			String [] toCheck = {jwtToken};
 			final JwtVal validator = new JwtVal();
@@ -87,7 +89,7 @@ public class BloccaggioUtente extends HttpServlet {
 				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
 				String email = jwtDecoded.getClaim("sub-email").asString();
 				
-				QueryHandler queryUser = new QueryHandler();
+				
 				int userAdmin_id = queryUser.getUserId(email);	
 				boolean isAdmin = queryUser.isUserAdmin(userAdmin_id);
 				

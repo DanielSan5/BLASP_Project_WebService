@@ -145,16 +145,17 @@ public class Segnalazioni extends HttpServlet {
 			//Estrazione del token dall'header
 			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String[] toCheck = {jwtToken, email};
-	
 			
-			if(Checks.isNotBlank(toCheck) && Checks.isValidEmail(email)) {
+			QueryHandler queryUser = new QueryHandler();
+			int user_seg_id = queryUser.getUserId(email);
+			
+			if(Checks.isNotBlank(toCheck) && Checks.isValidEmail(email) && Checks.isNotBlockedUser(user_seg_id) && Checks.hasNotThreFlags(user_seg_id)) {
 				
 				final JwtVal validator = new JwtVal();
 
 				DecodedJWT jwt = validator.validate(jwtToken);
 				String segnalatore_email = jwt.getClaim("sub-email").asString();
 				
-				QueryHandler queryUser = new QueryHandler();
 				int user_segnalatore_id = queryUser.getUserId(segnalatore_email);
 				int user_segnalato_id = queryUser.getUserId(email);
 				
