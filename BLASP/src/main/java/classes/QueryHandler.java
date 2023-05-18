@@ -442,7 +442,7 @@ public class QueryHandler {
 
 		
 		establishConnection();
-		String prepared_query = "SELECT COUNT(*) as num_flags, u.UT_email, u.UT_nome, u.UT_cognome"
+		String prepared_query = "SELECT COUNT(*) as num_flags, u.UT_email, u.UT_nome, u.UT_cognome, u.UT_classe"
 				+ " FROM utenti u INNER JOIN segnalazione s ON u.UT_id = s.UT_id_segnalato GROUP BY u.UT_id";
 		ArrayList<Utente> toBlock = new ArrayList<Utente>();
 		
