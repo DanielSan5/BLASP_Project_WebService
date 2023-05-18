@@ -10,6 +10,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.sql.SQLException;
+
+import javax.security.auth.login.CredentialNotFoundException;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -77,6 +80,7 @@ public class Favourites extends HttpServlet {
 		
 		String [] toCheck = {jwtToken, ticket_id};
 		if(Checks.isNotBlank(toCheck)) {
+			
 			final JwtVal validator = new JwtVal();
 			
 			try{
@@ -85,45 +89,25 @@ public class Favourites extends HttpServlet {
 				String email = jwtDecoded.getClaim("sub-email").asString();
 				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
 				
-				int hasTicket= queryForThis.hasTicketId(Integer.parseInt(ticket_id));
+				boolean hasTicket= queryForThis.hasTicketId(Integer.parseInt(ticket_id));
 				
-				switch(hasTicket) {
-				
-					case 1:
-						QueryHandler queryForThis_user = new QueryHandler();
-						
-						int user_id = queryForThis_user.getUserId(email);
-						int check = queryForThis.saveFavourites(Integer.parseInt(ticket_id), user_id);
-						
-						if( check != -1) {
-							
-							if(check==1) {
-								response.setStatus(201);
-								jsonResponse.addProperty("stato", "confermato");
-								jsonResponse.addProperty("desc", "aggiunto ai preferiti");
-							}else
-								response.setStatus(500);
-								jsonResponse.addProperty("stato", "errore server");
-								jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-						}else {
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-						}
-						break;
-					case 0:
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("desc", "ticket inesistente");
-						break;
-					default:
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-						break;
+				if(hasTicket) {
+
+					QueryHandler queryForThis_user = new QueryHandler();
+					
+					int user_id = queryForThis_user.getUserId(email);
+					queryForThis.saveFavourites(Integer.parseInt(ticket_id), user_id);
+					
+					response.setStatus(201);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "aggiunto ai preferiti");
+
+				}else {
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "ticket inesistente");
 				}
 			
-		
 			}catch(InvalidParameterException e) {
 			
 				response.setStatus(403);
@@ -132,7 +116,7 @@ public class Favourites extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			}catch(Exception e) {
+			}catch(SQLException | CredentialNotFoundException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");

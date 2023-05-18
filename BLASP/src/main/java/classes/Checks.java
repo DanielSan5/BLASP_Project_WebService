@@ -1,5 +1,6 @@
 package classes;
 
+import java.sql.SQLException;
 import java.text.Normalizer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -91,33 +92,19 @@ public abstract class Checks {
 	   	
     }
    
-	public static boolean isValidSTA(String indirizzo_scolastico) {
+	public static boolean isValidSTA(String indirizzo_scolastico) throws SQLException {
    	
  		QueryHandler queryIndirizzo = new QueryHandler();
      	String indirizzo_upperCase = indirizzo_scolastico.toUpperCase();
-     	switch(queryIndirizzo.hasIndirizzo(indirizzo_upperCase)) {
+     	return queryIndirizzo.hasIndirizzo(indirizzo_upperCase);
      	
-     	case 1:
-     		return true;
-     	default:
-     		System.out.println("sta errata");
-     		return false;
-     	
-     	}
     }
      
-	public static boolean isValidLocation(String localita) {
+	public static boolean isValidLocation(String localita) throws SQLException {
+		
 	   	QueryHandler queryLocalita = new QueryHandler();
-	   	
-	   	switch(queryLocalita.hasLocalita(localita)) {
-	   	
-		   	case 1:
-		   		return true;
-		   	default:
-		   		System.out.println("localita errata");
-		   		return false;
-	   	
-	   	}
+	   	return queryLocalita.hasLocalita(localita);
+	   
    }
    
 	public static boolean isValidAge(String date, int classe) {
@@ -220,12 +207,10 @@ public abstract class Checks {
 		return result;
 	}
 
-	public static boolean isValidMateria(String materia) {
+	public static boolean isValidMateria(String materia) throws SQLException {
 		
 		QueryHandler queryForThis = new QueryHandler();
-		if(queryForThis.checkExistMateria(materia) == 1)
-			return true;
-		else
-			return false;
+		return queryForThis.checkExistMateria(materia);
+		
 	}
 }
