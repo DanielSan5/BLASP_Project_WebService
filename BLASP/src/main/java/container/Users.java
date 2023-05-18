@@ -50,13 +50,17 @@ public class Users extends HttpServlet {
 		PrintWriter out = response.getWriter(); 
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
-		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		
-		String[] toCheck = {jwtToken};
-		if(Checks.isNotBlank(toCheck)) {
-			final JwtVal validator = new JwtVal();
+
+		try{
 			
-			try{
+			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			
+			String[] toCheck = {jwtToken};
+			if(Checks.isNotBlank(toCheck)) {
+				
+				final JwtVal validator = new JwtVal();
+			
 				
 				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
 				validator.validate(jwtToken);
@@ -74,9 +78,13 @@ public class Users extends HttpServlet {
 				jsonResponse.add("user_info", g.toJsonTree(userData));
 				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
 					
-			
+			}else {
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "sintassi errata");
+			}
 				
-			}catch(InvalidParameterException e) {
+			}catch(InvalidParameterException | NullPointerException e) {
 				
 				response.setStatus(403);
 				jsonResponse.addProperty("stato", "errore client");
@@ -100,13 +108,7 @@ public class Users extends HttpServlet {
 			}finally {
 				out.println(jsonResponse.toString());
 			}
-		}else {
-			response.setStatus(400);
-			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "sintassi errata");
-		}
 		
-		out.println(jsonResponse.toString());
 		
 	}
 

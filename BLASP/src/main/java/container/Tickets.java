@@ -24,6 +24,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import classes.Checks;
 import classes.JwtVal;
@@ -65,18 +66,16 @@ public class Tickets extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
-		//Estrazione del token dall'header
-		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-		Map<String, String[]> filters = request.getParameterMap();
-		Set<String> types = filters.keySet();
-		
-		String[] toCheck = {jwtToken};
-		if(Checks.isValidFilter(types) && Checks.isNotBlank(toCheck) ) {
+		try{
+			//Estrazione del token dall'header
+			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			Map<String, String[]> filters = request.getParameterMap();
+			Set<String> types = filters.keySet();
 			
-			final JwtVal validator = new JwtVal();
-			
-			try{
+			String[] toCheck = {jwtToken};
+			if(Checks.isValidFilter(types) && Checks.isNotBlank(toCheck) ) {
 				
+				final JwtVal validator = new JwtVal();
 				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
 				//DecodedJWT jwtDecoded =
 				validator.validate(jwtToken);
@@ -145,45 +144,41 @@ public class Tickets extends HttpServlet {
 				jsonResponse.addProperty("stato", "confermato");
 				jsonResponse.addProperty("descrizione", "ricerca filtrata");
 				jsonResponse.add("filtered", g.toJsonTree(tickets));	
-				
-				
-			}catch(InvalidParameterException  e) {
-				
-				response.setStatus(403);
+			}else {
+				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "non autorizzato");
-				System.out.println("not authorized token");
-				e.printStackTrace();
+				jsonResponse.addProperty("descrizione", "errore nella sintassi");
 				
-			}catch(SQLException e) {
-				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
-			
-				e.printStackTrace();
-				
-			} catch (NoSuchFieldException e) {
-				
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("descrizione", "ricerca filtrata");
-				jsonResponse.addProperty("filtered", "nessun risultato");
-				e.printStackTrace();
-			}
-			finally {
-				out.println(jsonResponse.toString());
 			}
 			
-		}else {
-			response.setStatus(400);
+		}catch(InvalidParameterException  e) {
+			
+			response.setStatus(403);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "errore nella sintassi");
+			jsonResponse.addProperty("descrizione", "non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
 			
-		}
-	
-		out.println(jsonResponse.toString());
+		}catch(SQLException e) {
+			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
 		
+			e.printStackTrace();
+			
+		} catch (NoSuchFieldException e) {
+			
+			response.setStatus(200);
+			jsonResponse.addProperty("stato", "confermato");
+			jsonResponse.addProperty("descrizione", "ricerca filtrata");
+			jsonResponse.addProperty("filtered", "nessun risultato");
+			e.printStackTrace();
+		}
+		finally {
+			out.println(jsonResponse.toString());
+		}
+			
 	}
 
 	/**
@@ -207,20 +202,21 @@ public class Tickets extends HttpServlet {
 		}
 				
 		body = sb.toString();
-				
-		JsonObject user = g.fromJson(body, JsonObject.class);
-		
-		String materia = user.get("materia").getAsString();
-		String livello_materia = user.get("livello_materia").getAsString();
-		String descrizione = user.get("desc").getAsString();
-		Date dataOdierna = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-		String dataStringa = formatter.format(dataOdierna);
-		
-		//Estrazione del token dall'header
-		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-		String[] toCheck = {jwtToken, materia, livello_materia, descrizione, dataStringa};
-		try {
+		try {		
+			
+			JsonObject user = g.fromJson(body, JsonObject.class);
+			
+			String materia = user.get("materia").getAsString();
+			String livello_materia = user.get("livello_materia").getAsString();
+			String descrizione = user.get("desc").getAsString();
+			Date dataOdierna = new Date();
+	        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+			String dataStringa = formatter.format(dataOdierna);
+			
+			//Estrazione del token dall'header
+			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] toCheck = {jwtToken, materia, livello_materia, descrizione, dataStringa};
+			
 			
 			if(Checks.isValidTag(livello_materia) && Checks.isValidMateria(materia) && Checks.isNotBlank(toCheck)) {
 			
@@ -275,12 +271,17 @@ public class Tickets extends HttpServlet {
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "nessun risultato");
 			e.printStackTrace();
+		}catch(JsonSyntaxException | NullPointerException e) {
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "formato non supportato");
+			e.printStackTrace();
 		}finally {
 			out.println(jsonResponse.toString());
 		}
 	
 		
-		out.println(jsonResponse.toString());
+	
 		
 	}
 	
@@ -306,22 +307,23 @@ public class Tickets extends HttpServlet {
 		}
 		
 		body = sb.toString();
-		
-		Gson g = new Gson();
-		JsonObject user = g.fromJson(body, JsonObject.class);
-		
-		//Estrazione del token dall'header
-		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-		
-		//acquisizione delle chiavi
-		String numeroTicket = user.get("numero_ticket").getAsString();	
-		//acquisizione chiavi dell'ogetto "to_edit"
-		String valoreMateria = user.get("to_edit").getAsJsonObject().get("materia").getAsString();
-		String valoreDescrizione = user.get("to_edit").getAsJsonObject().get("descrizione").getAsString();
-		String valoreTag = user.get("to_edit").getAsJsonObject().get("tag").getAsString();
-		String[] toCheck = {jwtToken, valoreDescrizione, numeroTicket};
-		
+
 		try{
+			
+			Gson g = new Gson();
+			JsonObject user = g.fromJson(body, JsonObject.class);
+			
+			//Estrazione del token dall'header
+			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			
+			//acquisizione delle chiavi
+			String numeroTicket = user.get("numero_ticket").getAsString();	
+			//acquisizione chiavi dell'ogetto "to_edit"
+			String valoreMateria = user.get("to_edit").getAsJsonObject().get("materia").getAsString();
+			String valoreDescrizione = user.get("to_edit").getAsJsonObject().get("descrizione").getAsString();
+			String valoreTag = user.get("to_edit").getAsJsonObject().get("tag").getAsString();
+			String[] toCheck = {jwtToken, valoreDescrizione, numeroTicket};
+			
 			
 			if(Checks.isValidTag(valoreTag) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
 		
@@ -376,6 +378,11 @@ public class Tickets extends HttpServlet {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("desc", "nessun risultato");
+			e.printStackTrace();
+		}catch(JsonSyntaxException | NullPointerException e) {
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "formato non supportato");
 			e.printStackTrace();
 		}finally {
 			out.println(jsonResponse.toString());

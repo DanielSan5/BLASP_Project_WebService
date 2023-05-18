@@ -17,6 +17,7 @@ import javax.security.auth.login.CredentialNotFoundException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import classes.Checks;
 import classes.JwtVal;
@@ -73,26 +74,23 @@ public class Accettazione_ticket extends HttpServlet {
 		}
 		
 		body = sb.toString();
-		
-		Gson g = new Gson();
-		JsonObject user = g.fromJson(body, JsonObject.class);
-		
-		//Estrazione del token dall'header
-		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-		
-		//acquisizione delle chiavi
-		String numeroTicket = user.get("numero_ticket").getAsString();	
-		
-		String [] toCheck = {jwtToken, numeroTicket};
-		
-		if(Checks.isNotBlank(toCheck)) {
-		
-			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+		try{
 			
-			try{
-				
-				
-				
+			Gson g = new Gson();
+			JsonObject user = g.fromJson(body, JsonObject.class);
+			
+			//Estrazione del token dall'header
+			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			
+			//acquisizione delle chiavi
+			String numeroTicket = user.get("numero_ticket").getAsString();	
+			
+			String [] toCheck = {jwtToken, numeroTicket};
+			
+			if(Checks.isNotBlank(toCheck)) {
+		
+				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+
 				final JwtVal validator = new JwtVal();
 		
 				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
@@ -125,39 +123,42 @@ public class Accettazione_ticket extends HttpServlet {
 					jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 				}
 				
-				
-			}catch(InvalidParameterException e) {
-			
-				response.setStatus(403);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("desc", "utente non autorizzato");
-				System.out.println("not authorized token");
-				e.printStackTrace();
-			
-			}catch(SQLException | NumberFormatException e) {
-				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-				e.printStackTrace();
-				
-			} catch (CredentialNotFoundException e) {
-				
+			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "nessun risultato");
-				e.printStackTrace();
-			}finally {
-				out.println(jsonResponse.toString());
+				jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 			}
+		}catch(InvalidParameterException e) {
+		
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("desc", "utente non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+		
+		}catch(SQLException | NumberFormatException e) {
 			
-		}else {
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+			e.printStackTrace();
+			
+		} catch (CredentialNotFoundException e) {
+			
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
+			e.printStackTrace();
+		}catch(JsonSyntaxException | NullPointerException e) {
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "formato non supportato");
+			e.printStackTrace();
+		}finally {
+			out.println(jsonResponse.toString());
 		}
-		
-		out.println(jsonResponse.toString());
+
+	
 	}
 	
 	

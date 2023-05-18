@@ -31,6 +31,8 @@ import org.eclipse.angus.mail.util.MailSSLSocketFactory;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
+
 import classes.Checks;
 import classes.JwtGen;
 import classes.QueryHandler;
@@ -42,7 +44,6 @@ import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 public class AutenticazioneUtenti extends HttpServlet{
 	
 	private static final long serialVersionUID = 1L;
-	
 	
        
  
@@ -124,27 +125,26 @@ public class AutenticazioneUtenti extends HttpServlet{
 		}
 		
 		body = sb.toString();
-		
-		Gson g = new Gson();
-		JsonObject user = g.fromJson(body, JsonObject.class);
-		
-		//String username = user.get("Username").getAsString();		//ancora da definire
-		String email = user.get("email").getAsString();			
-		String password = user.get("password").getAsString();
-		
-		JsonObject jwtFormat = new JsonObject();
-		//jwtFormat.addProperty("sub", username);
-		jwtFormat.addProperty("sub-email", email);
-		jwtFormat.addProperty("aud", "*");
-
-		//controlli input
-		
-		if(Checks.isValidPassword(password) && Checks.isValidEmail(email)) {
+		try {
 			
-			QueryHandler queryForThis = new QueryHandler();
+			Gson g = new Gson();
+			JsonObject user = g.fromJson(body, JsonObject.class);
 			
-			try {
+			//String username = user.get("Username").getAsString();		//ancora da definire
+			String email = user.get("email").getAsString();			
+			String password = user.get("password").getAsString();
+			
+			JsonObject jwtFormat = new JsonObject();
+			//jwtFormat.addProperty("sub", username);
+			jwtFormat.addProperty("sub-email", email);
+			jwtFormat.addProperty("aud", "*");
+	
+			//controlli input
+			
+			if(Checks.isValidEmail(email)) {
 				
+				QueryHandler queryForThis = new QueryHandler();
+
 				boolean hasEmail = queryForThis.hasEmail(email);
 				
 				if(hasEmail) {
@@ -200,37 +200,37 @@ public class AutenticazioneUtenti extends HttpServlet{
 				}else {
 					response.setStatus(400);
 					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("descrizione", "errore nella sintassi");
+					jsonResponse.addProperty("descrizione", "utente inesistente");
 						
 				}
-				
-				
-			}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				e.printStackTrace();
-				
-			} catch (CredentialNotFoundException e) {
-				
+			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "nessun risultato");
-				e.printStackTrace();
-			}finally {
-				out.println(jsonResponse.toString());
-			}
-
-		}else {
+				jsonResponse.addProperty("descrizione", "errore nella sintassi");
+			}	
+				
+		}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+			e.printStackTrace();
+			
+		} catch (CredentialNotFoundException e) {
+			
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "errore nella sintassi");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
+			e.printStackTrace();
+		}catch(JsonSyntaxException | NullPointerException e) {
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "formato non supportato");
+			e.printStackTrace();
+		}finally {
+			out.println(jsonResponse.toString());
 		}
-		
-		out.println(jsonResponse.toString());
-		
-		
+
 	}
 	
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -250,19 +250,17 @@ public class AutenticazioneUtenti extends HttpServlet{
 		}
 		
 		body = sb.toString();
-		
-		Gson g = new Gson();
-		JsonObject user = g.fromJson(body, JsonObject.class);
-			
-		String action = user.get("action").getAsString();
-		String email = user.get("email").getAsString();
-		
-		String [] toCheck = {action};
-		
-		if(Checks.isValidEmail(email) && Checks.isNotBlank(toCheck)) {
-			
-			try {
+		try {
+			Gson g = new Gson();
+			JsonObject user = g.fromJson(body, JsonObject.class);
 				
+			String action = user.get("action").getAsString();
+			String email = user.get("email").getAsString();
+			
+			String [] toCheck = {action};
+			
+			if(Checks.isValidEmail(email) && Checks.isNotBlank(toCheck)) {
+
 				QueryHandler queryForThis = new QueryHandler();
 				int user_id = queryForThis.getUserId(email);
 				
@@ -335,24 +333,27 @@ public class AutenticazioneUtenti extends HttpServlet{
 						jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 						break;
 				}
-			}catch(GeneralSecurityException | MessagingException | SQLException e) {
-				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
-				e.printStackTrace();
-			}finally {
-				out.println(jsonResponse.toString());
-				
+			}else {
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 			}
+		}catch(GeneralSecurityException | MessagingException | SQLException e) {
 			
-		}else {
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+			e.printStackTrace();
+		}catch(JsonSyntaxException | NullPointerException e) {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
+			jsonResponse.addProperty("descrizione", "formato non supportato");
+			e.printStackTrace();
+		}finally {
+			out.println(jsonResponse.toString());
+			
 		}
-	
-		out.println(jsonResponse.toString());
+
 		
 	}
 

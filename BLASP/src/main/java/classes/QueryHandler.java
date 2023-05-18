@@ -156,7 +156,7 @@ public class QueryHandler {
 	public void modificaDatiUtente(int user_id, String descrizione, String localita, int classe, String indirizzo) throws SQLException {
 		
 		establishConnection();
-		String prepared_query = "UPDATE utenti SET (UT_descrizione, UT_localita, UT_classe, UT_indirizzo_scolastico) = (?, ?, ?, ?) WHERE UT_id = ?";		
+		String prepared_query = "UPDATE utenti SET UT_descrizione = ?, UT_localita = ?, UT_classe = ?, UT_indirizzo_scolastico = ? WHERE UT_id = ?";		
 
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 		
@@ -357,7 +357,7 @@ public class QueryHandler {
 		
 	}
 	
-	public ArrayList<Ticket> getUserTickets(int user_id) throws CredentialNotFoundException, SQLException {
+	public ArrayList<Ticket> getUserTickets(int user_id) throws SQLException {
 		
 		establishConnection();
 		
@@ -379,11 +379,9 @@ public class QueryHandler {
 			tickets.add(ticket);
 			
 		}
-		if(tickets.isEmpty()) {
-			throw new CredentialNotFoundException("utente non esistente");
-		}else {
-			return tickets;
-		}
+		
+		return tickets;
+		
 
 		
 	}

@@ -62,6 +62,7 @@ public abstract class Checks {
    
 	public static boolean isValidNameAndSurname(String nome, String cognome, String email) {
 		
+		//nome inserito
 	   	String nomeNormalizzato = Normalizer.normalize(nome.toLowerCase(), Normalizer.Form.NFD);
 	   	String cognomeNormalizzato = Normalizer.normalize(cognome.toLowerCase(), Normalizer.Form.NFD);
 	   	
@@ -74,8 +75,16 @@ public abstract class Checks {
 	   	String nomeNoApostrofo = nomeNoSpazi.replaceAll("'", "");
 	   	String cognomeNoApostrofo = cognomeNoSpazi.replaceAll("'", "");
 	   	
+	   //nome vero
+	   	String[] splittedEmail = email.split("[@]");
+		String[] names = splittedEmail[0].split("[.]");
+		
+		String nomeCorretto = names[0];
+		String cognomeCorretto = names[1];
+		
+	   	System.out.println(nomeCorretto + " " + cognomeCorretto);
 	   	
-	   	if(email.contains(nomeNoApostrofo) && email.contains(cognomeNoApostrofo))
+	   	if(nomeCorretto.equals(nomeNoApostrofo) && cognomeCorretto.equals(cognomeNoApostrofo) && !nomeNoApostrofo.isBlank() && !cognomeNoApostrofo.isBlank())
 	   		return true;
 	   	else 
 	   		System.out.println("nome errato");
