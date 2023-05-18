@@ -167,7 +167,7 @@ public class QueryHandler_flags {
 	}
 	
 	//***INSERISCI SEGNALAZIONE***
-	public void inserisciSegnalazione (int user_segnalato_id, int user_segnalatore_id) throws SQLException, CredentialNotFoundException{
+	public int inserisciSegnalazione (int user_segnalato_id, int user_segnalatore_id) throws SQLException, CredentialNotFoundException{
 		
 		establishConnection();
 		String prepared_query = "INSERT INTO segnalazione (UT_id_segnalato, UT_id_segnalatore) VALUES (?, ?)";
@@ -184,8 +184,16 @@ public class QueryHandler_flags {
 		if(pr.executeUpdate() != 1) {
 			conn.close();
 			throw new MySQLDataException("could not create row in segnalazione");
+		}else {
+			
+			if(pr.getGeneratedKeys().next()) {
+				conn.close();
+				return pr.getGeneratedKeys().getInt(1);
+			}else {
+				conn.close();
+				return 0;
+			}
 		}
-		conn.close();
 	}
 
 }
