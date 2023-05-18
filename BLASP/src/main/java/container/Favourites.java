@@ -11,18 +11,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 import javax.security.auth.login.CredentialNotFoundException;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import classes.Checks;
 import classes.JwtVal;
 import classes.QueryHandler;
 import classes.QueryHandler_ticket;
 import classes.Ticket;
+import classes.Utente;
 
 /**
  * Servlet implementation class favourites
@@ -43,9 +46,74 @@ public class Favourites extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
-	}
+		//ottenimento ticket preferiti
+		response.setContentType("application/json");
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        response.addHeader("Access-Control-Allow-Methods", "GET");
+
+        PrintWriter out = response.getWriter(); 
+        JsonObject jsonResponse = new JsonObject();
+        Gson g = new Gson();
+        try{
+        	
+	        String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+	        String [] toCheck = {jwtToken};
+	
+	        if(Checks.isNotBlank(toCheck)) {
+	
+	            final JwtVal validator = new JwtVal();
+
+                //se non viene autorizzato lancia eccezzione gestita nel catch sotto
+                DecodedJWT jwtDecoded = validator.validate(jwtToken);
+
+                String email = jwtDecoded.getClaim("sub-email").asString();
+                QueryHandler_ticket queryTickets = new QueryHandler_ticket();
+                QueryHandler queryForThis = new QueryHandler();
+                int user_id = queryForThis.getUserId(email);
+                Utente userData = queryForThis.getUserData(user_id);
+                ArrayList<Ticket> FavTickets = queryTickets.getFavTickets(user_id);
+
+                response.setStatus(200);
+                jsonResponse.addProperty("stato", "confermato");
+                jsonResponse.addProperty("desc", " ottenimento preferiti");
+
+                jsonResponse.add("Fav", g.toJsonTree(FavTickets));
+                jsonResponse.add("user_info", g.toJsonTree(userData));
+                
+	        }else {
+	            response.setStatus(400);
+	            jsonResponse.addProperty("stato", "errore client");
+	            jsonResponse.addProperty("descrizione", "sintassi errata");
+	        }
+        }catch(InvalidParameterException e) {
+
+            response.setStatus(403);
+            jsonResponse.addProperty("stato", "errore client");
+            jsonResponse.addProperty("descrizione", "non autorizzato");
+            System.out.println("not authorized token");
+            e.printStackTrace();
+
+        } catch (SQLException e) {
+
+            response.setStatus(500);
+            jsonResponse.addProperty("stato", "errore server");
+            jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+            e.printStackTrace();
+        } catch (CredentialNotFoundException e) {
+
+            response.setStatus(400);
+            jsonResponse.addProperty("stato", "errore client");
+            jsonResponse.addProperty("descrizione", "nessun risultato");
+            e.printStackTrace();
+        }catch(JsonSyntaxException | NullPointerException e) {
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "formato non supportato");
+			e.printStackTrace();
+		}finally {
+            out.println(jsonResponse.toString());
+        }
+			}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
