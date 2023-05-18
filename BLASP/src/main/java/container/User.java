@@ -95,32 +95,27 @@ public class User extends HttpServlet {
 				
 				String email = jwtDecoded.getClaim("sub-email").asString();
 				QueryHandler queryForThis = new QueryHandler();
+				
 				int user_id = queryForThis.getUserId(email);
 				Utente userData = queryForThis.getUserData(user_id);
 				ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
 				boolean isAdmin = queryForThis.isUserAdmin(user_id);
 				
-				if(userData != null) {
+
+				response.setStatus(200);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("desc", " ottenimento dati personali");
+				jsonResponse.add("user_info", g.toJsonTree(userData));
+				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
+				
+				if(isAdmin) {
 					
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", " ottenimento dati personali");
-					jsonResponse.add("user_info", g.toJsonTree(userData));
-					jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
-					
-					if(isAdmin) {
-						
-						ArrayList<Utente> toBlock = queryForThis.getToBlock();
-						jsonResponse.add("to_block", g.toJsonTree(toBlock));
-					
-					}
-					
-				}else {
-					
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+					ArrayList<Utente> toBlock = queryForThis.getToBlock();
+					jsonResponse.add("to_block", g.toJsonTree(toBlock));
+				
 				}
+					
+				
 			}catch(InvalidParameterException e) {
 				
 				response.setStatus(403);
@@ -129,8 +124,17 @@ public class User extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
-			} catch (CredentialNotFoundException | SQLException e) {
-				//errore db
+			} catch (SQLException e) {
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+				e.printStackTrace();
+			} catch (CredentialNotFoundException e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
 				e.printStackTrace();
 			}finally {
 				
@@ -196,41 +200,41 @@ public class User extends HttpServlet {
 				
 				
 					
-					boolean hasEmail = queryForThis.hasEmail(email); 
+				boolean hasEmail = queryForThis.hasEmail(email); 
+				
+				if(hasEmail) {
 					
-					if(hasEmail) {
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("descrizione", "utente gia esistente");
 						
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("descrizione", "utente gia esistente");
-							
-					}else {
-						
-						//gestito nel catch
-						queryForThis.inserisciUtente(email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+				}else {
+					
+					//gestito nel catch
+					queryForThis.inserisciUtente(email, encryptedPass, nome, cognome, data_nascita, classe, indirizzo_scolastico, localita);
+
+					JsonObject jwtFormat = new JsonObject();
+					
+					jwtFormat.addProperty("sub-email", email);
+					jwtFormat.addProperty("aud", "*");
+					
+					JwtGen generator = new JwtGen();
+					Map<String, String> claims = new HashMap<>();
+					
+					jwtFormat.keySet().forEach(keyStr ->
+				    {
+				        String keyvalue = jwtFormat.get(keyStr).getAsString();
+				        claims.put(keyStr, keyvalue);
+				      
+				    });
+					
+					String token = generator.generateJwt(claims);
+					response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+					response.setStatus(201);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "utente creato");
 	
-						JsonObject jwtFormat = new JsonObject();
-						
-						jwtFormat.addProperty("sub-email", email);
-						jwtFormat.addProperty("aud", "*");
-						
-						JwtGen generator = new JwtGen();
-						Map<String, String> claims = new HashMap<>();
-						
-						jwtFormat.keySet().forEach(keyStr ->
-					    {
-					        String keyvalue = jwtFormat.get(keyStr).getAsString();
-					        claims.put(keyStr, keyvalue);
-					      
-					    });
-						
-						String token = generator.generateJwt(claims);
-						response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
-						response.setStatus(201);
-						jsonResponse.addProperty("stato", "confermato");
-						jsonResponse.addProperty("desc", "utente creato");
-		
-					}
+				}
 				
 			}else {
 				response.setStatus(400);
@@ -363,11 +367,18 @@ public class User extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 	
-		}catch (SQLException | CredentialNotFoundException e) {
+		}catch (SQLException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
 			jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+			e.printStackTrace();
+			
+		} catch (CredentialNotFoundException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
 			e.printStackTrace();
 			
 		}finally {

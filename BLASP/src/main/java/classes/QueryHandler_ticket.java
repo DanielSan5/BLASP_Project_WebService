@@ -70,7 +70,7 @@ public class QueryHandler_ticket {
 				return pr.getGeneratedKeys().getInt(1);
 			}else {
 				conn.close();
-				return 0;
+				throw new MySQLDataException("could get generated key");
 			}
 		}	
 			

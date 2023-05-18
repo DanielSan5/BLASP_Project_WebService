@@ -151,6 +151,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 				
 					int user_id = queryForThis.getUserId(email);
 					String userStatus =  queryForThis.getUserStatus(user_id);
+					
 					if(userStatus.equals("none")) {
 						
 						boolean checkPass = queryForThis.checkPass(user_id, password);
@@ -182,7 +183,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 						}
 					
 					//pezzo nuovo da confermare
-					}else if (userStatus.equals("banned")) {
+					}else if(userStatus.equals("blocked")) {
 						
 						response.setStatus(401);
 						jsonResponse.addProperty("stato", "errore client");
@@ -194,11 +195,8 @@ public class AutenticazioneUtenti extends HttpServlet{
 						jsonResponse.addProperty("stato", "errore");
 						jsonResponse.addProperty("descrizione", "utente disabilitato");
 						
-					}else if(userStatus.isBlank()){
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 					}
+					
 				}else {
 					response.setStatus(400);
 					jsonResponse.addProperty("stato", "errore client");
@@ -207,13 +205,19 @@ public class AutenticazioneUtenti extends HttpServlet{
 				}
 				
 				
-			}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException | CredentialNotFoundException e) {
+			}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 				e.printStackTrace();
 				
+			} catch (CredentialNotFoundException e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
+				e.printStackTrace();
 			}finally {
 				out.println(jsonResponse.toString());
 			}
@@ -278,7 +282,11 @@ public class AutenticazioneUtenti extends HttpServlet{
 								
 						
 						}else{
-							//email inesistente
+							
+							response.setStatus(400);
+							jsonResponse.addProperty("stato", "errore client");
+							jsonResponse.addProperty("descrizione", "email inesistente");
+							
 						}
 							
 						break;
@@ -288,10 +296,17 @@ public class AutenticazioneUtenti extends HttpServlet{
 						String code = user.get("code").getAsString();
 						
 						if(queryForThis.checkCode(user_id, code)) {
-							//success
+						
+							response.setStatus(200);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("descrizione", "codice verificato");
 							
 						}else {
-							//codice errato
+							
+							response.setStatus(400);
+							jsonResponse.addProperty("stato", "errore client");
+							jsonResponse.addProperty("descrizione", "codice errato");
+							
 						}
 						break;
 						
@@ -306,30 +321,38 @@ public class AutenticazioneUtenti extends HttpServlet{
 							queryForThis.changePass(user_id, new_pass_encr);
 							
 						}else {
-							//errore input
+							
+							response.setStatus(400);
+							jsonResponse.addProperty("stato", "errore client");
+							jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 						}
 						break;
 						
 					default:
-						//errore input
+						
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 						break;
 				}
 			}catch(GeneralSecurityException | MessagingException | SQLException e) {
-				//errore database
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
 				e.printStackTrace();
 			}finally {
+				out.println(jsonResponse.toString());
 				
 			}
 			
 		}else {
-			//errore input
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 		}
 	
-		
-		
-		
-
-		
+		out.println(jsonResponse.toString());
 		
 	}
 

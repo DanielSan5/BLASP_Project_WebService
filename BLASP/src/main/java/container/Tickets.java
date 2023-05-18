@@ -44,7 +44,7 @@ import org.json.JSONObject;;
 public class Tickets extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	private QueryHandler_filters queryForThis = new QueryHandler_filters();
+	//private QueryHandler_filters queryForThis = new QueryHandler_filters();
 			
 				
     /**
@@ -94,6 +94,7 @@ public class Tickets extends HttpServlet {
 				 * CNM -> classe, nome e materia
 				 */
 				List<Ticket> tickets = new ArrayList<Ticket>();
+				QueryHandler_filters queryForThis = new QueryHandler_filters();
 				
 				if(filters.containsKey("localita") && filters.containsKey("classe")) {
 					String filtroLocalita = filters.get("localita").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
@@ -185,7 +186,6 @@ public class Tickets extends HttpServlet {
 		
 	}
 
-
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -230,61 +230,24 @@ public class Tickets extends HttpServlet {
 				String email = jwt.getClaim("sub-email").asString();
 				QueryHandler queryUser = new QueryHandler();
 				int user_id = queryUser.getUserId(email);
+	
+				QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
 				
-				switch(user_id) {
+				int id_ticket = queryForThis.inserisciTicketOttieniID(materia, livello_materia, descrizione, dataStringa, user_id);
+		
+				Ticket ticket = queryForThis.getTicketFromId(id_ticket);
 				
-					case 0:
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("descrizione", "utente non esistente");
-						break;
-					case -1:
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");	
-						break;
-						
-					default:
-						QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
-						
-						int id_ticket = queryForThis.inserisciTicketOttieniID(materia, livello_materia, descrizione, dataStringa, user_id);
-						
-						if(id_ticket == 0){
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-							
-						}else if(id_ticket == 1){
-							
-							Ticket ticket = queryForThis.getTicketFromId(id_ticket);
-							
-							if(ticket != null) {
-								
-								response.setStatus(201);
-								jsonResponse.addProperty("stato", "confermato");
-								jsonResponse.addProperty("desc", "ticket creato");
-								
-								JsonObject ticket_info = new JsonObject();
-								ticket_info.addProperty("numero_ticket", id_ticket);
-								ticket_info.addProperty("data_cr", ticket.getData_cr());
-								ticket_info.add("ticket_info", g.toJsonTree(ticket));
-								
-								jsonResponse.add("ticket_inserito", ticket_info);
-							
-							}else {
-								response.setStatus(500);
-								jsonResponse.addProperty("stato", "errore server");
-								jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-								
-							}
-							
-						}else {
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						}
-						break;		
-				}
+				response.setStatus(201);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("desc", "ticket creato");
+				
+				JsonObject ticket_info = new JsonObject();
+				ticket_info.addProperty("numero_ticket", id_ticket);
+				ticket_info.addProperty("data_cr", ticket.getData_cr());
+				ticket_info.add("ticket_info", g.toJsonTree(ticket));
+				
+				jsonResponse.add("ticket_inserito", ticket_info);
+				
 			}else {
 				
 				response.setStatus(400);
@@ -300,15 +263,18 @@ public class Tickets extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 	
-		}catch(Exception e) {
+		} catch (SQLException e) {
+			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+			e.printStackTrace();
+		} catch (CredentialNotFoundException e) {
 			
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "nessun risultato");
-			
-			System.out.println("not created");
 			e.printStackTrace();
-			
 		}finally {
 			out.println(jsonResponse.toString());
 		}
@@ -321,7 +287,6 @@ public class Tickets extends HttpServlet {
 	/**
 	 * @see HttpServlet#doPut(HttpServletRequest request, HttpServletResponse response)
 	 */
-	//da mettere a posto
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
@@ -401,10 +366,16 @@ public class Tickets extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		} catch (NumberFormatException | SQLException | CredentialNotFoundException e) {
+		} catch (NumberFormatException | SQLException e) {
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
 			jsonResponse.addProperty("desc", "errore nell'elaborazione della richiesta");
+			e.printStackTrace();
+		} catch (CredentialNotFoundException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("desc", "nessun risultato");
 			e.printStackTrace();
 		}finally {
 			out.println(jsonResponse.toString());
@@ -474,12 +445,11 @@ public class Tickets extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			}catch(Exception e) {
+			} catch (NumberFormatException | SQLException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-				System.out.println("no results");
 				e.printStackTrace();
 				
 			}finally {

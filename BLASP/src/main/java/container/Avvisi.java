@@ -61,6 +61,7 @@ public class Avvisi extends HttpServlet {
 		//Estrazione del token dall'header
 		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		String[] toCheck = {jwtToken};
+		
 		if(Checks.isNotBlank(toCheck)) {
 			
 			final JwtVal validator = new JwtVal();
@@ -68,33 +69,18 @@ public class Avvisi extends HttpServlet {
 			try {
 			
 				DecodedJWT jwt = validator.validate(jwtToken);
+				String email =  jwt.getClaim("sub-email").asString();
 				QueryHandler queryUser = new QueryHandler();
-				int utente_id = queryUser.getUserId(jwt.getClaim("sub-email").asString());
-				
-				//controllo sull'ID utente del ticket
-				if(utente_id == 0){
+				int utente_id = queryUser.getUserId(email);
+
+				QueryHandler_flags queryAvviso = new QueryHandler_flags();
+				ArrayList<Avviso> avvisi = queryAvviso.getAvvisi(utente_id);
+
+				response.setStatus(200);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("descrizione", "ottenimento avvisi");
+				jsonResponse.add("avvisi", g.toJsonTree(avvisi));
 			
-					response.setStatus(400);
-					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("descrizione", "nessun risultato");
-					
-				}else if(utente_id == -1) {
-					
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-					
-				}else{
-				
-					QueryHandler_flags queryAvviso = new QueryHandler_flags();
-					ArrayList<Avviso> avvisi = queryAvviso.getAvvisi(utente_id);
-
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("descrizione", "ottenimento avvisi");
-					jsonResponse.add("avvisi", g.toJsonTree(avvisi));
-
-				} 
 						
 			}catch(InvalidParameterException e) {
 				
@@ -104,11 +90,18 @@ public class Avvisi extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			} catch (CredentialNotFoundException | SQLException e) {
+			} catch ( SQLException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				e.printStackTrace();
+				
+			} catch (CredentialNotFoundException e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
 				e.printStackTrace();
 			}finally {
 				out.println(jsonResponse.toString());
@@ -117,7 +110,7 @@ public class Avvisi extends HttpServlet {
 		}else {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("descrizione", "errore input");
+			jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 		}
 			
 		out.println(jsonResponse.toString());
@@ -161,8 +154,7 @@ public class Avvisi extends HttpServlet {
 			try {
 			
 				validator.validate(jwtToken);
-				
-				
+	
 				QueryHandler_ticket queryTicket = new QueryHandler_ticket();
 					
 				int utente_id = queryTicket.getUserIdFromTicket(Integer.parseInt(ticket_id));
@@ -174,8 +166,7 @@ public class Avvisi extends HttpServlet {
 				response.setStatus(201);
 				jsonResponse.addProperty("stato", "confermato");
 				jsonResponse.addProperty("desc", "avviso:" + avviso_id + " creato");
-
-						
+		
 						
 			}catch(InvalidParameterException e) {
 				
@@ -185,11 +176,17 @@ public class Avvisi extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			} catch (SQLException | NumberFormatException | CredentialNotFoundException e) {
+			} catch (SQLException | NumberFormatException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				e.printStackTrace();
+			} catch (CredentialNotFoundException e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
 				e.printStackTrace();
 			}finally {
 				out.println(jsonResponse.toString());

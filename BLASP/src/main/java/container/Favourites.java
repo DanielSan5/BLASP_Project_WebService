@@ -53,7 +53,7 @@ public class Favourites extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "PUT");
+		response.addHeader("Access-Control-Allow-Methods", "POST");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
@@ -79,6 +79,7 @@ public class Favourites extends HttpServlet {
 		String ticket_id = user.get("numero_ticket").getAsString();	
 		
 		String [] toCheck = {jwtToken, ticket_id};
+		
 		if(Checks.isNotBlank(toCheck)) {
 			
 			final JwtVal validator = new JwtVal();
@@ -89,7 +90,7 @@ public class Favourites extends HttpServlet {
 				String email = jwtDecoded.getClaim("sub-email").asString();
 				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
 				
-				boolean hasTicket= queryForThis.hasTicketId(Integer.parseInt(ticket_id));
+				boolean hasTicket = queryForThis.hasTicketId(Integer.parseInt(ticket_id));
 				
 				if(hasTicket) {
 
@@ -116,7 +117,7 @@ public class Favourites extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			}catch(SQLException | CredentialNotFoundException e) {
+			}catch(SQLException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
@@ -124,6 +125,12 @@ public class Favourites extends HttpServlet {
 				System.out.println("no results");
 				e.printStackTrace();
 				
+			} catch (CredentialNotFoundException e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
+				e.printStackTrace();
 			}finally {
 				out.println(jsonResponse.toString());
 			}

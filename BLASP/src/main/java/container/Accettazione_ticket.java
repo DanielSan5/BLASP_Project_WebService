@@ -91,7 +91,7 @@ public class Accettazione_ticket extends HttpServlet {
 			
 			try{
 				
-				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
+				
 				
 				final JwtVal validator = new JwtVal();
 		
@@ -100,41 +100,23 @@ public class Accettazione_ticket extends HttpServlet {
 				QueryHandler queryUser = new QueryHandler();
 				int user_id = queryUser.getUserId(email);
 				
+				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
+				
 				//MI SERVE L'ID DELL'UTENTE CHE HA ACCETTATO IL TICKET
 				
 				if(hasTicketId) {
 	
-					switch(user_id) {
-						case 1:
-							
-							//esecuzione della query
-							queryForThis.modificaStatoTicket(user_id, Integer.parseInt(numeroTicket));
-							
-							response.setStatus(200);
-							jsonResponse.addProperty("stato", "confermato");
-							jsonResponse.addProperty("desc", "stato modificato");
-							
-							Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
-							
-							if(ticket_info == null) {
-								response.setStatus(400);
-								jsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
-							}
-							
-							jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
-							break;
-						case 0:
-							response.setStatus(400);
-							jsonResponse.addProperty("stato", "errore client");
-							jsonResponse.addProperty("descrizione", "utente non esistente");
-							break;
-							
-						default:
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");	
-							break;
-					}
+			
+					queryForThis.modificaStatoTicket(user_id, Integer.parseInt(numeroTicket));
+					
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "stato modificato");
+					
+					Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
+					
+					jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
+					
 					
 				
 				}else {
@@ -152,13 +134,19 @@ public class Accettazione_ticket extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			}catch(SQLException | NumberFormatException | CredentialNotFoundException e) {
+			}catch(SQLException | NumberFormatException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
 				e.printStackTrace();
 				
+			} catch (CredentialNotFoundException e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
+				e.printStackTrace();
 			}finally {
 				out.println(jsonResponse.toString());
 			}

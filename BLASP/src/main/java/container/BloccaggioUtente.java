@@ -91,12 +91,13 @@ public class BloccaggioUtente extends HttpServlet {
 				String email = jwtDecoded.getClaim("sub-email").asString();
 				
 				QueryHandler queryUser = new QueryHandler();
-				int userAdmin_id = queryUser.getUserId(email);			//USER ID dell'ADMIN
-				int user_id_toBlock = queryUser.getUserId(toBlock_email);	//USER ID di quello da bloccare
+				int userAdmin_id = queryUser.getUserId(email);	
 				boolean isAdmin = queryUser.isUserAdmin(userAdmin_id);
 				
 				if(isAdmin) {
 					
+						
+					int user_id_toBlock = queryUser.getUserId(toBlock_email);	//USER ID di quello da bloccare
 					queryUser.blockUser(user_id_toBlock);
 					response.setStatus(200);
 					jsonResponse.addProperty("stato", "confermato");
@@ -120,7 +121,7 @@ public class BloccaggioUtente extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			}catch(CredentialNotFoundException | SQLException e) {
+			}catch(SQLException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
@@ -128,6 +129,12 @@ public class BloccaggioUtente extends HttpServlet {
 				System.out.println("no results");
 				e.printStackTrace();
 				
+			} catch (CredentialNotFoundException e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
+				e.printStackTrace();
 			}finally {
 				out.println(jsonResponse.toString());
 			}

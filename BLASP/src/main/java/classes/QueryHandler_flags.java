@@ -67,7 +67,7 @@ public class QueryHandler_flags {
 				return pr.getGeneratedKeys().getInt(1);
 			}else {
 				conn.close();
-				return 0;
+				throw new MySQLDataException("could get generated key");
 			}
 		}
 			
@@ -167,7 +167,7 @@ public class QueryHandler_flags {
 	}
 	
 	//***INSERISCI SEGNALAZIONE***
-	public int inserisciSegnalazione (int user_segnalato_id, int user_segnalatore_id) throws SQLException, CredentialNotFoundException{
+	public int inserisciSegnalazioneGetId(int user_segnalato_id, int user_segnalatore_id) throws SQLException, CredentialNotFoundException{
 		
 		establishConnection();
 		String prepared_query = "INSERT INTO segnalazione (UT_id_segnalato, UT_id_segnalatore) VALUES (?, ?)";
@@ -191,7 +191,7 @@ public class QueryHandler_flags {
 				return pr.getGeneratedKeys().getInt(1);
 			}else {
 				conn.close();
-				return 0;
+				throw new MySQLDataException("could get generated key");
 			}
 		}
 	}
