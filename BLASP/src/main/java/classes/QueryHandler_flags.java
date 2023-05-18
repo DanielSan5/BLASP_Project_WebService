@@ -165,5 +165,27 @@ public class QueryHandler_flags {
 			
 		
 	}
+	
+	//***INSERISCI SEGNALAZIONE***
+	public void inserisciSegnalazione (int user_segnalato_id, int user_segnalatore_id) throws SQLException, CredentialNotFoundException{
+		
+		establishConnection();
+		String prepared_query = "INSERT INTO segnalazione (UT_id_segnalato, UT_id_segnalatore) VALUES (?, ?)";
+		
+	
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		//pr.setString(1, username);
+		pr.setInt(1, user_segnalato_id);
+		pr.setInt(2, user_segnalatore_id);
+		
+		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+		
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not create row in segnalazione");
+		}
+		conn.close();
+	}
 
 }
