@@ -8,7 +8,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.sql.SQLException;
 import java.util.ArrayList;
+
+import javax.security.auth.login.CredentialNotFoundException;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -64,21 +67,14 @@ public class Users extends HttpServlet {
 				Utente userData = queryForThis.getUserData(user_id);
 				
 				ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
-				
-				if(userData != null) {
+
+				response.setStatus(200);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("desc", " ottenimento profilo dell'utente");
+				jsonResponse.add("user_info", g.toJsonTree(userData));
+				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
 					
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", " ottenimento profilo dell'utente");
-					jsonResponse.add("user_info", g.toJsonTree(userData));
-					jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
-					
-				}else {
-					
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				}
+			
 				
 			}catch(InvalidParameterException e) {
 				
@@ -88,13 +84,20 @@ public class Users extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
-			}catch(Exception e) {
+			} catch (CredentialNotFoundException e) {
 				
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("descrizione", "nessun risultato");
-			}
-			finally {
+				e.printStackTrace();
+				
+			} catch (SQLException e) {
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+				e.printStackTrace();
+			}finally {
 				out.println(jsonResponse.toString());
 			}
 		}else {
@@ -111,8 +114,7 @@ public class Users extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		doGet(request, response);
+		response.setStatus(405);
 	}
 
 }

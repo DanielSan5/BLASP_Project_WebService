@@ -41,41 +41,40 @@ public class QueryHandler_filters {
 	}
 	
 	//filtraggio in base a classe, nome e materia
-	public List<Ticket> getCNM(String classe, String nome, String materia) {
+	public List<Ticket> getCNM(String classe, String nome, String materia) throws SQLException, NoSuchFieldException {
 		// TODO Auto-generated method stub
 		establishConnection();
 		String ticketCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_nome = ? AND u.UT_classe = ? ";
 		ResultSet res;
-		
-		
-		try(
-			java.sql.PreparedStatement ticketCM_query = conn.prepareStatement(ticketCM);
-			){
-							
-				res = ticketCM_query.executeQuery();
-				while(res.next()) {
-					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
+		java.sql.PreparedStatement ticketCM_query = conn.prepareStatement(ticketCM);
+	
 					
-					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
-							res.getString("TIC_descrizione"), user_info);
-					
-					tickets.add(ticket);
-					
-				}
-				conn.close();
-				
-				return tickets;
-				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
+		res = ticketCM_query.executeQuery();
+		while(res.next()) {
+			
+			Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+					res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
+			
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
+					res.getString("TIC_descrizione"), user_info);
+			
+			tickets.add(ticket);
+			
 		}
+		if(tickets.isEmpty()) {
+			conn.close();
+			throw new NoSuchFieldException("nessun risultato");
+		}else {
+			conn.close();
+			return tickets;
+		}
+	
+	
 
 	}
 
 	//filtraggio in base a localita, nome e materia
-	public List<Ticket> getLNM(String localita, String nome, String materia) {
+	public List<Ticket> getLNM(String localita, String nome, String materia) throws SQLException, NoSuchFieldException {
 		// TODO Auto-generated method stub
 		
 		establishConnection();
@@ -83,203 +82,201 @@ public class QueryHandler_filters {
 		ResultSet res;
 		
 		
-		try(
-			java.sql.PreparedStatement ticketLNM_query = conn.prepareStatement(ticketLNM);
-			){
-							
-				res = ticketLNM_query.executeQuery();
-				while(res.next()) {
-					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
-					
-					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
-							res.getString("TIC_descrizione"), user_info);
-					tickets.add(ticket);
-					
-				}
-				conn.close();
-				
-				return tickets;
-				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
+		
+		java.sql.PreparedStatement ticketLNM_query = conn.prepareStatement(ticketLNM);
+		
+						
+		res = ticketLNM_query.executeQuery();
+		while(res.next()) {
+			Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+					res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
+			
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
+					res.getString("TIC_descrizione"), user_info);
+			tickets.add(ticket);
+			
 		}
+		if(tickets.isEmpty()) {
+			conn.close();
+			throw new NoSuchFieldException("nessun risultato");
+		}else {
+			conn.close();
+			return tickets;
+		}
+				
+	
 
 	}
 
 	//filtraggio in base a localita, classe e materia
-	public List<Ticket> getLCM(String localita, String classe, String materia) {
+	public List<Ticket> getLCM(String localita, String classe, String materia) throws SQLException, NoSuchFieldException {
 		// TODO Auto-generated method stub
 		establishConnection();
 		String ticketLCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_localita = ? AND u.UT_classe = ?";
 		ResultSet res;
 		
 		
-		try(
-			java.sql.PreparedStatement ticketLCM_query = conn.prepareStatement(ticketLCM);
-			){
+	
+		java.sql.PreparedStatement ticketLCM_query = conn.prepareStatement(ticketLCM);
+			
 							
-				res = ticketLCM_query.executeQuery();
-				while(res.next()) {
-					
-					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
-					
-					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
-							res.getString("TIC_descrizione"), user_info);
-					tickets.add(ticket);
-					
-				}
-				conn.close();
-				
-				return tickets;
-				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
+		res = ticketLCM_query.executeQuery();
+		while(res.next()) {
+			
+			Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+					res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
+			
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
+					res.getString("TIC_descrizione"), user_info);
+			tickets.add(ticket);
+			
 		}
+		if(tickets.isEmpty()) {
+			conn.close();
+			throw new NoSuchFieldException("nessun risultato");
+		}else {
+			conn.close();
+			return tickets;
+		}
+		
+		
 
 	
 	}
 	
 	//filtraggio in base a nome e materia
-	public List<Ticket> getNM(String nome, String materia) {
+	public List<Ticket> getNM(String nome, String materia) throws SQLException, NoSuchFieldException {
 		// TODO Auto-generated method stub
 		establishConnection();
 		String ticketNM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_nome = ? ";
 		ResultSet res;
 		
-		try(
-			java.sql.PreparedStatement ticketNM_query = conn.prepareStatement(ticketNM);
-			){
-							
-				res = ticketNM_query.executeQuery();
-				while(res.next()) {
-					
-					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
-					
-					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
-							res.getString("TIC_descrizione"), user_info);
-					tickets.add(ticket);
-					
-				}
-				conn.close();
-				
-				return tickets;
-				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
+	
+		java.sql.PreparedStatement ticketNM_query = conn.prepareStatement(ticketNM);
+								
+		res = ticketNM_query.executeQuery();
+		while(res.next()) {
+			
+			Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+					res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
+			
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
+					res.getString("TIC_descrizione"), user_info);
+			tickets.add(ticket);
+			
 		}
+		if(tickets.isEmpty()) {
+			conn.close();
+			throw new NoSuchFieldException("nessun risultato");
+		}else {
+			conn.close();
+			return tickets;
+		}
+		
+		
 
 		
 	}
 
 	//filtraggio in base a classe e materia
-	public List<Ticket> getCM(String classe, String materia) {
+	public List<Ticket> getCM(String classe, String materia) throws SQLException, NoSuchFieldException {
 		// TODO Auto-generated method stub
 		establishConnection();
 		String ticketCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_classe = ?";
 		ResultSet res;
 		
 		
-		try(
-			java.sql.PreparedStatement ticketCM_query = conn.prepareStatement(ticketCM);
-			){
+	
+		java.sql.PreparedStatement ticketCM_query = conn.prepareStatement(ticketCM);
+		
 							
-				res = ticketCM_query.executeQuery();
-				while(res.next()) {
-					
-					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
-					
-					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
-							res.getString("TIC_descrizione"), user_info);
-					tickets.add(ticket);
-					
-				}
-				conn.close();
-				
-				return tickets;
-				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
+		res = ticketCM_query.executeQuery();
+		while(res.next()) {
+			
+			Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+					res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
+			
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
+					res.getString("TIC_descrizione"), user_info);
+			tickets.add(ticket);
+			
 		}
+		if(tickets.isEmpty()) {
+			conn.close();
+			throw new NoSuchFieldException("nessun risultato");
+		}else {
+			conn.close();
+			return tickets;
+		}
+	
 	
 	}
 
 	//filtraggio in base a localita e materia
-	public List<Ticket> getLM(String localita, String materia) {
+	public List<Ticket> getLM(String localita, String materia) throws SQLException, NoSuchFieldException {
 		
 		establishConnection();
 		String ticketLM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_localita = ?";
 		ResultSet res;
 			
-			try(
-				java.sql.PreparedStatement ticketLM_query = conn.prepareStatement(ticketLM);
-				){
-								
-					res = ticketLM_query.executeQuery();
-					while(res.next()) {
-						
-						Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-								res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
-						
-						Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
-								res.getString("TIC_descrizione"), user_info);
-						tickets.add(ticket);
-						
-					}
-					conn.close();
-					
-					return tickets;
-					
-			}catch(SQLException e){
-				System.out.println(e.getLocalizedMessage());
-				return null;
-			}
+	
+		java.sql.PreparedStatement ticketLM_query = conn.prepareStatement(ticketLM);
+				
+		res = ticketLM_query.executeQuery();
+		while(res.next()) {
+			
+			Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+					res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
+			
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
+					res.getString("TIC_descrizione"), user_info);
+			tickets.add(ticket);
+			
+		}
+		if(tickets.isEmpty()) {
+			conn.close();
+			throw new NoSuchFieldException("nessun risultato");
+		}else {
+			conn.close();
+			return tickets;
+		}
 		
 	}
 
 	//filtraggio in base alla materia
-	public List<Ticket> getM(String materia) {
+	public List<Ticket> getM(String materia) throws SQLException, NoSuchFieldException {
 		
 		establishConnection();
-		
-		
 		String ticketM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ?";
 		ResultSet res;
-		
-		
-		try(
-			java.sql.PreparedStatement ticketM_query = conn.prepareStatement(ticketM);
-			){
+	
+		java.sql.PreparedStatement ticketM_query = conn.prepareStatement(ticketM);
+			
 							
-				res = ticketM_query.executeQuery();
-				while(res.next()) {
-					
-					Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
-							res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
-					
-					Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
-							res.getString("TIC_descrizione"), user_info);
-					tickets.add(ticket);
-					
-				}
-				conn.close();
-				
-				return tickets;
-				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
+		res = ticketM_query.executeQuery();
+		while(res.next()) {
+			
+			Utente user_info = new Utente(res.getString("UT_nome"), res.getString("UT_cognome"), res.getInt("UT_classe"), 
+					res.getString("UT_indirizzo_scolastico"), res.getString("UT_descrizione"), res.getString("UT_data_nascita"), res.getString("UT_localita"), res.getBoolean("UT_admin"));
+			
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_stato"), res.getString("TIC_materia"), res.getString("TIC_tags"), 
+					res.getString("TIC_descrizione"), user_info);
+			tickets.add(ticket);
+			
 		}
+		if(tickets.isEmpty()) {
+			conn.close();
+			throw new NoSuchFieldException("nessun risultato");
+		}else {
+			conn.close();
+			return tickets;
+		}
+				
 	
 	}
 	
 	
 
+	
+	
 }

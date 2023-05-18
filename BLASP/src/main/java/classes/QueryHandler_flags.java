@@ -7,8 +7,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.security.auth.login.CredentialNotFoundException;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mysql.jdbc.exceptions.MySQLDataException;
 
 public class QueryHandler_flags {
 
@@ -38,48 +41,41 @@ public class QueryHandler_flags {
 	}
 	
 //***INSERISCI AVVISO***
-	public int inserisciAvviso(String descrizione_avviso, int ticket_id, int utente_id) {
+	public int inserisciAvvisoGetId(String descrizione_avviso, int ticket_id, int utente_id) throws SQLException {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO avviso (AVV_descrizione, ID_TIC_avvisato, UT_ID_avviso) VALUES (?,?,?)";
-		//DA CORREGGERE I NOME DI CAMPI DEL DB
+		String prepared_query = "INSERT INTO avviso (AVV_descrizione, TIC_id_avvisato, UT_ID_avviso) VALUES (?,?,?)";
+	
 		
-		try(
-				java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-				){
-				
-				pr.setString(1, descrizione_avviso);
-				pr.setInt(2, ticket_id);
-				pr.setInt(3, utente_id);
+
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		
+		pr.setString(1, descrizione_avviso);
+		pr.setInt(2, ticket_id);
+		pr.setInt(3, utente_id);
+	
+		//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfin
+
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not create row in utenti");
+		}else {
 			
-				//executeUpdate returna o 1 se  andato a buonfine o 0 se non  andato a buonfine
-				int check = pr.executeUpdate();
-				
-				
-				if (check == 1) {
-					if(pr.getGeneratedKeys().next()) {
-						conn.close();
-						return pr.getGeneratedKeys().getInt(1);
-					}else {
-						conn.close();
-						return 0;
-					}
-				
-				}else {
-					return 0;
-				}
-			
-			}catch(SQLException e){
-				
-				System.out.println(e.getLocalizedMessage());
-				return -1;
-			
+			if(pr.getGeneratedKeys().next()) {
+				conn.close();
+				return pr.getGeneratedKeys().getInt(1);
+			}else {
+				conn.close();
+				throw new MySQLDataException("could get generated key");
 			}
+		}
+			
+			
 		
 	}	
 	
-	
-	public ArrayList<String> getFlags(int utente_id) throws Exception {
+	public ArrayList<String> getFlags(int utente_id) throws SQLException, CredentialNotFoundException {
 		
 		establishConnection();
 		
@@ -87,31 +83,28 @@ public class QueryHandler_flags {
 		ResultSet res;
 		ArrayList<String> flag_desc= new ArrayList<String>();
 		
-		try(
-			java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
-			){
-			
-				getUser_query.setInt(1, utente_id);
-				res = getUser_query.executeQuery();
-				
-				while(res.next()) {
-					flag_desc.add(res.getString("SEG_descrizione"));
-					
-				}
-				if(flag_desc.isEmpty()) {
-					throw new Exception("utente non esistente");
-				}else {
-					return flag_desc;
-				}
-				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
-		}
+	
+		java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
 		
+		
+		getUser_query.setInt(1, utente_id);
+		res = getUser_query.executeQuery();
+		
+		while(res.next()) {
+			
+			flag_desc.add(res.getString("SEG_descrizione"));
+			
+		}
+		if(flag_desc.isEmpty()) {
+			throw new CredentialNotFoundException("utente non esistente");
+		}else {
+			return flag_desc;
+		}
+			
+	
 	}
 	
-	public ArrayList<Avviso> getAvvisi(int utente_id) throws Exception {
+	public ArrayList<Avviso> getAvvisi(int utente_id) throws SQLException, CredentialNotFoundException {
 		
 		establishConnection();
 		
@@ -119,46 +112,42 @@ public class QueryHandler_flags {
 		ResultSet res;
 		ArrayList<Avviso> avvisi = new ArrayList<Avviso>();
 		
-		try(
-			java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
-			){
+	
+		java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
+	
+	
+		getUser_query.setInt(1, utente_id);
+		res = getUser_query.executeQuery();
+		
+		while(res.next()) {
 			
-				getUser_query.setInt(1, utente_id);
-				res = getUser_query.executeQuery();
-				
-				while(res.next()) {
-					
-					String email = getUserEmail(res.getInt("UT_id_avvisante"));
-					
-					Ticket tic = new Ticket(res.getInt("TIC_id"),res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
-							res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
-					
-					Avviso avv = new Avviso(res.getString("AVV_descrizione"), email , tic);
-					
-					avvisi.add(avv);
-					
-				}
-				if(avvisi.isEmpty()) {
-					throw new Exception("utente non esistente");
-				}else {
-					return avvisi;
-				}
-				
-		}catch(SQLException e){
-			System.out.println(e.getLocalizedMessage());
-			return null;
+			String email = getUserEmail(res.getInt("UT_id_avvisante"));
+			
+			Ticket tic = new Ticket(res.getInt("TIC_id"),res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
+					res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
+			
+			Avviso avv = new Avviso(res.getString("AVV_descrizione"), email , tic);
+			
+			avvisi.add(avv);
+			
 		}
+		if(avvisi.isEmpty()) {
+			throw new CredentialNotFoundException("utente non esistente");
+		}else {
+			return avvisi;
+		}
+	
 		
 	}
 	
-	public String getUserEmail(int user_id) throws Exception {
+	public String getUserEmail(int user_id) throws SQLException, CredentialNotFoundException {
 		
 		establishConnection();
 		String prepared_query = "SELECT UT_email FROM utenti WHERE UT_id = ?";
 		
-		try(
+		
 			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-			){
+			
 			
 			pr.setInt(1, user_id);
 			ResultSet res = pr.executeQuery();
@@ -171,14 +160,39 @@ public class QueryHandler_flags {
 				
 			}else {
 				conn.close();
-				throw new Exception("no results");
+				throw new CredentialNotFoundException("no results");
 			}
 			
-		}catch(SQLException e){
-			
-			System.out.println(e.getLocalizedMessage());
-			return null;
 		
+	}
+	
+	//***INSERISCI SEGNALAZIONE***
+	public int inserisciSegnalazioneGetId(int user_segnalato_id, int user_segnalatore_id) throws SQLException, CredentialNotFoundException{
+		
+		establishConnection();
+		String prepared_query = "INSERT INTO segnalazione (UT_id_segnalato, UT_id_segnalatore) VALUES (?, ?)";
+		
+	
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		//pr.setString(1, username);
+		pr.setInt(1, user_segnalato_id);
+		pr.setInt(2, user_segnalatore_id);
+		
+		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+		
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not create row in segnalazione");
+		}else {
+			
+			if(pr.getGeneratedKeys().next()) {
+				conn.close();
+				return pr.getGeneratedKeys().getInt(1);
+			}else {
+				conn.close();
+				throw new MySQLDataException("could get generated key");
+			}
 		}
 	}
 

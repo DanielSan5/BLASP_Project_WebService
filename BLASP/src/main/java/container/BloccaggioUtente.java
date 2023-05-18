@@ -10,6 +10,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.sql.SQLException;
+
+import javax.security.auth.login.CredentialNotFoundException;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -77,6 +80,7 @@ public class BloccaggioUtente extends HttpServlet {
 		String toBlock_email = user.get("email").getAsString();
 		
 		String [] toCheck = {jwtToken};
+		
 		if(Checks.isValidEmail(toBlock_email) && Checks.isNotBlank(toCheck)) {
 		
 			final JwtVal validator = new JwtVal();
@@ -87,55 +91,26 @@ public class BloccaggioUtente extends HttpServlet {
 				String email = jwtDecoded.getClaim("sub-email").asString();
 				
 				QueryHandler queryUser = new QueryHandler();
-				int userAdmin_id = queryUser.getUserIdAdmin(email);			//USER ID dell'ADMIN
-				int user_id_toBlock = queryUser.getUserId(toBlock_email);	//USER ID di quello da bloccare
+				int userAdmin_id = queryUser.getUserId(email);	
+				boolean isAdmin = queryUser.isUserAdmin(userAdmin_id);
 				
-				switch(userAdmin_id) {
-				case 0:
+				if(isAdmin) {
 					
-					response.setStatus(400);
+						
+					int user_id_toBlock = queryUser.getUserId(toBlock_email);	//USER ID di quello da bloccare
+					queryUser.blockUser(user_id_toBlock);
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "utente bloccato");
+					
+				}else {
+					
+					response.setStatus(403);
 					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("descrizione", "utente non Admin o inesistente");
-					break;
-				
-				case -1:
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");			
-					break;
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					System.out.println("not authorized action");
 					
-				default:
-					
-					switch(user_id_toBlock) {
-					case 0:
-						
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("descrizione", "utente da bloccare non presente");
-						break;
-					
-					case -1:
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");			
-						break;
-						
-					default:
-						if(queryUser.blockUser(user_id_toBlock) == 1) {
-							response.setStatus(200);
-							jsonResponse.addProperty("stato", "confermato");
-							jsonResponse.addProperty("desc", "utente bloccato");
-						}else {
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-						}
-						break;
-					}
-					
-					break;
 				}
-				
 				
 				
 			}catch(InvalidParameterException e) {
@@ -146,7 +121,7 @@ public class BloccaggioUtente extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			}catch(Exception e) {
+			}catch(SQLException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
@@ -154,6 +129,12 @@ public class BloccaggioUtente extends HttpServlet {
 				System.out.println("no results");
 				e.printStackTrace();
 				
+			} catch (CredentialNotFoundException e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
+				e.printStackTrace();
 			}finally {
 				out.println(jsonResponse.toString());
 			}

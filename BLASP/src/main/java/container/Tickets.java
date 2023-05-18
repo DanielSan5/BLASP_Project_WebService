@@ -10,11 +10,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import javax.security.auth.login.CredentialNotFoundException;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -41,7 +44,7 @@ import org.json.JSONObject;;
 public class Tickets extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
-	private QueryHandler_filters queryForThis = new QueryHandler_filters();
+	//private QueryHandler_filters queryForThis = new QueryHandler_filters();
 			
 				
     /**
@@ -91,6 +94,8 @@ public class Tickets extends HttpServlet {
 				 * CNM -> classe, nome e materia
 				 */
 				List<Ticket> tickets = new ArrayList<Ticket>();
+				QueryHandler_filters queryForThis = new QueryHandler_filters();
+				
 				if(filters.containsKey("localita") && filters.containsKey("classe")) {
 					String filtroLocalita = filters.get("localita").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
@@ -135,23 +140,14 @@ public class Tickets extends HttpServlet {
 					
 				}
 				
-				if(tickets == null) {
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-				}else if(tickets.isEmpty()){
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("descrizione", "ricerca filtrata");
-					jsonResponse.addProperty("filtered", "nessun risultato");
-				}else {
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("descrizione", "ricerca filtrata");
-					jsonResponse.add("filtered", g.toJsonTree(tickets));	
-				}
+			
+				response.setStatus(200);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("descrizione", "ricerca filtrata");
+				jsonResponse.add("filtered", g.toJsonTree(tickets));	
 				
-			}catch(InvalidParameterException e) {
+				
+			}catch(InvalidParameterException  e) {
 				
 				response.setStatus(403);
 				jsonResponse.addProperty("stato", "errore client");
@@ -159,7 +155,23 @@ public class Tickets extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 				
-			}finally {
+			}catch(SQLException e) {
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+			
+				e.printStackTrace();
+				
+			} catch (NoSuchFieldException e) {
+				
+				response.setStatus(200);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("descrizione", "ricerca filtrata");
+				jsonResponse.addProperty("filtered", "nessun risultato");
+				e.printStackTrace();
+			}
+			finally {
 				out.println(jsonResponse.toString());
 			}
 			
@@ -173,7 +185,6 @@ public class Tickets extends HttpServlet {
 		out.println(jsonResponse.toString());
 		
 	}
-
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
@@ -209,100 +220,65 @@ public class Tickets extends HttpServlet {
 		//Estrazione del token dall'header
 		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 		String[] toCheck = {jwtToken, materia, livello_materia, descrizione, dataStringa};
-		
-		if(Checks.isValidTag(livello_materia) && Checks.isValidMateria(materia) && Checks.isNotBlank(toCheck)) {
+		try {
 			
-			final JwtVal validator = new JwtVal();
+			if(Checks.isValidTag(livello_materia) && Checks.isValidMateria(materia) && Checks.isNotBlank(toCheck)) {
 			
-			try {
+				final JwtVal validator = new JwtVal();
 			
 				DecodedJWT jwt = validator.validate(jwtToken);
 				String email = jwt.getClaim("sub-email").asString();
 				QueryHandler queryUser = new QueryHandler();
 				int user_id = queryUser.getUserId(email);
+	
+				QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
 				
-				switch(user_id) {
-				
-					case 0:
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("descrizione", "utente non esistente");
-						break;
-					case -1:
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");	
-						break;
-						
-					default:
-						QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
-						
-						int id_ticket = queryForThis.inserisciTicket(materia, livello_materia, descrizione, dataStringa, user_id);
-						
-						if(id_ticket == 0){
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-							
-						}else if(id_ticket == 1){
-							
-							Ticket ticket = queryForThis.getTicketFromId(id_ticket);
-							
-							if(ticket != null) {
-								
-								response.setStatus(201);
-								jsonResponse.addProperty("stato", "confermato");
-								jsonResponse.addProperty("desc", "ticket creato");
-								
-								JsonObject ticket_info = new JsonObject();
-								ticket_info.addProperty("numero_ticket", id_ticket);
-								ticket_info.addProperty("data_cr", ticket.getData_cr());
-								ticket_info.add("ticket_info", g.toJsonTree(ticket));
-								
-								jsonResponse.add("ticket_inserito", ticket_info);
-							
-							}else {
-								response.setStatus(500);
-								jsonResponse.addProperty("stato", "errore server");
-								jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-								
-							}
-							
-						}else {
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-						}
-						break;		
-				}
-				
-				
-			}catch(InvalidParameterException e) {
-				
-				response.setStatus(403);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "non autorizzato");
-				System.out.println("not authorized token");
-				e.printStackTrace();
+				int id_ticket = queryForThis.inserisciTicketOttieniID(materia, livello_materia, descrizione, dataStringa, user_id);
 		
-			}catch(Exception e) {
+				Ticket ticket = queryForThis.getTicketFromId(id_ticket);
+				
+				response.setStatus(201);
+				jsonResponse.addProperty("stato", "confermato");
+				jsonResponse.addProperty("desc", "ticket creato");
+				
+				JsonObject ticket_info = new JsonObject();
+				ticket_info.addProperty("numero_ticket", id_ticket);
+				ticket_info.addProperty("data_cr", ticket.getData_cr());
+				ticket_info.add("ticket_info", g.toJsonTree(ticket));
+				
+				jsonResponse.add("ticket_inserito", ticket_info);
+				
+			}else {
 				
 				response.setStatus(400);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "nessun risultato");
-				
-				System.out.println("not created");
-				e.printStackTrace();
-				
-			}finally {
-				out.println(jsonResponse.toString());
+				jsonResponse.addProperty("stato", "errore");
+				jsonResponse.addProperty("desc", "errore nella sintassi");
 			}
-		}else {
 				
+		}catch(InvalidParameterException e) {
+			
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+	
+		} catch (SQLException e) {
+			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+			e.printStackTrace();
+		} catch (CredentialNotFoundException e) {
+			
 			response.setStatus(400);
-			jsonResponse.addProperty("stato", "errore");
-			jsonResponse.addProperty("desc", "errore nella sintassi");
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
+			e.printStackTrace();
+		}finally {
+			out.println(jsonResponse.toString());
 		}
+	
 		
 		out.println(jsonResponse.toString());
 		
@@ -311,7 +287,6 @@ public class Tickets extends HttpServlet {
 	/**
 	 * @see HttpServlet#doPut(HttpServletRequest request, HttpServletResponse response)
 	 */
-	//da mettere a posto
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
@@ -346,90 +321,65 @@ public class Tickets extends HttpServlet {
 		String valoreTag = user.get("to_edit").getAsJsonObject().get("tag").getAsString();
 		String[] toCheck = {jwtToken, valoreDescrizione, numeroTicket};
 		
-		if(Checks.isValidTag(valoreTag) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
+		try{
+			
+			if(Checks.isValidTag(valoreTag) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
 		
-			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-			int hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
-			
-			final JwtVal validator = new JwtVal();
-			
-			try{
+				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
 				
+				final JwtVal validator = new JwtVal();
+
 				validator.validate(jwtToken);
 				
-				switch(hasTicketId) {
-					case 1:
-						
-						//esecuzione della query
-						int modificaDatiTicket = queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTag);
-						
-						if(modificaDatiTicket == 1) {
-							response.setStatus(200);
-							jsonResponse.addProperty("desc", "ticket modificato");
-							jsonResponse.addProperty("stato", "confermato");
-						}else if(modificaDatiTicket == 0 || modificaDatiTicket == -1) {
-							response.setStatus(400);
-							jsonResponse.addProperty("desc", "errore modifica ticket");
-							jsonResponse.addProperty("stato", "errore");
-						}
-						
-						Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
-						
-						if(ticket_info == null) {
-							response.setStatus(400);
-							jsonResponse.addProperty("ticket_info", "impossibile restituire dati ticket");
-						}
-						jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
-						break;
+				if(hasTicketId) {
 					
-					case 0:
-						
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore");
-						jsonResponse.addProperty("desc", "ticket inesistente");
-						
-						
-						break;
-						
-					case -1:
-						
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-						
-						break;
-						
+					//esecuzione della query (void)
+					queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTag);
+
+					response.setStatus(200);
+					jsonResponse.addProperty("desc", "ticket modificato");
+					jsonResponse.addProperty("stato", "confermato");
+					
+					Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
+					jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
+	
+				}else {
+					
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "ticket inesistente");
 					
 				}
 				
-		
-			}catch(InvalidParameterException e) {
-			
-				response.setStatus(403);
+			}else {
+				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("desc", "utente non autorizzato");
-				System.out.println("not authorized token");
-				e.printStackTrace();
-			
-			}catch(Exception e) {
-				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-				System.out.println("no results");
-				e.printStackTrace();
-				
-			}finally {
-				out.println(jsonResponse.toString());
+				jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 			}
 		
-		}else {
+		}catch(InvalidParameterException e) {
+		
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("desc", "utente non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+		
+		} catch (NumberFormatException | SQLException e) {
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("desc", "errore nell'elaborazione della richiesta");
+			e.printStackTrace();
+		} catch (CredentialNotFoundException e) {
+			
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+			jsonResponse.addProperty("desc", "nessun risultato");
+			e.printStackTrace();
+		}finally {
+			out.println(jsonResponse.toString());
 		}
-		
-			
 		
 		out.println(jsonResponse.toString());
 		
@@ -465,41 +415,26 @@ public class Tickets extends HttpServlet {
 		if(Checks.isNotBlank(toCheck)) {
 			
 			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-			int hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
-			
-			final JwtVal validator = new JwtVal();
 			
 			try{
+					
+				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
+				
+				final JwtVal validator = new JwtVal();
+			
 				
 				validator.validate(jwtToken);
 				
-				switch(hasTicketId) {
+				if(hasTicketId) {
+			
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "ticket cancellato");
 				
-					case 1:
-						
-						response.setStatus(200);
-						jsonResponse.addProperty("stato", "confermato");
-						jsonResponse.addProperty("desc", "ticket cancellato");
-					
-						break;
-					
-					case 0:
-						
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
-						
-						
-						break;
-						
-					case -1:
-						
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-						
-						break;
-					
+				}else {
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 				}
 			
 			}catch(InvalidParameterException e) {
@@ -510,12 +445,11 @@ public class Tickets extends HttpServlet {
 				System.out.println("not authorized token");
 				e.printStackTrace();
 			
-			}catch(Exception e) {
+			} catch (NumberFormatException | SQLException e) {
 				
 				response.setStatus(500);
 				jsonResponse.addProperty("stato", "errore server");
 				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-				System.out.println("no results");
 				e.printStackTrace();
 				
 			}finally {

@@ -13,6 +13,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
+import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,7 +23,12 @@ import java.util.Map;
 import java.util.Properties;
 import jakarta.mail.*;
 import java.util.UUID;
+
+import javax.security.auth.login.CredentialNotFoundException;
+
 import org.eclipse.angus.mail.util.MailSSLSocketFactory;
+
+import com.auth0.jwt.exceptions.JWTCreationException;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import classes.Checks;
@@ -90,18 +98,13 @@ public class AutenticazioneUtenti extends HttpServlet{
         	
     	}
     		
-    	
-   
-    
-    	
+ 
     }
     
-
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		response.setStatus(405);
 	}
-
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
@@ -133,73 +136,54 @@ public class AutenticazioneUtenti extends HttpServlet{
 		//jwtFormat.addProperty("sub", username);
 		jwtFormat.addProperty("sub-email", email);
 		jwtFormat.addProperty("aud", "*");
-		
-		
-		
+
 		//controlli input
 		
 		if(Checks.isValidPassword(password) && Checks.isValidEmail(email)) {
 			
 			QueryHandler queryForThis = new QueryHandler();
 			
-			int hasEmail = queryForThis.hasEmail(email);
-			
-			
-			switch(hasEmail) {
-			
-				case 1:
+			try {
+				
+				boolean hasEmail = queryForThis.hasEmail(email);
+				
+				if(hasEmail) {
 				
 					int user_id = queryForThis.getUserId(email);
 					String userStatus =  queryForThis.getUserStatus(user_id);
+					
 					if(userStatus.equals("none")) {
 						
-						int checkPass = queryForThis.checkPass(user_id, password);
+						boolean checkPass = queryForThis.checkPass(user_id, password);
 						
-						if(checkPass == 1) {
+						if(checkPass) {
 								
 							//generazione jwt per la sessione
-							try {
-								
-								JwtGen generator = new JwtGen();
-								Map<String, String> claims = new HashMap<>();
-								
-								jwtFormat.keySet().forEach(keyStr ->
-							    {
-							        String keyvalue = jwtFormat.get(keyStr).getAsString();
-							        claims.put(keyStr, keyvalue);
-							      
-							    });
-								
-								String token = generator.generateJwt(claims);
-								response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
-								response.setStatus(200);
-								jsonResponse.addProperty("stato", "confermato");
-								jsonResponse.addProperty("desc", "utente autorizzato");
-								
-							} catch (Exception e) {
-								response.setStatus(500);
-								jsonResponse.addProperty("stato", "errore server");
-								jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-								e.printStackTrace();
-							}finally {
-								out.println(jsonResponse.toString());
-							}
+							JwtGen generator = new JwtGen();
+							Map<String, String> claims = new HashMap<>();
+							
+							jwtFormat.keySet().forEach(keyStr ->
+						    {
+						        String keyvalue = jwtFormat.get(keyStr).getAsString();
+						        claims.put(keyStr, keyvalue);
+						      
+						    });
+							
+							String token = generator.generateJwt(claims);
+							response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+							response.setStatus(200);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("desc", "utente autorizzato");
 						
-						}else if (checkPass == 0){
+						}else{
 							
 							response.setStatus(401);
 							jsonResponse.addProperty("stato", "errore client");
 							jsonResponse.addProperty("descrizione", "credenziali invalide");
-							
-						}else {
-							response.setStatus(500);
-							jsonResponse.addProperty("stato", "errore server");
-							jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 						}
-						
 					
 					//pezzo nuovo da confermare
-					}else if (userStatus.equals("banned")) {
+					}else if(userStatus.equals("blocked")) {
 						
 						response.setStatus(401);
 						jsonResponse.addProperty("stato", "errore client");
@@ -211,32 +195,38 @@ public class AutenticazioneUtenti extends HttpServlet{
 						jsonResponse.addProperty("stato", "errore");
 						jsonResponse.addProperty("descrizione", "utente disabilitato");
 						
-					}else if(userStatus.isBlank()){
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
 					}
-					break;
-				case 0:
+					
+				}else {
 					response.setStatus(400);
 					jsonResponse.addProperty("stato", "errore client");
 					jsonResponse.addProperty("descrizione", "errore nella sintassi");
-					break;
-					
-				default:
-					response.setStatus(500);
-					jsonResponse.addProperty("stato", "errore server");
-					jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
-					break;
+						
+				}
+				
+				
+			}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
+				e.printStackTrace();
+				
+			} catch (CredentialNotFoundException e) {
+				
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "nessun risultato");
+				e.printStackTrace();
+			}finally {
+				out.println(jsonResponse.toString());
 			}
-			
-			
+
 		}else {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "errore nella sintassi");
 		}
-
 		
 		out.println(jsonResponse.toString());
 		
@@ -271,94 +261,98 @@ public class AutenticazioneUtenti extends HttpServlet{
 		
 		if(Checks.isValidEmail(email) && Checks.isNotBlank(toCheck)) {
 			
-			QueryHandler queryForThis = new QueryHandler();
-			int user_id = queryForThis.getUserId(email);
-			
-			switch(action) {
-			
-			
-				case "email_info":
-					
-					int check = queryForThis.hasEmail(email);
-					
-					if(check == 1) {
+			try {
+				
+				QueryHandler queryForThis = new QueryHandler();
+				int user_id = queryForThis.getUserId(email);
+				
+				switch(action) {
+	
+					case "email_info":
+	
+						boolean hasEmail = queryForThis.hasEmail(email);
 						
-						
-						String ver_code = UUID.randomUUID().toString();
-						
-						if(queryForThis.inserisciCodice(user_id, ver_code) == 1) {
-							
-							try {
+						if(hasEmail) {
 								
-								sendEmailCode(email, ver_code);
-								//da testare
-							} catch (GeneralSecurityException | MessagingException e) {
-								//errore database
-								e.printStackTrace();
-							}
+							String ver_code = UUID.randomUUID().toString();
+							//void
+							queryForThis.inserisciCodice(user_id, ver_code);
+							//void
+							sendEmailCode(email, ver_code);
+								
+						
+						}else{
+							
+							response.setStatus(400);
+							jsonResponse.addProperty("stato", "errore client");
+							jsonResponse.addProperty("descrizione", "email inesistente");
+							
+						}
+							
+						break;
+						
+					case "ver_code":
+						
+						String code = user.get("code").getAsString();
+						
+						if(queryForThis.checkCode(user_id, code)) {
+						
+							response.setStatus(200);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("descrizione", "codice verificato");
 							
 						}else {
-							//errore database
+							
+							response.setStatus(400);
+							jsonResponse.addProperty("stato", "errore client");
+							jsonResponse.addProperty("descrizione", "codice errato");
+							
 						}
+						break;
 						
-					}else if(check == 0){
-						//email inesistente
-					}else {
-						//errore database
-					}
-					break;
-					
-				case "ver_code":
-					
-					String code = user.get("code").getAsString();
-					try {
+					case "change_pass":
 						
-						if( queryForThis.checkCode(user_id, code)) {
-							//success
+						String new_pass = user.get("new_pass").getAsString();
+						String conf_pass = user.get("conf_new_pass").getAsString();
+						if(Checks.isValidPassword(new_pass) && Checks.isConfirmedPassword(new_pass, conf_pass)) {
+							
+							String new_pass_encr = passEncr(new_pass);
+							//void
+							queryForThis.changePass(user_id, new_pass_encr);
 							
 						}else {
-							//codice errato
+							
+							response.setStatus(400);
+							jsonResponse.addProperty("stato", "errore client");
+							jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 						}
+						break;
 						
-					} catch (Exception e) {
-						//errore database
-						e.printStackTrace();
-					}
-					
-					break;
-					
-				case "change_pass":
-					
-					String new_pass = user.get("new_pass").getAsString();
-					String conf_pass = user.get("conf_new_pass").getAsString();
-					if(Checks.isValidPassword(new_pass) && Checks.isConfirmedPassword(new_pass, conf_pass)) {
+					default:
 						
-						String new_pass_encr = passEncr(new_pass);
-						int checkPass = queryForThis.changePass(user_id, new_pass_encr);
-						if(checkPass == 1) {
-							//password cambiata
-						}else {
-							//errore
-						}
-						
-					}else {
-						//errore input
-					}
-					break;
-					
-				default:
-					//errore input
-					break;
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
+						break;
+				}
+			}catch(GeneralSecurityException | MessagingException | SQLException e) {
+				
+				response.setStatus(500);
+				jsonResponse.addProperty("stato", "errore server");
+				jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+				e.printStackTrace();
+			}finally {
+				out.println(jsonResponse.toString());
+				
 			}
+			
 		}else {
-			//errore input
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 		}
 	
-		
-		
-		
-
-		
+		out.println(jsonResponse.toString());
 		
 	}
 
