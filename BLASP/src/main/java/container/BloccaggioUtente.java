@@ -80,12 +80,12 @@ public class BloccaggioUtente extends HttpServlet {
 			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String toBlock_email = user.get("email").getAsString();
 			QueryHandler queryUser = new QueryHandler();
-			int toBlock_id = queryUser.getUserId(toBlock_email);
+			
 			
 			String [] toCheck = {jwtToken};
 			final JwtVal validator = new JwtVal();
 
-			if(Checks.isValidEmail(toBlock_email) && Checks.isNotBlank(toCheck) && Checks.isNotBlockedUser(toBlock_id) && Checks.hasNotThreFlags(toBlock_id)) {
+			if(Checks.isValidEmail(toBlock_email) && Checks.isNotBlank(toCheck)) {
 				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
 				String email = jwtDecoded.getClaim("sub-email").asString();
 				
