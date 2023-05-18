@@ -235,6 +235,32 @@ public class QueryHandler_ticket {
 			
 	}
 	
+	public ArrayList<Ticket> getFavTickets(int user_id) throws CredentialNotFoundException, SQLException {
+		
+		establishConnection();
+		
+		String getUser = "SELECT * FROM preferiti INNER JOIN tickets ON preferiti.TIC_id = tickets.TIC_id WHERE preferiti.UT_id = ?";
+		ResultSet res;
+		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
+		
+	
+		java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
+		
+		getUser_query.setInt(1, user_id);
+		res = getUser_query.executeQuery();
+		
+		while(res.next()) {
+			
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
+					res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
+			
+			tickets.add(ticket);
+			
+		}
+			return tickets;
+
+		
+	}
 	
 	
 	

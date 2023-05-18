@@ -501,7 +501,6 @@ public class QueryHandler {
 			
 	}
 
-		
 	
 
 }
