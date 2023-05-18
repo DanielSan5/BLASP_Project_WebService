@@ -17,6 +17,10 @@ import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -169,8 +173,13 @@ public class AutenticazioneUtenti extends HttpServlet{
 						      
 						    });
 							
+							LocalDate oggi = LocalDate.now();
+							LocalDate domani = oggi.plusDays(1);
+							ZonedDateTime domaniUTC = domani.atStartOfDay(ZoneId.of("UTC"));
+							String domaniUTCFormatted = domaniUTC.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+							
 							String token = generator.generateJwt(claims);
-							response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure");
+							response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure; exp=" + domaniUTCFormatted);
 							response.setStatus(200);
 							jsonResponse.addProperty("stato", "confermato");
 							jsonResponse.addProperty("desc", "utente autorizzato");

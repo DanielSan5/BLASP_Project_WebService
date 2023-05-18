@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.security.auth.login.CredentialNotFoundException;
+
 public abstract class Checks {
 
 	
@@ -221,5 +223,19 @@ public abstract class Checks {
 		QueryHandler queryForThis = new QueryHandler();
 		return queryForThis.checkExistMateria(materia);
 		
+	}
+	
+	public static boolean isNotBlockedUser(int user_id) throws SQLException{
+		
+		QueryHandler queryForThis = new QueryHandler();
+		return queryForThis.isNotBlockedUser(user_id);
+				
+	}
+	
+	public static boolean hasNotThreFlags(int user_id) throws SQLException{
+		
+		QueryHandler_flags queryForThis = new QueryHandler_flags();
+		return queryForThis.hasNotThreeFlags(user_id);
+				
 	}
 }
