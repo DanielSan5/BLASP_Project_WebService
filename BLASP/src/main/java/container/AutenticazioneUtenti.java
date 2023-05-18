@@ -77,7 +77,7 @@ public class AutenticazioneUtenti extends HttpServlet{
     		Properties props = new Properties();
         	props.put("mail.smtp.host", host);
         	props.put("mail.smtp.port", 587);
-        	props.put("mail.smtp.starttks.enable", "true");
+        	props.put("mail.smtp.starttls.enable", "true");
         	props.put("mail.smtp.auth", "true");
         	
         	Authenticator authenticator = new Authenticator() {
@@ -277,7 +277,10 @@ public class AutenticazioneUtenti extends HttpServlet{
 							queryForThis.inserisciCodice(user_id, ver_code);
 							//void
 							sendEmailCode(email, ver_code);
-								
+							
+							response.setStatus(200);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("descrizione", "email inviata");
 						
 						}else{
 							
@@ -292,12 +295,27 @@ public class AutenticazioneUtenti extends HttpServlet{
 					case "ver_code":
 						
 						String code = user.get("code").getAsString();
+						String new_pass = user.get("new_pass").getAsString();
+						String conf_pass = user.get("conf_new_pass").getAsString();
 						
 						if(queryForThis.checkCode(user_id, code)) {
-						
-							response.setStatus(200);
-							jsonResponse.addProperty("stato", "confermato");
-							jsonResponse.addProperty("descrizione", "codice verificato");
+							
+							if(Checks.isValidPassword(new_pass) && Checks.isConfirmedPassword(new_pass, conf_pass)) {
+								
+								String new_pass_encr = passEncr(new_pass);
+								//void
+								queryForThis.changePass(user_id, new_pass_encr);
+								
+								response.setStatus(200);
+								jsonResponse.addProperty("stato", "confermato");
+								jsonResponse.addProperty("descrizione", "password modificata");
+								
+							}else {
+								
+								response.setStatus(400);
+								jsonResponse.addProperty("stato", "errore client");
+								jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
+							}
 							
 						}else {
 							
@@ -305,24 +323,6 @@ public class AutenticazioneUtenti extends HttpServlet{
 							jsonResponse.addProperty("stato", "errore client");
 							jsonResponse.addProperty("descrizione", "codice errato");
 							
-						}
-						break;
-						
-					case "change_pass":
-						
-						String new_pass = user.get("new_pass").getAsString();
-						String conf_pass = user.get("conf_new_pass").getAsString();
-						if(Checks.isValidPassword(new_pass) && Checks.isConfirmedPassword(new_pass, conf_pass)) {
-							
-							String new_pass_encr = passEncr(new_pass);
-							//void
-							queryForThis.changePass(user_id, new_pass_encr);
-							
-						}else {
-							
-							response.setStatus(400);
-							jsonResponse.addProperty("stato", "errore client");
-							jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 						}
 						break;
 						

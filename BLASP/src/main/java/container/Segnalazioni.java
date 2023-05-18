@@ -141,6 +141,7 @@ public class Segnalazioni extends HttpServlet {
 			
 			//acquisizione valore delle chiavi
 			String email = user.get("email").getAsString();
+			String descrizione = user.get("descrizione").getAsString();
 			//Estrazione del token dall'header
 			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String[] toCheck = {jwtToken, email};
@@ -148,10 +149,8 @@ public class Segnalazioni extends HttpServlet {
 			
 			if(Checks.isNotBlank(toCheck) && Checks.isValidEmail(email)) {
 				
-			final JwtVal validator = new JwtVal();
-			
-		
-				
+				final JwtVal validator = new JwtVal();
+
 				DecodedJWT jwt = validator.validate(jwtToken);
 				String segnalatore_email = jwt.getClaim("sub-email").asString();
 				
@@ -161,7 +160,7 @@ public class Segnalazioni extends HttpServlet {
 				
 				QueryHandler_flags queryFlags = new QueryHandler_flags();
 				
-				int segnalazioneID = queryFlags.inserisciSegnalazioneGetId(user_segnalato_id, user_segnalatore_id);
+				int segnalazioneID = queryFlags.inserisciSegnalazioneGetId(user_segnalato_id, user_segnalatore_id, descrizione);
 				
 				response.setStatus(201);
 				jsonResponse.addProperty("stato", "confermato");

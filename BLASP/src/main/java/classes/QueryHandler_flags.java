@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,11 +45,11 @@ public class QueryHandler_flags {
 	public int inserisciAvvisoGetId(String descrizione_avviso, int ticket_id, int utente_id) throws SQLException {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO avviso (AVV_descrizione, TIC_id_avvisato, UT_ID_avviso) VALUES (?,?,?)";
+		String prepared_query = "INSERT INTO avviso (AVV_descrizione, TIC_id_avvisato, UT_ID_avvisante) VALUES (?,?,?)";
 	
 		
 
-		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query, Statement.RETURN_GENERATED_KEYS);
 	
 		
 		pr.setString(1, descrizione_avviso);
@@ -61,15 +62,17 @@ public class QueryHandler_flags {
 			conn.close();
 			throw new MySQLDataException("could not create row in utenti");
 		}else {
-			
-			if(pr.getGeneratedKeys().next()) {
+			ResultSet res = pr.getGeneratedKeys();
+			if(res.next()) {
+				
+				int key = res.getInt(1);
 				conn.close();
-				return pr.getGeneratedKeys().getInt(1);
+				return key;
 			}else {
 				conn.close();
 				throw new MySQLDataException("could get generated key");
 			}
-		}
+		}	
 			
 			
 		
@@ -167,18 +170,18 @@ public class QueryHandler_flags {
 	}
 	
 	//***INSERISCI SEGNALAZIONE***
-	public int inserisciSegnalazioneGetId(int user_segnalato_id, int user_segnalatore_id) throws SQLException, CredentialNotFoundException{
+	public int inserisciSegnalazioneGetId(int user_segnalato_id, int user_segnalatore_id, String segnalazioni) throws SQLException, CredentialNotFoundException{
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO segnalazione (UT_id_segnalato, UT_id_segnalatore) VALUES (?, ?)";
+		String prepared_query = "INSERT INTO segnalazione (UT_id_segnalato, UT_id_segnalatore, SEG_descrizione) VALUES (?, ?, ?)";
 		
 	
-		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query, Statement.RETURN_GENERATED_KEYS);
 	
 		//pr.setString(1, username);
 		pr.setInt(1, user_segnalato_id);
 		pr.setInt(2, user_segnalatore_id);
-		
+		pr.setString(3, segnalazioni);
 		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
 		
 		if(pr.executeUpdate() != 1) {
@@ -186,9 +189,12 @@ public class QueryHandler_flags {
 			throw new MySQLDataException("could not create row in segnalazione");
 		}else {
 			
-			if(pr.getGeneratedKeys().next()) {
+			ResultSet res = pr.getGeneratedKeys();
+			if(res.next()) {
+				
+				int key = res.getInt(1);
 				conn.close();
-				return pr.getGeneratedKeys().getInt(1);
+				return key;
 			}else {
 				conn.close();
 				throw new MySQLDataException("could get generated key");

@@ -9,22 +9,23 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.security.auth.login.CredentialNotFoundException;
 
-import com.auth0.jwt.interfaces.Claim;
+import org.apache.tomcat.jakartaee.commons.lang3.ArrayUtils;
+
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.mysql.cj.util.StringUtils;
 
 import classes.Checks;
 import classes.JwtVal;
@@ -34,9 +35,8 @@ import classes.QueryHandler_ticket;
 import classes.Ticket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-
-import org.json.JSONObject;;
+import java.util.HashMap;
+import java.util.Map;;
 
 /**
  * Servlet implementation class RicercaFiltrataTickets
@@ -46,7 +46,20 @@ public class Tickets extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
 	//private QueryHandler_filters queryForThis = new QueryHandler_filters();
-			
+	
+	private HashMap<String, String> getParametersFromQS(String queryString){
+		
+		String[] singleParameters = queryString.split("[&]");
+		HashMap<String, String> parametersPair = new HashMap<String,String>();
+		
+		for(int i= 0; i < singleParameters.length; i++) {
+			String[] p = singleParameters[i].split("[=]"); 
+			parametersPair.put(p[0], p[1]);			
+		}
+		return parametersPair;
+		
+	}
+	
 				
     /**
      * @see HttpServlet#HttpServlet()
@@ -69,7 +82,8 @@ public class Tickets extends HttpServlet {
 		try{
 			//Estrazione del token dall'header
 			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-			Map<String, String[]> filters = request.getParameterMap();
+			HashMap<String, String> filters = getParametersFromQS(request.getQueryString());
+			System.out.println(filters);
 			Set<String> types = filters.keySet();
 			
 			String[] toCheck = {jwtToken};
@@ -91,50 +105,77 @@ public class Tickets extends HttpServlet {
 				 * LCM -> localita, classe e materia
 				 * LNM -> localita, nome e materia
 				 * CNM -> classe, nome e materia
+				 * ALL --> localita, classe, nome e materia
 				 */
-				List<Ticket> tickets = new ArrayList<Ticket>();
+				ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 				QueryHandler_filters queryForThis = new QueryHandler_filters();
 				
-				if(filters.containsKey("localita") && filters.containsKey("classe")) {
-					String filtroLocalita = filters.get("localita").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+				if(filters.containsKey("localita") && filters.containsKey("nome") && filters.containsKey("classe")) {
 					
-					tickets = queryForThis.getLCM(filtroLocalita, filters.get("classe").toString(), 
-							filtroMateria);
+					String filtroMateria = filters.get("materia").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					String filtroLocalita = filters.get("localita").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					String filtroNome = filters.get("nome").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					
+					System.out.println("get all " + filtroMateria + filtroLocalita + filtroNome);
+					tickets = queryForThis.getAll(filtroMateria, filtroNome, filters.get("classe"), filtroLocalita );
+				}else if(filters.containsKey("localita") && filters.containsKey("classe")) {
+					
+					String filtroLocalita = filters.get("localita").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					String filtroMateria = filters.get("materia").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					System.out.println("get localita classe materia");
+					tickets = queryForThis.getLCM(filtroLocalita, filters.get("classe").toString(), filtroMateria);
 					
 				}else if(filters.containsKey("localita") && filters.containsKey("nome")) {
-					String filtroLocalita = filters.get("localita").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");					
 					
-					tickets = queryForThis.getLNM(filtroLocalita, filters.get("nome").toString(), 
-							filtroMateria);
+					String filtroLocalita = filters.get("localita").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					String filtroMateria = filters.get("materia").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");					
+					System.out.println("get localita nome materia");
+					tickets = queryForThis.getLNM(filtroLocalita, filters.get("nome").toString(), filtroMateria);
 					
 				}else if(filters.containsKey("classe") && filters.containsKey("nome")) {
-					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
 					
+					String filtroMateria = filters.get("materia").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
+					System.out.println("get classe nome materia");
 					tickets = queryForThis.getCNM(filters.get("classe").toString(), filters.get("nome").toString(), 
 							filtroMateria);
 					
 				}else if(filters.containsKey("localita")) {
-					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
-					String filtroLocalita = filters.get("localita").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 					
+					String filtroMateria = filters.get("materia").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
+					String filtroLocalita = filters.get("localita").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					System.out.println("get localita materia");
 					tickets = queryForThis.getLM(filtroLocalita, filtroMateria);
 					
 				}else if(filters.containsKey("classe")) {
-					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 					
+					String filtroMateria = filters.get("materia").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					System.out.println("get classe materia");
 					tickets = queryForThis.getCM(filters.get("classe").toString(), filtroMateria);
 					
 				}else if(filters.containsKey("nome")) {
-					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 					
+					String filtroMateria = filters.get("materia").toString()
+							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					
+					System.out.println("get nome materia");
 					tickets = queryForThis.getNM(filters.get("nome").toString(), filtroMateria);
 					
 				}
 				else {
-					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 					
+					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+					System.out.println("get materia");
 					tickets = queryForThis.getM(filtroMateria);
 					
 				}
@@ -167,15 +208,7 @@ public class Tickets extends HttpServlet {
 		
 			e.printStackTrace();
 			
-		} catch (NoSuchFieldException e) {
-			
-			response.setStatus(200);
-			jsonResponse.addProperty("stato", "confermato");
-			jsonResponse.addProperty("descrizione", "ricerca filtrata");
-			jsonResponse.addProperty("filtered", "nessun risultato");
-			e.printStackTrace();
-		}
-		finally {
+		}finally {
 			out.println(jsonResponse.toString());
 		}
 			
@@ -237,17 +270,14 @@ public class Tickets extends HttpServlet {
 				jsonResponse.addProperty("stato", "confermato");
 				jsonResponse.addProperty("desc", "ticket creato");
 				
-				JsonObject ticket_info = new JsonObject();
-				ticket_info.addProperty("numero_ticket", id_ticket);
-				ticket_info.addProperty("data_cr", ticket.getData_cr());
-				ticket_info.add("ticket_info", g.toJsonTree(ticket));
+				jsonResponse.add("ticket_info", g.toJsonTree(ticket));
 				
-				jsonResponse.add("ticket_inserito", ticket_info);
+				
 				
 			}else {
 				
 				response.setStatus(400);
-				jsonResponse.addProperty("stato", "errore");
+				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("desc", "errore nella sintassi");
 			}
 				
@@ -321,11 +351,11 @@ public class Tickets extends HttpServlet {
 			//acquisizione chiavi dell'ogetto "to_edit"
 			String valoreMateria = user.get("to_edit").getAsJsonObject().get("materia").getAsString();
 			String valoreDescrizione = user.get("to_edit").getAsJsonObject().get("descrizione").getAsString();
-			String valoreTag = user.get("to_edit").getAsJsonObject().get("tag").getAsString();
+			String valoreTags = user.get("to_edit").getAsJsonObject().get("tags").getAsString();
 			String[] toCheck = {jwtToken, valoreDescrizione, numeroTicket};
 			
 			
-			if(Checks.isValidTag(valoreTag) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
+			if(Checks.isValidTag(valoreTags) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
 		
 				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
 				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
@@ -337,7 +367,7 @@ public class Tickets extends HttpServlet {
 				if(hasTicketId) {
 					
 					//esecuzione della query (void)
-					queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTag);
+					queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTags);
 
 					response.setStatus(200);
 					jsonResponse.addProperty("desc", "ticket modificato");
@@ -388,8 +418,6 @@ public class Tickets extends HttpServlet {
 			out.println(jsonResponse.toString());
 		}
 		
-		out.println(jsonResponse.toString());
-		
 	}
 	
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -410,30 +438,28 @@ public class Tickets extends HttpServlet {
 		}
 				
 		body = sb.toString();
-				
-		JsonObject ticket = g.fromJson(body, JsonObject.class);
-		
-		//Estrazione del token dall'header
-		String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
-		//acquisizione delle chiavi
-		String  numeroTicket = ticket.get("numero_ticket").getAsString();	
-		String[] toCheck = {jwtToken, numeroTicket};
-		
-		if(Checks.isNotBlank(toCheck)) {
+		try{	
 			
-			QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+			JsonObject ticket = g.fromJson(body, JsonObject.class);
 			
-			try{
-					
-				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
+			//Estrazione del token dall'header
+			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			//acquisizione delle chiavi
+			String  numeroTicket = ticket.get("numero_ticket").getAsString();	
+			String[] toCheck = {jwtToken, numeroTicket};
+			
+			if(Checks.isNotBlank(toCheck)) {
 				
 				final JwtVal validator = new JwtVal();
-			
-				
-				validator.validate(jwtToken);
+				DecodedJWT jwt = validator.validate(jwtToken);
+				String email = jwt.getClaim("sub-email").asString();
+				//da controllare che il ticket sia veramente dell'utente
+				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
 				
 				if(hasTicketId) {
-			
+					
+					queryForThis.cancellaTicket(Integer.parseInt(numeroTicket));
 					response.setStatus(200);
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("desc", "ticket cancellato");
@@ -441,35 +467,38 @@ public class Tickets extends HttpServlet {
 				}else {
 					response.setStatus(400);
 					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+					jsonResponse.addProperty("desc", "ticket inesistente");
 				}
-			
-			}catch(InvalidParameterException e) {
-				
-				response.setStatus(403);
+			}else {
+				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("desc", "utente non autorizzato");
-				System.out.println("not authorized token");
-				e.printStackTrace();
-			
-			} catch (NumberFormatException | SQLException e) {
-				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
-				e.printStackTrace();
-				
-			}finally {
-				out.println(jsonResponse.toString());
+				jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 			}
+	
+		}catch(InvalidParameterException e) {
 			
-		}else {
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("desc", "utente non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+		
+		} catch (NumberFormatException | SQLException e) {
+			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+			e.printStackTrace();
+			
+		}catch(JsonSyntaxException | NullPointerException e) {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
-			jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+			jsonResponse.addProperty("descrizione", "formato non supportato");
+			e.printStackTrace();
+		}finally {
+			out.println(jsonResponse.toString());
 		}
-		
-		out.println(jsonResponse.toString());
+			
 		
 	}
 

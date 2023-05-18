@@ -202,18 +202,15 @@ public abstract class Checks {
 
 	public static boolean isValidTag(String tag) {
 
-		boolean result = false;
 		ArrayList<String> validStrings = new ArrayList<>(List.of("prima", "seconda", "terza", "quarta", "quinta"));
 		String[] tagSeparati = tag.split(",");
-		
-		for(String tagSingolo : tagSeparati) {
-			if(!validStrings.contains(tagSingolo.trim()))
-				result = true;
-			else
-				result = false;
-				break;
+		for(int i = 0; i<tagSeparati.length; i++) {
+			if(!validStrings.contains(tagSeparati[i])) {
+				return false;
+			}
 		}
-		return result;
+		return true;
+		
 	}
 
 	public static boolean isValidMateria(String materia) throws SQLException {

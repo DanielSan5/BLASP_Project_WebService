@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 import javax.security.auth.login.CredentialNotFoundException;
@@ -45,10 +46,10 @@ public class QueryHandler_ticket {
 	public int inserisciTicketOttieniID(String materia, String livello_materia, String descrizione, String dataCreazione, int userID) throws SQLException {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO tickets (TIC_materia, TIC_livello_materia, TIC_descrizione, TIC_data_cr, UT_id_apertura) VALUES (?, ?, ?, ?, ?)";
+		String prepared_query = "INSERT INTO tickets (TIC_materia, TIC_tags, TIC_descrizione, TIC_data_creazione, UT_id_apertura) VALUES (?, ?, ?, ?, ?)";
 		
 
-		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query, Statement.RETURN_GENERATED_KEYS);
 	
 		
 		pr.setString(1, materia);
@@ -65,10 +66,12 @@ public class QueryHandler_ticket {
 			conn.close();
 			throw new MySQLDataException("could not create row in utenti");
 		}else {
-			
-			if(pr.getGeneratedKeys().next()) {
+			ResultSet res = pr.getGeneratedKeys();
+			if(res.next()) {
+				
+				int key = res.getInt(1);
 				conn.close();
-				return pr.getGeneratedKeys().getInt(1);
+				return key;
 			}else {
 				conn.close();
 				throw new MySQLDataException("could get generated key");
@@ -86,8 +89,8 @@ public class QueryHandler_ticket {
 		
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 		
-		pr.setInt(1, ticket_id);
-		pr.setInt(2, user_id);
+		pr.setInt(1,user_id );
+		pr.setInt(2, ticket_id);
 		
 		if(pr.executeUpdate() != 1) {
 			conn.close();
@@ -124,7 +127,7 @@ public class QueryHandler_ticket {
 	public void modificaDatiTicket(int numero_ticket, String materia, String descrizione, String tag) throws SQLException {
 			
 		establishConnection();
-		String prepared_query = "UPDATE tickets SET (TIC_materia, TIC_descrizione, TIC_tag) = (?, ?, ?) WHERE TIC_id = ?";		
+		String prepared_query = "UPDATE tickets SET TIC_materia = ?, TIC_descrizione = ?, TIC_tags = ? WHERE TIC_id = ?";		
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 	
@@ -132,7 +135,7 @@ public class QueryHandler_ticket {
 		pr.setString(1, materia);
 		pr.setString(2, descrizione);
 		pr.setString(3, tag);
-
+		pr.setInt(4, numero_ticket);
 		//executeUpdate returna o 1 se   andato a buonfine o 0 se non   andato a buonfine
 		if(pr.executeUpdate() != 1) {
 			conn.close();
@@ -180,8 +183,8 @@ public class QueryHandler_ticket {
 			
 			if(res.next()) {
 				
-				Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
-						res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
+				Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_creazione"), res.getString("TIC_stato"), 
+						res.getString("TIC_materia"), res.getString("TIC_tags"), res.getString("TIC_descrizione"));
 				return ticket;
 			
 			}else {
@@ -195,7 +198,7 @@ public class QueryHandler_ticket {
 	public int getUserIdFromTicket(int ticket_id) throws SQLException, CredentialNotFoundException {
 		
 		establishConnection();
-		String prepared_query = "SELECT UT_id FROM tickets WHERE TIC_id = ?";
+		String prepared_query = "SELECT UT_id_apertura FROM tickets WHERE TIC_id = ?";
 		//DA MODIFICARE IL NOME DEL CAMPO
 
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -203,13 +206,17 @@ public class QueryHandler_ticket {
 		pr.setInt(1, ticket_id);
 		ResultSet res = pr.executeQuery();
 		
-		conn.close();
 		
-		if(res.next())
-			return res.getInt("UT_id");				//se true ritorna l'ID utente
-		else
+		
+		if(res.next()) {
+			int user_id = res.getInt("UT_id_apertura");
+			conn.close();
+			return user_id;				//se true ritorna l'ID utente
+		}
+		else {
+			conn.close();
 			throw new CredentialNotFoundException("no results in getUserIdFromTicket");								//se false ritorna 0
-
+		}
 		
 	}
 	
@@ -251,8 +258,8 @@ public class QueryHandler_ticket {
 		
 		while(res.next()) {
 			
-			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
-					res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_creazione"), res.getString("TIC_stato"), 
+					res.getString("TIC_materia"), res.getString("TIC_tags"), res.getString("TIC_descrizione"));
 			
 			tickets.add(ticket);
 			

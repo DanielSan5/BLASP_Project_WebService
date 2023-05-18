@@ -37,7 +37,7 @@ public class QueryHandler {
 	private void establishConnection() {
 		
 		try{
-			conn = DriverManager.getConnection(db_url, db_user, db_password); 
+			this.conn = DriverManager.getConnection(db_url, db_user, db_password); 
 		}catch(SQLException e){
 			System.err.println(e.getLocalizedMessage());
 		}
@@ -273,7 +273,7 @@ public class QueryHandler {
 	public String getUserStatus(int user_id) throws CredentialNotFoundException, SQLException {
 		
 		establishConnection();
-		String prepared_query = "SELECT UT_status FROM utenti WHERE UT_id = ?";
+		String prepared_query = "SELECT UT_stato FROM utenti WHERE UT_id = ?";
 		
 		
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -285,7 +285,7 @@ public class QueryHandler {
 		
 		if(res.next()) {
 	
-			String user_status = res.getString("UT_status");
+			String user_status = res.getString("UT_stato");
 			conn.close();
 			return user_status;
 
@@ -303,7 +303,7 @@ public class QueryHandler {
 	public boolean checkExistMateria(String materia) throws SQLException {
 		
 		establishConnection();
-		String prepared_query = "SELECT * FROM materia WHERE MAT_nome = ?";
+		String prepared_query = "SELECT MAT_nome FROM materia WHERE MAT_nome = ?";
 		
 
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -373,8 +373,8 @@ public class QueryHandler {
 		
 		while(res.next()) {
 			
-			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_cr"), res.getString("TIC_stato"), 
-					res.getString("TIC_materia"), res.getString("TIC_livello_materia"), res.getString("TIC_decrizione"));
+			Ticket ticket = new Ticket(res.getInt("TIC_id"), res.getString("TIC_data_creazione"), res.getString("TIC_stato"), 
+					res.getString("TIC_materia"), res.getString("TIC_tags"), res.getString("TIC_descrizione"));
 			
 			tickets.add(ticket);
 			
@@ -451,7 +451,7 @@ public class QueryHandler {
 	public void inserisciCodice(int user_id, String ver_code) throws SQLException {
 		
 		establishConnection();
-		String prepared_query = "INSERT INTO utenti (UT_ver_code) VALUES (?) WHERE UT_id = ?";
+		String prepared_query = "UPDATE utenti SET UT_ver_code = ? WHERE UT_id = ?";
 			
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 	
@@ -459,15 +459,12 @@ public class QueryHandler {
 		pr.setInt(2, user_id);
 		
 		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
-
 		if(pr.executeUpdate() != 1) {
 			conn.close();
 			throw new MySQLDataException("could not create row in utenti");
 		}
 		conn.close();
 	
-	
-		
 	}
 	
 	public boolean checkCode(int user_id, String ver_code) throws SQLException, CredentialNotFoundException {
@@ -499,6 +496,85 @@ public class QueryHandler {
 			throw new CredentialNotFoundException("no results");
 		}
 			
+	}
+	
+	public ArrayList<Avviso> getUserAvvisi(int user_id) throws SQLException, CredentialNotFoundException {
+		
+		establishConnection();
+		
+		String getUser = "SELECT * FROM avviso WHERE TIC_id_avvisato IN (SELECT TIC_id FROM tickets t WHERE t.UT_id_apertura = ?)";
+		
+		ResultSet res;
+		ArrayList<Avviso> avvisi = new ArrayList<Avviso>();
+		QueryHandler_ticket queryTickets = new QueryHandler_ticket();
+	
+		java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
+		
+		getUser_query.setInt(1, user_id);
+		res = getUser_query.executeQuery();
+		
+		while(res.next()) {
+			
+			String email_avvisatore = getEmailFromId(res.getInt("UT_id_avvisante"));
+			Ticket ticket_info = queryTickets.getTicketFromId(res.getInt("TIC_id_avvisato"));
+			
+			Avviso avv = new Avviso(res.getString("AVV_descrizione"), email_avvisatore, ticket_info);		
+			avvisi.add(avv);
+	
+		}
+		
+		return avvisi;
+		
+	}
+
+	private String getEmailFromId(int user_id) throws SQLException, CredentialNotFoundException {
+		
+		establishConnection();
+		String prepared_query = "SELECT UT_email FROM utenti WHERE UT_id = ?";
+		
+		
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		
+		
+		pr.setInt(1, user_id);
+		ResultSet res = pr.executeQuery();
+		if(res.next()) {
+			
+			String email = res.getString("UT_email");
+			conn.close();
+			return email;
+			
+		}else {
+			conn.close();
+			throw new CredentialNotFoundException("no results in getUserEmailFromId");
+		}
+	}
+
+	public ArrayList<Segnalazione> getUserSegnalazioni(int user_id) throws SQLException, CredentialNotFoundException {
+establishConnection();
+		
+		String getUser = "SELECT * FROM segnalazione WHERE UT_id_segnalato = ?";
+		
+		ResultSet res;
+		ArrayList<Segnalazione> segnalazioni = new ArrayList<Segnalazione>();
+	
+		java.sql.PreparedStatement getUser_query = conn.prepareStatement(getUser);
+		
+		getUser_query.setInt(1, user_id);
+		res = getUser_query.executeQuery();
+		
+		while(res.next()) {
+			
+			String email_segnalatore = getEmailFromId(res.getInt("UT_id_segnalatore"));
+			
+			
+			Segnalazione seg = new Segnalazione(res.getString("SEG_descrizione"), email_segnalatore);		
+			segnalazioni.add(seg);
+	
+		}
+		
+		return segnalazioni;
+		
 	}
 
 	

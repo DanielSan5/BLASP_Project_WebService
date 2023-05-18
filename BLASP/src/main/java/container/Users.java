@@ -17,9 +17,11 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import classes.Avviso;
 import classes.Checks;
 import classes.JwtVal;
 import classes.QueryHandler;
+import classes.Segnalazione;
 import classes.Ticket;
 import classes.Utente;
 
@@ -46,38 +48,41 @@ public class Users extends HttpServlet {
 		response.setContentType("application/json");
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "GET");
-		
 		PrintWriter out = response.getWriter(); 
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
 		
-
 		try{
 			
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			String[] toCheck = {jwtToken};
 			if(Checks.isNotBlank(toCheck)) {
 				
 				final JwtVal validator = new JwtVal();
-			
-				
+
 				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
 				validator.validate(jwtToken);
-			
+				
 				String email = request.getParameter("email");
 				QueryHandler queryForThis = new QueryHandler();
 				int user_id = queryForThis.getUserId(email);
 				Utente userData = queryForThis.getUserData(user_id);
 				
 				ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
-
+				ArrayList<Avviso> userAvvisi = queryForThis.getUserAvvisi(user_id);
+				ArrayList<Segnalazione> userSegnalazioni = queryForThis.getUserSegnalazioni(user_id);
+				
 				response.setStatus(200);
 				jsonResponse.addProperty("stato", "confermato");
 				jsonResponse.addProperty("desc", " ottenimento profilo dell'utente");
 				jsonResponse.add("user_info", g.toJsonTree(userData));
 				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
-					
+				jsonResponse.add("user_avvisi", g.toJsonTree(userAvvisi));	
+				jsonResponse.add("user_segnalazioni", g.toJsonTree(userSegnalazioni));	
+				
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");

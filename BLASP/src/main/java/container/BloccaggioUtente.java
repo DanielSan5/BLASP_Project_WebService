@@ -26,7 +26,7 @@ import classes.QueryHandler;
 /**
  * Servlet implementation class BloccaggioUtente
  */
-@WebServlet("/BloccaggioUtente")
+@WebServlet("/block")
 public class BloccaggioUtente extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;

@@ -356,7 +356,7 @@ public class User extends HttpServlet {
 					queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo);
 					response.setStatus(200);
 					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", "dati utente e psw modificati");
+					jsonResponse.addProperty("desc", "dati utente modificati");
 					
 				}
 				
