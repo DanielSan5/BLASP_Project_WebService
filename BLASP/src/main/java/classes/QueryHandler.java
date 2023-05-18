@@ -345,8 +345,6 @@ public class QueryHandler {
 	}
 
 	public Utente getUserData(int user_id) throws CredentialNotFoundException, SQLException {
-
-
 		
 		establishConnection();
 		

@@ -146,32 +146,43 @@ public class Segnalazioni extends HttpServlet {
 			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String[] toCheck = {jwtToken, email};
 			
-			QueryHandler queryUser = new QueryHandler();
-			int user_seg_id = queryUser.getUserId(email);
 			
-			if(Checks.isNotBlank(toCheck) && Checks.isValidEmail(email) && Checks.isNotBlockedUser(user_seg_id) && Checks.hasNotThreFlags(user_seg_id)) {
+			
+			if(Checks.isNotBlank(toCheck) && Checks.isValidEmail(email) ) {
 				
 				final JwtVal validator = new JwtVal();
 
 				DecodedJWT jwt = validator.validate(jwtToken);
 				String segnalatore_email = jwt.getClaim("sub-email").asString();
 				
+				QueryHandler queryUser = new QueryHandler();
+				
 				int user_segnalatore_id = queryUser.getUserId(segnalatore_email);
 				int user_segnalato_id = queryUser.getUserId(email);
 				
-				QueryHandler_flags queryFlags = new QueryHandler_flags();
-				
-				int segnalazioneID = queryFlags.inserisciSegnalazioneGetId(user_segnalato_id, user_segnalatore_id, descrizione);
-				
-				response.setStatus(201);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("desc", "segnalazione:" + segnalazioneID + " creata");
+				if(Checks.isNotBlockedUser(user_segnalato_id) && Checks.hasNotThreFlags(user_segnalato_id)) {
+					
+					QueryHandler_flags queryFlags = new QueryHandler_flags();
+					
+					int segnalazioneID = queryFlags.inserisciSegnalazioneGetId(user_segnalato_id, user_segnalatore_id, descrizione);
+					
+					response.setStatus(201);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "segnalazione:" + segnalazioneID + " creata");
+					
+				}else {
+					
+					response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente gia in stato di ban");
+			
+				}
 				
 				
 			}else {
 				
 				response.setStatus(400);
-				jsonResponse.addProperty("stato", "errore");
+				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("desc", "errore nella sintassi");
 		
 			}

@@ -180,13 +180,21 @@ public class QueryHandler_flags {
 			
 			pr.setInt(1, user_id);
 			ResultSet res = pr.executeQuery();
-			
-			if(res.getInt("numeroSegnalazioni") >= 3) {
-				return false;
-			
+			if(res.next()) {
+				if(res.getInt("numeroSegnalazioni") >= 3) {
+					
+					conn.close();
+					return false;
+				
+				}else {
+					conn.close();
+					return true;
+				}
 			}else {
+				conn.close();
 				return true;
 			}
+			
 			
 		
 	}
