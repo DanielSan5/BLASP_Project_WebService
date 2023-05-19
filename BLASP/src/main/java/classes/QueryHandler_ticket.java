@@ -150,7 +150,7 @@ public class QueryHandler_ticket {
 	public void modificaStatoTicket(int id_user, int numero_ticket) throws SQLException {
 				
 		establishConnection();
-		String prepared_query = "UPDATE tickets SET (UT_id_accettazione, TIC_stato) = (?,'pending') WHERE TIC_id = ?";		
+		String prepared_query = "UPDATE tickets SET UT_id_accettazione = ?, TIC_stato = 'pending' WHERE TIC_id = ?";		
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 	
