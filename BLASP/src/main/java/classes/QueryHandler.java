@@ -1,16 +1,12 @@
 package classes;
 
-import java.rmi.NoSuchObjectException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-
 import javax.security.auth.login.CredentialNotFoundException;
-
 import com.mysql.jdbc.exceptions.MySQLDataException;
-
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
@@ -24,14 +20,12 @@ public class QueryHandler {
     private Connection conn;
 
 	public QueryHandler() {
-		
 		try {
 			Class.forName(db_driver);
 		} catch (ClassNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
 	}
 	
 	private void establishConnection() {
@@ -177,7 +171,7 @@ public class QueryHandler {
 	}
 	
 	//***UPDATE DATI UTENTE***
-	public void modificaDatiUtente(int user_id, String descrizione, String localita, int classe, String indirizzo) throws SQLException {
+	public void modificaDatiUtente(int user_id, String descrizione, String localita, int classe, String indirizzo) throws SQLException, NoSuchFieldException {
 		
 		establishConnection();
 		String prepared_query = "UPDATE utenti SET UT_descrizione = ?, UT_localita = ?, UT_classe = ?, UT_indirizzo_scolastico = ? WHERE UT_id = ?";		
@@ -195,7 +189,7 @@ public class QueryHandler {
 
 		if(pr.executeUpdate() != 1) {
 			conn.close();
-			throw new MySQLDataException("could not update table utenti");
+			throw new NoSuchFieldException("could not update table utenti");
 		}
 		conn.close();
 		
@@ -203,7 +197,7 @@ public class QueryHandler {
 	}
 	
 	//***UPDATE PASSWORD UTENTE***
-	public void changePass(int user_id, String password_encr) throws SQLException {
+	public void changePass(int user_id, String password_encr) throws SQLException, NoSuchFieldException {
 			
 			establishConnection();
 			String prepared_query = "UPDATE utenti SET UT_password = ? WHERE UT_id = ?";		
@@ -216,7 +210,7 @@ public class QueryHandler {
 			
 			if(pr.executeUpdate() != 1) {
 				conn.close();
-				throw new MySQLDataException("could not update table utenti");
+				throw new NoSuchFieldException("could not update table utenti");
 			}
 			conn.close();
 			
@@ -226,7 +220,7 @@ public class QueryHandler {
 		}
 	
 	//***BLOCCAGGIO UTENTE***
-	public void blockUser(int user_id) throws  SQLException {
+	public void blockUser(int user_id) throws  SQLException, NoSuchFieldException {
 				
 		establishConnection();
 		String prepared_query = "UPDATE utenti SET UT_stato = 'blocked' WHERE UT_id = ?";		
@@ -240,7 +234,7 @@ public class QueryHandler {
 		
 		if(pr.executeUpdate() != 1) {
 			conn.close();
-			throw new MySQLDataException("could not update table utenti");
+			throw new NoSuchFieldException("could not update table utenti");
 		}
 		conn.close();
 				
@@ -370,12 +364,7 @@ public class QueryHandler {
 		}
 		else
 			throw new CredentialNotFoundException("utente non esistente");
-			
-						
-					
-				
-				
-	
+		
 		
 	}
 	
@@ -470,7 +459,7 @@ public class QueryHandler {
 		
 	}
 	
-	public void inserisciCodice(int user_id, String ver_code) throws SQLException {
+	public void inserisciCodice(int user_id, String ver_code) throws SQLException, NoSuchFieldException {
 		
 		establishConnection();
 		String prepared_query = "UPDATE utenti SET UT_ver_code = ? WHERE UT_id = ?";
@@ -483,7 +472,7 @@ public class QueryHandler {
 		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
 		if(pr.executeUpdate() != 1) {
 			conn.close();
-			throw new MySQLDataException("could not create row in utenti");
+			throw new NoSuchFieldException("could not create row in utenti");
 		}
 		conn.close();
 	
@@ -573,7 +562,8 @@ public class QueryHandler {
 	}
 
 	public ArrayList<Segnalazione> getUserSegnalazioni(int user_id) throws SQLException, CredentialNotFoundException {
-establishConnection();
+		
+		establishConnection();
 		
 		String getUser = "SELECT * FROM segnalazione WHERE UT_id_segnalato = ?";
 		
@@ -596,6 +586,24 @@ establishConnection();
 		}
 		
 		return segnalazioni;
+		
+	}
+
+	public void setCodeNull(int user_id) throws SQLException {
+		
+		establishConnection();
+		String prepared_query = "UPDATE utenti SET UT_ver_code = NULL WHERE UT_id = ?";
+			
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		pr.setInt(1, user_id);
+		
+		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could set null value UT_ver_code in utenti");
+		}
+		conn.close();
 		
 	}
 

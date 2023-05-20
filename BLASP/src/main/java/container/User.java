@@ -82,13 +82,17 @@ public class User extends HttpServlet {
 		response.setContentType("application/json");
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "GET");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		
 		PrintWriter out = response.getWriter(); 
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
 		try{
 			
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			String [] toCheck = {jwtToken};
 			
@@ -160,6 +164,8 @@ public class User extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		//output writer
 		PrintWriter out = response.getWriter(); 
@@ -196,14 +202,12 @@ public class User extends HttpServlet {
 			if(Checks.isValidDateOfBirth(data_nascita) && Checks.isValidPassword(password) && Checks.isValidEmail(email) && Checks.isValidClass(classe) && 
 					Checks.isConfirmedPassword(password, confirm_password) && Checks.isValidNameAndSurname(nome, cognome, email) && 
 					Checks.isValidAge(data_nascita, classe) && Checks.isValidLocation(localita) && Checks.isValidSTA(indirizzo_scolastico)) {
-					/*
-					 * psw encryption
-					 */
+				/*
+				 * psw encryption
+				 */
 				String encryptedPass = passEncr(password);
 				QueryHandler queryForThis = new QueryHandler();
 				
-				
-					
 				boolean hasEmail = queryForThis.hasEmail(email); 
 				
 				if(hasEmail) {
@@ -227,9 +231,10 @@ public class User extends HttpServlet {
 					
 					jwtFormat.keySet().forEach(keyStr ->
 				    {
+				    	
 				        String keyvalue = jwtFormat.get(keyStr).getAsString();
 				        claims.put(keyStr, keyvalue);
-				      
+				        
 				    });
 					
 					LocalDate oggi = LocalDate.now();
@@ -246,13 +251,15 @@ public class User extends HttpServlet {
 				}
 				
 			}else {
+				
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("descrizione", "errore nella sintassi");
 				
 			}
-				
+			
 		}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
 			jsonResponse.addProperty("descrizione", "problema nell'elaborazione della richiesta");
@@ -278,6 +285,8 @@ public class User extends HttpServlet {
 	
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "PUT");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		//output writer
 		PrintWriter out = response.getWriter(); 
@@ -307,7 +316,9 @@ public class User extends HttpServlet {
 			int classe = user.get("classe").getAsInt();
 			String indirizzo = user.get("indirizzo").getAsString();
 			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String[] toCheck = {jwtToken};
 			
 			
@@ -401,6 +412,12 @@ public class User extends HttpServlet {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "formato non supportato");
+			e.printStackTrace();
+		} catch (NoSuchFieldException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "oggetto inesistente");
 			e.printStackTrace();
 		}finally {
 			out.println(jsonResponse.toString());

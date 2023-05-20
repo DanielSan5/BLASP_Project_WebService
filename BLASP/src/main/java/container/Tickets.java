@@ -75,13 +75,17 @@ public class Tickets extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "GET");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
 		try{
 			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			HashMap<String, String> filters = getParametersFromQS(request.getQueryString());
 			System.out.println(filters);
 			Set<String> types = filters.keySet();
@@ -221,6 +225,8 @@ public class Tickets extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
@@ -247,7 +253,9 @@ public class Tickets extends HttpServlet {
 			String dataStringa = formatter.format(dataOdierna);
 			
 			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String[] toCheck = {jwtToken, materia, livello_materia, descrizione, dataStringa};
 			
 			
@@ -322,6 +330,8 @@ public class Tickets extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "PUT");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
@@ -344,7 +354,9 @@ public class Tickets extends HttpServlet {
 			JsonObject user = g.fromJson(body, JsonObject.class);
 			
 			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			//acquisizione delle chiavi
 			String numeroTicket = user.get("numero_ticket").getAsString();	
@@ -414,6 +426,12 @@ public class Tickets extends HttpServlet {
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "formato non supportato");
 			e.printStackTrace();
+		} catch (NoSuchFieldException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "oggetto inesistente");
+			e.printStackTrace();
 		}finally {
 			out.println(jsonResponse.toString());
 		}
@@ -424,6 +442,8 @@ public class Tickets extends HttpServlet {
 	
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "DELETE");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
@@ -443,7 +463,9 @@ public class Tickets extends HttpServlet {
 			JsonObject ticket = g.fromJson(body, JsonObject.class);
 			
 			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			//acquisizione delle chiavi
 			String  numeroTicket = ticket.get("numero_ticket").getAsString();	
 			String[] toCheck = {jwtToken, numeroTicket};
@@ -494,6 +516,12 @@ public class Tickets extends HttpServlet {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "formato non supportato");
+			e.printStackTrace();
+		} catch (NoSuchFieldException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "oggetto inesistente");
 			e.printStackTrace();
 		}finally {
 			out.println(jsonResponse.toString());

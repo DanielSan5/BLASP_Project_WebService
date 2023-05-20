@@ -115,7 +115,9 @@ public class AutenticazioneUtenti extends HttpServlet{
 		
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		JsonObject jsonResponse = new JsonObject();
@@ -180,6 +182,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 							
 							String token = generator.generateJwt(claims);
 							response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure; exp=" + domaniUTCFormatted);
+							
 							response.setStatus(200);
 							jsonResponse.addProperty("stato", "confermato");
 							jsonResponse.addProperty("desc", "utente autorizzato");
@@ -245,7 +248,9 @@ public class AutenticazioneUtenti extends HttpServlet{
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.addHeader("Access-Control-Allow-Methods", "PUT,POST");
+		response.addHeader("Access-Control-Allow-Methods", "PUT");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		JsonObject jsonResponse = new JsonObject();
@@ -319,6 +324,8 @@ public class AutenticazioneUtenti extends HttpServlet{
 								jsonResponse.addProperty("stato", "confermato");
 								jsonResponse.addProperty("descrizione", "password modificata");
 								
+								queryForThis.setCodeNull(user_id);
+								
 							}else {
 								
 								response.setStatus(400);
@@ -342,6 +349,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 						jsonResponse.addProperty("descrizione", "errore nella sintassi della richiesta");
 						break;
 				}
+				
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -358,6 +366,13 @@ public class AutenticazioneUtenti extends HttpServlet{
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "formato non supportato");
 			e.printStackTrace();
+		} catch (NoSuchFieldException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "oggetto inesistente");
+			e.printStackTrace();
+		
 		}finally {
 			out.println(jsonResponse.toString());
 			

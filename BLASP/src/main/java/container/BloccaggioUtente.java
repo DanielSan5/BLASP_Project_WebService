@@ -57,6 +57,8 @@ public class BloccaggioUtente extends HttpServlet {
 		
 	
 		response.addHeader("Access-Control-Allow-Methods", "PUT");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
@@ -77,7 +79,9 @@ public class BloccaggioUtente extends HttpServlet {
 			JsonObject user = g.fromJson(body, JsonObject.class);
 			
 			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String toBlock_email = user.get("email").getAsString();
 			QueryHandler queryUser = new QueryHandler();
 			
@@ -144,6 +148,13 @@ public class BloccaggioUtente extends HttpServlet {
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "formato non supportato");
 			e.printStackTrace();
+		} catch (NoSuchFieldException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "oggetto inesistente");
+			e.printStackTrace();
+			
 		}finally {
 			out.println(jsonResponse.toString());
 		}

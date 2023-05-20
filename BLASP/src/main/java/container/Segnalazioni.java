@@ -48,6 +48,8 @@ public class Segnalazioni extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "GET");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		JsonObject jsonResponse = new JsonObject();
@@ -56,7 +58,9 @@ public class Segnalazioni extends HttpServlet {
 		try {
 			
 			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			String [] toCheck = {jwtToken};
 			if(Checks.isNotBlank(toCheck)) {
@@ -117,6 +121,8 @@ public class Segnalazioni extends HttpServlet {
 
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		//output writer
 		PrintWriter out = response.getWriter(); 
@@ -143,7 +149,9 @@ public class Segnalazioni extends HttpServlet {
 			String email = user.get("email").getAsString();
 			String descrizione = user.get("descrizione").getAsString();
 			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String[] toCheck = {jwtToken, email};
 			
 			

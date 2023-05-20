@@ -28,7 +28,7 @@ import classes.Ticket;
 /**
  * Servlet implementation class AccettazioneTicket
  */
-@WebServlet("/Accettazione_ticket")
+@WebServlet("/accept")
 public class Accettazione_ticket extends HttpServlet {
 	
 	private static final long serialVersionUID = 1L;
@@ -58,7 +58,10 @@ public class Accettazione_ticket extends HttpServlet {
 	
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
+		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "PUT");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
@@ -79,8 +82,11 @@ public class Accettazione_ticket extends HttpServlet {
 			Gson g = new Gson();
 			JsonObject user = g.fromJson(body, JsonObject.class);
 			
-			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			//Estrazione del token dall'header ------
+
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			//acquisizione delle chiavi
 			String numeroTicket = user.get("numero_ticket").getAsString();	
@@ -108,7 +114,7 @@ public class Accettazione_ticket extends HttpServlet {
 						
 						response.setStatus(200);
 						jsonResponse.addProperty("stato", "confermato");
-						jsonResponse.addProperty("desc", "stato modificato");
+						jsonResponse.addProperty("desc", "ticket accettato");
 						
 						Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
 						
@@ -116,16 +122,16 @@ public class Accettazione_ticket extends HttpServlet {
 						
 					}else {
 						
-						response.setStatus(500);
-						jsonResponse.addProperty("stato", "errore server");
-						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("desc", "il ticket e' gia occupato");
 						
 					}		
 					
 				}else {
 					response.setStatus(400);
 					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+					jsonResponse.addProperty("desc", "ticket inesistente");
 				}
 				
 			}else {
@@ -158,6 +164,12 @@ public class Accettazione_ticket extends HttpServlet {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "formato non supportato");
+			e.printStackTrace();
+		} catch (NoSuchFieldException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "oggetto inesistente");
 			e.printStackTrace();
 		}finally {
 			out.println(jsonResponse.toString());

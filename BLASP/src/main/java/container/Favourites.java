@@ -51,13 +51,17 @@ public class Favourites extends HttpServlet {
 		response.setContentType("application/json");
         response.addHeader("Access-Control-Allow-Origin", "*");
         response.addHeader("Access-Control-Allow-Methods", "GET");
+        response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 
         PrintWriter out = response.getWriter(); 
         JsonObject jsonResponse = new JsonObject();
         Gson g = new Gson();
         try{
         	
-	        String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+        	String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+	       // String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 	        String [] toCheck = {jwtToken};
 	
 	        if(Checks.isNotBlank(toCheck)) {
@@ -124,6 +128,8 @@ public class Favourites extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "POST");
+		response.addHeader("Access-Control-Allow-Credentials", "true");
+		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
@@ -144,7 +150,9 @@ public class Favourites extends HttpServlet {
 			JsonObject user = g.fromJson(body, JsonObject.class);
 			
 			//Estrazione del token dall'header
-			String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			//acquisizione delle chiavi
 			String ticket_id = user.get("numero_ticket").getAsString();	

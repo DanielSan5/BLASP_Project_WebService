@@ -127,7 +127,7 @@ public class QueryHandler_ticket {
 	public boolean isNotPending(int ticket_id) throws SQLException {
 		
 		establishConnection();
-		String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ? AND TIC_stato = 'pending'";
+		String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ? AND TIC_stato = 'open'";
 		
 		
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -146,7 +146,7 @@ public class QueryHandler_ticket {
 	
 	
 	//***MODIFICA TUTTE LE INFORMAZIONI DEL TICKET***
-	public void modificaDatiTicket(int numero_ticket, String materia, String descrizione, String tag) throws SQLException {
+	public void modificaDatiTicket(int numero_ticket, String materia, String descrizione, String tag) throws SQLException, NoSuchFieldException {
 			
 		establishConnection();
 		String prepared_query = "UPDATE tickets SET TIC_materia = ?, TIC_descrizione = ?, TIC_tags = ? WHERE TIC_id = ?";		
@@ -161,7 +161,7 @@ public class QueryHandler_ticket {
 		//executeUpdate returna o 1 se   andato a buonfine o 0 se non   andato a buonfine
 		if(pr.executeUpdate() != 1) {
 			conn.close();
-			throw new MySQLDataException("could not update row in tickets");
+			throw new NoSuchFieldException("could not update row in tickets");
 		}
 		conn.close();
 				
@@ -169,7 +169,7 @@ public class QueryHandler_ticket {
 	}
 	
 	//***MODIFICA LO STATO DEL TICKET***
-	public void modificaStatoTicket(int id_user, int numero_ticket) throws SQLException {
+	public void modificaStatoTicket(int id_user, int numero_ticket) throws SQLException, NoSuchFieldException {
 				
 		establishConnection();
 		String prepared_query = "UPDATE tickets SET UT_id_accettazione = ?, TIC_stato = 'pending' WHERE TIC_id = ?";		
@@ -184,7 +184,7 @@ public class QueryHandler_ticket {
 		
 		if(pr.executeUpdate() != 1) {
 			conn.close();
-			throw new MySQLDataException("could not update row in tickets");
+			throw new NoSuchFieldException("could not update row in tickets");
 		}
 		conn.close();
 						
@@ -243,7 +243,7 @@ public class QueryHandler_ticket {
 	}
 	
 	//***CANCELLA UN TICKET***
-	public void cancellaTicket(int numero_ticket) throws SQLException {
+	public void cancellaTicket(int numero_ticket) throws SQLException, NoSuchFieldException {
 			
 		establishConnection();
 		String prepared_query = "DELETE FROM tickets WHERE TIC_id = ?";		
@@ -256,7 +256,7 @@ public class QueryHandler_ticket {
 		//executeUpdate returna o 1 se   andato a buonfine o 0 se non   andato a buonfine
 		if(pr.executeUpdate() != 1) {
 			conn.close();
-			throw new MySQLDataException("could not delete row in tickets");
+			throw new NoSuchFieldException("could not delete row in tickets");
 		}
 		conn.close();
 		
