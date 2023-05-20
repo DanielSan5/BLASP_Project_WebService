@@ -13,6 +13,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Set;
@@ -20,6 +22,7 @@ import java.util.Set;
 import javax.security.auth.login.CredentialNotFoundException;
 
 import org.apache.tomcat.jakartaee.commons.lang3.ArrayUtils;
+import org.apache.tomcat.util.codec.binary.Base64;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -93,102 +96,118 @@ public class Tickets extends HttpServlet {
 			String[] toCheck = {jwtToken};
 			if(Checks.isValidFilter(types) && Checks.isNotBlank(toCheck) ) {
 				
-				final JwtVal validator = new JwtVal();
-				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
-				//DecodedJWT jwtDecoded =
-				validator.validate(jwtToken);
+				QueryHandler queryForThis = new QueryHandler();
 				
-				//String email = jwtDecoded.getClaim("sub").asString();
-				//si presume che materia sia gia presente per via del controllo 
-				/*
-				 * combinazioni possibili:
-				 * M -> materia
-				 * LM -> localita e materia
-				 * CM -> classe e materia
-				 * NM -> nome e materia
-				 * LCM -> localita, classe e materia
-				 * LNM -> localita, nome e materia
-				 * CNM -> classe, nome e materia
-				 * ALL --> localita, classe, nome e materia
-				 */
-				ArrayList<Ticket> tickets = new ArrayList<Ticket>();
-				QueryHandler_filters queryForThis = new QueryHandler_filters();
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+		        	
+					final JwtVal validator = new JwtVal();
+					//se non viene autorizzato lancia eccezzione gestita nel catch sotto
+					//DecodedJWT jwtDecoded =
+					validator.validate(jwtToken);
+					
+					//String email = jwtDecoded.getClaim("sub").asString();
+					//si presume che materia sia gia presente per via del controllo 
+					/*
+					 * combinazioni possibili:
+					 * M -> materia
+					 * LM -> localita e materia
+					 * CM -> classe e materia
+					 * NM -> nome e materia
+					 * LCM -> localita, classe e materia
+					 * LNM -> localita, nome e materia
+					 * CNM -> classe, nome e materia
+					 * ALL --> localita, classe, nome e materia
+					 */
+					ArrayList<Ticket> tickets = new ArrayList<Ticket>();
+					QueryHandler_filters queryForFilters = new QueryHandler_filters();
+					
+					if(filters.containsKey("localita") && filters.containsKey("nome") && filters.containsKey("classe")) {
+						
+						String filtroMateria = filters.get("materia").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						String filtroLocalita = filters.get("localita").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						String filtroNome = filters.get("nome").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						
+						System.out.println("get all " + filtroMateria + filtroLocalita + filtroNome);
+						tickets = queryForFilters.getAll(filtroMateria, filtroNome, filters.get("classe"), filtroLocalita );
+					}else if(filters.containsKey("localita") && filters.containsKey("classe")) {
+						
+						String filtroLocalita = filters.get("localita").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						String filtroMateria = filters.get("materia").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						System.out.println("get localita classe materia");
+						tickets = queryForFilters.getLCM(filtroLocalita, filters.get("classe").toString(), filtroMateria);
+						
+					}else if(filters.containsKey("localita") && filters.containsKey("nome")) {
+						
+						String filtroLocalita = filters.get("localita").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						String filtroMateria = filters.get("materia").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");					
+						System.out.println("get localita nome materia");
+						tickets = queryForFilters.getLNM(filtroLocalita, filters.get("nome").toString(), filtroMateria);
+						
+					}else if(filters.containsKey("classe") && filters.containsKey("nome")) {
+						
+						String filtroMateria = filters.get("materia").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
+						System.out.println("get classe nome materia");
+						tickets = queryForFilters.getCNM(filters.get("classe").toString(), filters.get("nome").toString(), 
+								filtroMateria);
+						
+					}else if(filters.containsKey("localita")) {
+						
+						String filtroMateria = filters.get("materia").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
+						String filtroLocalita = filters.get("localita").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						System.out.println("get localita materia");
+						tickets = queryForFilters.getLM(filtroLocalita, filtroMateria);
+						
+					}else if(filters.containsKey("classe")) {
+						
+						String filtroMateria = filters.get("materia").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						System.out.println("get classe materia");
+						tickets = queryForFilters.getCM(filters.get("classe").toString(), filtroMateria);
+						
+					}else if(filters.containsKey("nome")) {
+						
+						String filtroMateria = filters.get("materia").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						
+						System.out.println("get nome materia");
+						tickets = queryForFilters.getNM(filters.get("nome").toString(), filtroMateria);
+						
+					}
+					else {
+						
+						String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						System.out.println("get materia");
+						tickets = queryForFilters.getM(filtroMateria);
+						
+					}
+					
 				
-				if(filters.containsKey("localita") && filters.containsKey("nome") && filters.containsKey("classe")) {
-					
-					String filtroMateria = filters.get("materia").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					String filtroLocalita = filters.get("localita").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					String filtroNome = filters.get("nome").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					
-					System.out.println("get all " + filtroMateria + filtroLocalita + filtroNome);
-					tickets = queryForThis.getAll(filtroMateria, filtroNome, filters.get("classe"), filtroLocalita );
-				}else if(filters.containsKey("localita") && filters.containsKey("classe")) {
-					
-					String filtroLocalita = filters.get("localita").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					String filtroMateria = filters.get("materia").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					System.out.println("get localita classe materia");
-					tickets = queryForThis.getLCM(filtroLocalita, filters.get("classe").toString(), filtroMateria);
-					
-				}else if(filters.containsKey("localita") && filters.containsKey("nome")) {
-					
-					String filtroLocalita = filters.get("localita").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					String filtroMateria = filters.get("materia").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");					
-					System.out.println("get localita nome materia");
-					tickets = queryForThis.getLNM(filtroLocalita, filters.get("nome").toString(), filtroMateria);
-					
-				}else if(filters.containsKey("classe") && filters.containsKey("nome")) {
-					
-					String filtroMateria = filters.get("materia").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
-					System.out.println("get classe nome materia");
-					tickets = queryForThis.getCNM(filters.get("classe").toString(), filters.get("nome").toString(), 
-							filtroMateria);
-					
-				}else if(filters.containsKey("localita")) {
-					
-					String filtroMateria = filters.get("materia").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
-					String filtroLocalita = filters.get("localita").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					System.out.println("get localita materia");
-					tickets = queryForThis.getLM(filtroLocalita, filtroMateria);
-					
-				}else if(filters.containsKey("classe")) {
-					
-					String filtroMateria = filters.get("materia").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					System.out.println("get classe materia");
-					tickets = queryForThis.getCM(filters.get("classe").toString(), filtroMateria);
-					
-				}else if(filters.containsKey("nome")) {
-					
-					String filtroMateria = filters.get("materia").toString()
-							.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					
-					System.out.println("get nome materia");
-					tickets = queryForThis.getNM(filters.get("nome").toString(), filtroMateria);
-					
-				}
-				else {
-					
-					String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
-					System.out.println("get materia");
-					tickets = queryForThis.getM(filtroMateria);
-					
-				}
-				
-			
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("descrizione", "ricerca filtrata");
-				jsonResponse.add("filtered", g.toJsonTree(tickets));	
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("descrizione", "ricerca filtrata");
+					jsonResponse.add("filtered", g.toJsonTree(tickets));	
+		        }
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -204,7 +223,7 @@ public class Tickets extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 			
-		}catch(SQLException e) {
+		}catch(SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
@@ -261,26 +280,41 @@ public class Tickets extends HttpServlet {
 			
 			if(Checks.isValidTag(livello_materia) && Checks.isValidMateria(materia) && Checks.isNotBlank(toCheck)) {
 			
-				final JwtVal validator = new JwtVal();
-			
-				DecodedJWT jwt = validator.validate(jwtToken);
-				String email = jwt.getClaim("sub-email").asString();
-				QueryHandler queryUser = new QueryHandler();
-				int user_id = queryUser.getUserId(email);
-	
-				QueryHandler_ticket queryForThis = new QueryHandler_ticket();		        
+				QueryHandler queryForThis = new QueryHandler();
 				
-				int id_ticket = queryForThis.inserisciTicketOttieniID(materia, livello_materia, descrizione, dataStringa, user_id);
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+		        	
+					final JwtVal validator = new JwtVal();
+				
+					DecodedJWT jwt = validator.validate(jwtToken);
+					String email = jwt.getClaim("sub-email").asString();
+					
+					int user_id = queryForThis.getUserId(email);
 		
-				Ticket ticket = queryForThis.getTicketFromId(id_ticket);
+					QueryHandler_ticket queryForTicket = new QueryHandler_ticket();		        
+					
+					int id_ticket = queryForTicket.inserisciTicketOttieniID(materia, livello_materia, descrizione, dataStringa, user_id);
+			
+					Ticket ticket = queryForTicket.getTicketFromId(id_ticket);
+					
+					response.setStatus(201);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "ticket creato");
+					
+					jsonResponse.add("ticket_info", g.toJsonTree(ticket));
 				
-				response.setStatus(201);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("desc", "ticket creato");
-				
-				jsonResponse.add("ticket_info", g.toJsonTree(ticket));
-				
-				
+		        }
 				
 			}else {
 				
@@ -297,7 +331,7 @@ public class Tickets extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 	
-		} catch (SQLException e) {
+		} catch (SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
@@ -369,33 +403,48 @@ public class Tickets extends HttpServlet {
 			
 			if(Checks.isValidTag(valoreTags) && Checks.isNotBlank(toCheck) && Checks.isValidMateria(valoreMateria)) {
 		
-				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
+				QueryHandler queryForThis = new QueryHandler();
 				
-				final JwtVal validator = new JwtVal();
-
-				validator.validate(jwtToken);
-				
-				if(hasTicketId) {
-					
-					//esecuzione della query (void)
-					queryForThis.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTags);
-
-					response.setStatus(200);
-					jsonResponse.addProperty("desc", "ticket modificato");
-					jsonResponse.addProperty("stato", "confermato");
-					
-					Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
-					jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
-	
-				}else {
-					
-					response.setStatus(400);
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
 					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("desc", "ticket inesistente");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
 					
-				}
-				
+		        }else {
+		        	
+					QueryHandler_ticket queryForTicket = new QueryHandler_ticket();
+					boolean hasTicketId = queryForTicket.hasTicketId(Integer.parseInt(numeroTicket));
+					
+					final JwtVal validator = new JwtVal();
+	
+					validator.validate(jwtToken);
+					
+					if(hasTicketId) {
+						
+						//esecuzione della query (void)
+						queryForTicket.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTags);
+	
+						response.setStatus(200);
+						jsonResponse.addProperty("desc", "ticket modificato");
+						jsonResponse.addProperty("stato", "confermato");
+						
+						Ticket ticket_info = queryForTicket.getTicketFromId(Integer.parseInt(numeroTicket));
+						jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
+		
+					}else {
+						
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("desc", "ticket inesistente");
+						
+					}
+		        }
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -410,7 +459,7 @@ public class Tickets extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		} catch ( SQLException e) {
+		} catch ( SQLException | NoSuchAlgorithmException e) {
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
 			jsonResponse.addProperty("desc", "errore nell'elaborazione della richiesta");
@@ -471,26 +520,41 @@ public class Tickets extends HttpServlet {
 			String[] toCheck = {jwtToken, numeroTicket};
 			
 			if(Checks.isNotBlank(toCheck)) {
+				QueryHandler queryForThis = new QueryHandler();
 				
-				final JwtVal validator = new JwtVal();
-				DecodedJWT jwt = validator.validate(jwtToken);
-				String email = jwt.getClaim("sub-email").asString();
-				//da controllare che il ticket sia veramente dell'utente
-				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
-				
-				if(hasTicketId) {
-					
-					queryForThis.cancellaTicket(Integer.parseInt(numeroTicket));
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", "ticket cancellato");
-				
-				}else {
-					response.setStatus(400);
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
 					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("desc", "ticket inesistente");
-				}
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+		        	
+					final JwtVal validator = new JwtVal();
+					DecodedJWT jwt = validator.validate(jwtToken);
+					String email = jwt.getClaim("sub-email").asString();
+					//da controllare che il ticket sia veramente dell'utente
+					QueryHandler_ticket queryForTicket = new QueryHandler_ticket();
+					boolean hasTicketId = queryForTicket.hasTicketId(Integer.parseInt(numeroTicket));
+					
+					if(hasTicketId) {
+						
+						queryForTicket.cancellaTicket(Integer.parseInt(numeroTicket));
+						response.setStatus(200);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("desc", "ticket cancellato");
+					
+					}else {
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("desc", "ticket inesistente");
+					}
+		        }
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -505,7 +569,7 @@ public class Tickets extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		} catch ( SQLException e) {
+		} catch ( SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");

@@ -28,14 +28,10 @@ public class QueryHandler {
 		}
 	}
 	
-	private void establishConnection() {
+	private void establishConnection() throws SQLException {
 		
-		try{
-			this.conn = DriverManager.getConnection(db_url, db_user, db_password); 
-		}catch(SQLException e){
-			System.err.println(e.getLocalizedMessage());
-		}
-		
+		this.conn = DriverManager.getConnection(db_url, db_user, db_password); 
+	
 	}
 	
 	public boolean hasEmail(String email) throws SQLException {
@@ -606,6 +602,41 @@ public class QueryHandler {
 		conn.close();
 		
 	}
+
+	public void revokeToken(String jwtToken_digest_inBase64) throws SQLException {
+	
+		establishConnection();
+		String prepared_query = "INSERT INTO revoken_token (base64_token_digest) VALUES (?)";
+	
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+	
+		pr.setString(1, jwtToken_digest_inBase64);
+	
+		
+		//executeUpdate returna  il numero di righe create o aggiornate, quindi se returna 0 non ha inserito/aggiornato nessuna riga
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new MySQLDataException("could not create row in revoked_token");
+		}
+		conn.close();
+		
+	}
+	
+	 public boolean isTokenRevoked(String jwtToken_digest_inBase64) throws SQLException {
+		 
+	  
+	     establishConnection();
+		 String prepared_query = "SELECT base64_token_digest FROM revoken_token WHERE base64_token_digest = ?";
+		 java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+			
+		 pr.setString(1, jwtToken_digest_inBase64);
+		 
+		 ResultSet rSet = pr.executeQuery();
+		 boolean tokenIsPresent = rSet.next();
+	     conn.close();
+
+	     return tokenIsPresent;
+	 }
 
 	
 

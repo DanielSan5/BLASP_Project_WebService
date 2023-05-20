@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;
@@ -21,6 +22,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,28 +32,33 @@ import java.util.UUID;
 
 import javax.security.auth.login.CredentialNotFoundException;
 
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.eclipse.angus.mail.util.MailSSLSocketFactory;
 
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
 import classes.Checks;
 import classes.JwtGen;
+import classes.JwtVal;
 import classes.QueryHandler;
+import classes.Ticket;
+import classes.Utente;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 
 @WebServlet("/auth")
-public class AutenticazioneUtenti extends HttpServlet{
+public class Autenticazione_Logout extends HttpServlet{
 	
 	private static final long serialVersionUID = 1L;
 	
        
  
-    public AutenticazioneUtenti() {
+    public Autenticazione_Logout() {
         super();
        
     }
@@ -107,8 +114,93 @@ public class AutenticazioneUtenti extends HttpServlet{
     }
     
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		//revoca del token
+		//response.setStatus(405);
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "GET");
+		response.setContentType("application/json");
+		PrintWriter out = response.getWriter();
+		JsonObject jsonResponse = new JsonObject();
+		
+		try {
+			
+			String[] hd = request.getHeader("Cookie").split("[=]");
+			String jwtToken = hd[1];
+			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
+			
+			String [] toCheck = {jwtToken};
+			
+			if(Checks.isNotBlank(toCheck)) {
+			
+				final JwtVal validator = new JwtVal();
+	
+				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
+				validator.validate(jwtToken);
+				QueryHandler queryForThis = new QueryHandler();
+				
+				//hash del token
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(400);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "logout gia effettuato");
+					
+		        }else {
+		        	
+		        	queryForThis.revokeToken(jwtTokenDigestInB64);
+		        	response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "logout in corso");
+					
+		        }
+				
 
-		response.setStatus(405);
+				
+				
+	
+					
+			}else {
+				response.setStatus(400);
+				jsonResponse.addProperty("stato", "errore client");
+				jsonResponse.addProperty("descrizione", "sintassi errata");
+			}	
+		}catch(InvalidParameterException | NullPointerException e) {
+			
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+			
+		} catch (SQLException e) {
+			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+			e.printStackTrace();
+			
+		}finally {
+			
+			out.println(jsonResponse.toString());
+		}
+
+			
+			
+		
+		
+		
+		
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -194,7 +286,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 							jsonResponse.addProperty("descrizione", "credenziali invalide");
 						}
 					
-					//pezzo nuovo da confermare
+					
 					}else if(userStatus.equals("blocked")) {
 						
 						response.setStatus(401);
@@ -204,7 +296,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 					}else if(userStatus.equals("unabled")){
 						
 						response.setStatus(401);
-						jsonResponse.addProperty("stato", "errore");
+						jsonResponse.addProperty("stato", "errore client");
 						jsonResponse.addProperty("descrizione", "utente disabilitato");
 						
 					}

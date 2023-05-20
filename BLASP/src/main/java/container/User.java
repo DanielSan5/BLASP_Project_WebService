@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.SQLException;
@@ -29,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.login.CredentialNotFoundException;
+
+import org.apache.tomcat.util.codec.binary.Base64;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
@@ -97,34 +100,49 @@ public class User extends HttpServlet {
 			String [] toCheck = {jwtToken};
 			
 			if(Checks.isNotBlank(toCheck)) {
-			
-				final JwtVal validator = new JwtVal();
-	
-				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
-				DecodedJWT jwtDecoded = validator.validate(jwtToken);
 				
-				String email = jwtDecoded.getClaim("sub-email").asString();
+			
 				QueryHandler queryForThis = new QueryHandler();
 				
-				int user_id = queryForThis.getUserId(email);
-				Utente userData = queryForThis.getUserData(user_id);
-				ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
-				boolean isAdmin = queryForThis.isUserAdmin(user_id);
-				
-
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("desc", " ottenimento dati personali");
-				jsonResponse.add("user_info", g.toJsonTree(userData));
-				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
-				
-				if(isAdmin) {
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
 					
-					ArrayList<Utente> toBlock = queryForThis.getToBlock();
-					jsonResponse.add("to_block", g.toJsonTree(toBlock));
-				
-				}
+		        }else {
+		        	
+		        	final JwtVal validator = new JwtVal();
+		
+					//se non viene autorizzato lancia eccezzione gestita nel catch sotto
+					DecodedJWT jwtDecoded = validator.validate(jwtToken);
 					
+					String email = jwtDecoded.getClaim("sub-email").asString();
+					
+					int user_id = queryForThis.getUserId(email);
+					Utente userData = queryForThis.getUserData(user_id);
+					ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
+					boolean isAdmin = queryForThis.isUserAdmin(user_id);
+					
+	
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", " ottenimento dati personali");
+					jsonResponse.add("user_info", g.toJsonTree(userData));
+					jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
+					
+					if(isAdmin) {
+						
+						ArrayList<Utente> toBlock = queryForThis.getToBlock();
+						jsonResponse.add("to_block", g.toJsonTree(toBlock));
+					
+					}
+		        }	
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -138,7 +156,7 @@ public class User extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 			
-		} catch (SQLException e) {
+		} catch (SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
@@ -324,62 +342,78 @@ public class User extends HttpServlet {
 			
 			if( Checks.isValidClass(classe) && Checks.isValidLocation(localita) && Checks.isValidSTA(indirizzo) && Checks.isNotBlank(toCheck)) {
 			
-				final JwtVal validator = new JwtVal();
-				DecodedJWT jwt = validator.validate(jwtToken);
-			
-				String email = jwt.getClaim("sub-email").asString();
-				QueryHandler queryUser = new QueryHandler();
-				int user_id = queryUser.getUserId(email);
 				
-				if(action_modifica_password) {
+				QueryHandler queryForThis = new QueryHandler();
+				
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
 					
-					//acquisizione valore delle chiavi
+		        }else {
+		        	
+					final JwtVal validator = new JwtVal();
+					DecodedJWT jwt = validator.validate(jwtToken);
+				
+					String email = jwt.getClaim("sub-email").asString();
 					
-					String old_password = user.get("old_password").getAsString();
-					String new_password = user.get("new_password").getAsString();
-					String confirm_new_password = user.get("confirm_new_password").getAsString();
-					if(Checks.isValidPassword(new_password) && Checks.isConfirmedPassword(new_password, confirm_new_password)) {
+					int user_id = queryForThis.getUserId(email);
+					
+					if(action_modifica_password) {
 						
-						boolean checkPassword = queryUser.checkPass(user_id, old_password);
+						//acquisizione valore delle chiavi
 						
-						if(checkPassword) {
-						
-							/*
-							 * psw encryption
-							 */
-							String encryptedPass = passEncr(new_password);
+						String old_password = user.get("old_password").getAsString();
+						String new_password = user.get("new_password").getAsString();
+						String confirm_new_password = user.get("confirm_new_password").getAsString();
+						if(Checks.isValidPassword(new_password) && Checks.isConfirmedPassword(new_password, confirm_new_password)) {
 							
-							queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo);
-
-							queryUser.changePass(user_id, encryptedPass);
+							boolean checkPassword = queryForThis.checkPass(user_id, old_password);
+							
+							if(checkPassword) {
+							
+								/*
+								 * psw encryption
+								 */
+								String encryptedPass = passEncr(new_password);
 								
-							response.setStatus(200);
-							jsonResponse.addProperty("stato", "confermato");
-							jsonResponse.addProperty("desc", "dati utente e psw modificati");
-				
-						}else{
+								queryForThis.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo);
+	
+								queryForThis.changePass(user_id, encryptedPass);
+									
+								response.setStatus(200);
+								jsonResponse.addProperty("stato", "confermato");
+								jsonResponse.addProperty("desc", "dati utente e psw modificati");
+					
+							}else{
+								
+								response.setStatus(401);
+								jsonResponse.addProperty("stato", "errore client");
+								jsonResponse.addProperty("descrizione", "credenziali non valide");
+								
+							}
 							
-							response.setStatus(401);
+						}else {
+							response.setStatus(400);
 							jsonResponse.addProperty("stato", "errore client");
-							jsonResponse.addProperty("descrizione", "credenziali non valide");
-							
+							jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 						}
+	
+					}else{
 						
-					}else {
-						response.setStatus(400);
-						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
+						queryForThis.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo);
+						response.setStatus(200);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("desc", "dati utente modificati");
+						
 					}
-
-				}else{
-					
-					queryUser.modificaDatiUtente(user_id, descrizione, localita, classe, indirizzo);
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", "dati utente modificati");
-					
-				}
-				
+		        }
 			}else {
 				 response.setStatus(400);
 				 jsonResponse.addProperty("stato", "errore client");
@@ -394,7 +428,7 @@ public class User extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 	
-		}catch (SQLException e) {
+		}catch (SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");

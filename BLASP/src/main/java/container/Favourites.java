@@ -10,10 +10,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 import javax.security.auth.login.CredentialNotFoundException;
+
+import org.apache.tomcat.util.codec.binary.Base64;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -65,26 +69,41 @@ public class Favourites extends HttpServlet {
 	        String [] toCheck = {jwtToken};
 	
 	        if(Checks.isNotBlank(toCheck)) {
+	        	QueryHandler queryForThis = new QueryHandler();
+				
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+		        	
+		            final JwtVal validator = new JwtVal();
 	
-	            final JwtVal validator = new JwtVal();
-
-                //se non viene autorizzato lancia eccezzione gestita nel catch sotto
-                DecodedJWT jwtDecoded = validator.validate(jwtToken);
-
-                String email = jwtDecoded.getClaim("sub-email").asString();
-                QueryHandler_ticket queryTickets = new QueryHandler_ticket();
-                QueryHandler queryForThis = new QueryHandler();
-                int user_id = queryForThis.getUserId(email);
-                Utente userData = queryForThis.getUserData(user_id);
-                ArrayList<Ticket> FavTickets = queryTickets.getFavTickets(user_id);
-
-                response.setStatus(200);
-                jsonResponse.addProperty("stato", "confermato");
-                jsonResponse.addProperty("desc", " ottenimento preferiti");
-
-                jsonResponse.add("Fav", g.toJsonTree(FavTickets));
-                jsonResponse.add("user_info", g.toJsonTree(userData));
-                
+	                //se non viene autorizzato lancia eccezzione gestita nel catch sotto
+	                DecodedJWT jwtDecoded = validator.validate(jwtToken);
+	
+	                String email = jwtDecoded.getClaim("sub-email").asString();
+	                QueryHandler_ticket queryTickets = new QueryHandler_ticket();
+	     
+	                int user_id = queryForThis.getUserId(email);
+	                Utente userData = queryForThis.getUserData(user_id);
+	                ArrayList<Ticket> FavTickets = queryTickets.getFavTickets(user_id);
+	
+	                response.setStatus(200);
+	                jsonResponse.addProperty("stato", "confermato");
+	                jsonResponse.addProperty("desc", " ottenimento preferiti");
+	
+	                jsonResponse.add("Fav", g.toJsonTree(FavTickets));
+	                jsonResponse.add("user_info", g.toJsonTree(userData));
+	                
+		        }
 	        }else {
 	            response.setStatus(400);
 	            jsonResponse.addProperty("stato", "errore client");
@@ -98,7 +117,7 @@ public class Favourites extends HttpServlet {
             System.out.println("not authorized token");
             e.printStackTrace();
 
-        } catch (SQLException e) {
+        } catch (SQLException | NoSuchAlgorithmException e) {
 
             response.setStatus(500);
             jsonResponse.addProperty("stato", "errore server");
@@ -162,28 +181,43 @@ public class Favourites extends HttpServlet {
 			final JwtVal validator = new JwtVal();
 			
 			if(Checks.isNotBlank(toCheck)) {
-				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
-				String email = jwtDecoded.getClaim("sub-email").asString();
-				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
+				QueryHandler queryForThis = new QueryHandler();
 				
-				boolean hasTicket = queryForThis.hasTicketId(Integer.parseInt(ticket_id));
-				
-				if(hasTicket) {
-
-					QueryHandler queryForThis_user = new QueryHandler();
-					
-					int user_id = queryForThis_user.getUserId(email);
-					queryForThis.saveFavourites(Integer.parseInt(ticket_id), user_id);
-					
-					response.setStatus(201);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", "aggiunto ai preferiti");
-
-				}else {
-					response.setStatus(400);
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
 					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("desc", "ticket inesistente");
-				}
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+		        	
+					DecodedJWT jwtDecoded =  validator.validate(jwtToken);
+					String email = jwtDecoded.getClaim("sub-email").asString();
+					QueryHandler_ticket queryForTicket = new QueryHandler_ticket();
+					
+					boolean hasTicket = queryForTicket.hasTicketId(Integer.parseInt(ticket_id));
+					
+					if(hasTicket) {
+	
+						
+						int user_id = queryForThis.getUserId(email);
+						queryForTicket.saveFavourites(Integer.parseInt(ticket_id), user_id);
+						
+						response.setStatus(201);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("desc", "aggiunto ai preferiti");
+	
+					}else {
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("desc", "ticket inesistente");
+					}
+		        }
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -198,7 +232,7 @@ public class Favourites extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		}catch(SQLException e) {
+		}catch(SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");

@@ -10,9 +10,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 
 import javax.security.auth.login.CredentialNotFoundException;
+
+import org.apache.tomcat.util.codec.binary.Base64;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -90,30 +94,46 @@ public class BloccaggioUtente extends HttpServlet {
 			final JwtVal validator = new JwtVal();
 
 			if(Checks.isValidEmail(toBlock_email) && Checks.isNotBlank(toCheck)) {
-				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
-				String email = jwtDecoded.getClaim("sub-email").asString();
+				QueryHandler queryForThis = new QueryHandler();
 				
-				
-				int userAdmin_id = queryUser.getUserId(email);	
-				boolean isAdmin = queryUser.isUserAdmin(userAdmin_id);
-				
-				if(isAdmin) {
-					
-						
-					int user_id_toBlock = queryUser.getUserId(toBlock_email);	//USER ID di quello da bloccare
-					queryUser.blockUser(user_id_toBlock);
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", "utente bloccato");
-					
-				}else {
-					
-					response.setStatus(403);
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
 					jsonResponse.addProperty("stato", "errore client");
 					jsonResponse.addProperty("desc", "utente non autorizzato");
-					System.out.println("not authorized action");
 					
-				}
+		        }else {
+				
+					DecodedJWT jwtDecoded =  validator.validate(jwtToken);
+					String email = jwtDecoded.getClaim("sub-email").asString();
+					
+					
+					int userAdmin_id = queryUser.getUserId(email);	
+					boolean isAdmin = queryUser.isUserAdmin(userAdmin_id);
+					
+					if(isAdmin) {
+						
+							
+						int user_id_toBlock = queryUser.getUserId(toBlock_email);	//USER ID di quello da bloccare
+						queryUser.blockUser(user_id_toBlock);
+						response.setStatus(200);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("desc", "utente bloccato");
+						
+					}else {
+						
+						response.setStatus(403);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("desc", "utente non autorizzato");
+						System.out.println("not authorized action");
+						
+					}
+		        }
 			}else {
 				
 				response.setStatus(400);
@@ -129,7 +149,7 @@ public class BloccaggioUtente extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		}catch(SQLException e) {
+		}catch(SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");

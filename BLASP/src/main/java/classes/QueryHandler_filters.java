@@ -30,13 +30,11 @@ public class QueryHandler_filters {
 		
 	}
 	
-	private void establishConnection() {
+	private void establishConnection() throws SQLException {
 		
-		try{
-			conn = DriverManager.getConnection(db_url, db_user, db_password); 
-		}catch(SQLException e){
-			System.err.println(e.getLocalizedMessage());
-		}
+		
+		conn = DriverManager.getConnection(db_url, db_user, db_password); 
+		
 		
 	}
 	

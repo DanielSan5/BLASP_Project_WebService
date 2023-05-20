@@ -10,10 +10,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 import javax.security.auth.login.CredentialNotFoundException;
+
+import org.apache.tomcat.util.codec.binary.Base64;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -69,21 +73,35 @@ public class Avvisi extends HttpServlet {
 			
 			if(Checks.isNotBlank(toCheck)) {
 				
-				final JwtVal validator = new JwtVal();
+				QueryHandler queryForThis = new QueryHandler();
+				
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+					final JwtVal validator = new JwtVal();
+		
+					DecodedJWT jwt = validator.validate(jwtToken);
+					String email =  jwt.getClaim("sub-email").asString();
+					QueryHandler queryUser = new QueryHandler();
+					int utente_id = queryUser.getUserId(email);
 	
-				DecodedJWT jwt = validator.validate(jwtToken);
-				String email =  jwt.getClaim("sub-email").asString();
-				QueryHandler queryUser = new QueryHandler();
-				int utente_id = queryUser.getUserId(email);
-
-				QueryHandler_flags queryAvviso = new QueryHandler_flags();
-				ArrayList<Avviso> avvisi = queryAvviso.getAvvisi(utente_id);
-
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("descrizione", "ottenimento avvisi");
-				jsonResponse.add("avvisi", g.toJsonTree(avvisi));
-			
+					QueryHandler_flags queryAvviso = new QueryHandler_flags();
+					ArrayList<Avviso> avvisi = queryAvviso.getAvvisi(utente_id);
+	
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("descrizione", "ottenimento avvisi");
+					jsonResponse.add("avvisi", g.toJsonTree(avvisi));
+		        }
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -98,7 +116,7 @@ public class Avvisi extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		} catch ( SQLException e) {
+		} catch ( SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
@@ -156,22 +174,38 @@ public class Avvisi extends HttpServlet {
 			
 			if(Checks.isNotBlank(toCheck)) {
 			
-				final JwtVal validator = new JwtVal();
-
-				validator.validate(jwtToken);
-	
-				QueryHandler_ticket queryTicket = new QueryHandler_ticket();
-					
-				int utente_id = queryTicket.getUserIdFromTicket(Integer.parseInt(ticket_id));
-
-				QueryHandler_flags queryUtenteAvviso = new QueryHandler_flags();
+				QueryHandler queryForThis = new QueryHandler();
 				
-				int avviso_id = queryUtenteAvviso.inserisciAvvisoGetId(avviso,Integer.parseInt(ticket_id), utente_id);
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+		        	
+					final JwtVal validator = new JwtVal();
 	
-				response.setStatus(201);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("desc", "avviso:" + avviso_id + " creato");
+					validator.validate(jwtToken);
 		
+					QueryHandler_ticket queryTicket = new QueryHandler_ticket();
+						
+					int utente_id = queryTicket.getUserIdFromTicket(Integer.parseInt(ticket_id));
+	
+					QueryHandler_flags queryUtenteAvviso = new QueryHandler_flags();
+					
+					int avviso_id = queryUtenteAvviso.inserisciAvvisoGetId(avviso,Integer.parseInt(ticket_id), utente_id);
+		
+					response.setStatus(201);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", "avviso:" + avviso_id + " creato");
+					
+		        }
 			}else {
 				
 				response.setStatus(400);
@@ -187,7 +221,7 @@ public class Avvisi extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		} catch (SQLException e) {
+		} catch (SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");

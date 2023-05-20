@@ -10,9 +10,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 
 import javax.security.auth.login.CredentialNotFoundException;
+
+import org.apache.tomcat.util.codec.binary.Base64;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -88,6 +92,7 @@ public class Accettazione_ticket extends HttpServlet {
 			String jwtToken = hd[1];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
+        	
 			//acquisizione delle chiavi
 			String numeroTicket = user.get("numero_ticket").getAsString();	
 			
@@ -95,50 +100,65 @@ public class Accettazione_ticket extends HttpServlet {
 			
 			if(Checks.isNotBlank(toCheck)) {
 		
-				QueryHandler_ticket queryForThis = new QueryHandler_ticket();
-
-				final JwtVal validator = new JwtVal();
-		
-				DecodedJWT jwtDecoded =  validator.validate(jwtToken);
-				String email = jwtDecoded.getClaim("sub-email").asString();
-				QueryHandler queryUser = new QueryHandler();
-				int user_id = queryUser.getUserId(email);
-				
-				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
-				
-				if(hasTicketId) {
+				QueryHandler queryForThis = new QueryHandler();
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+		        	
+					QueryHandler_ticket queryForTicket= new QueryHandler_ticket();
 	
-					if(queryForThis.isNotPending(Integer.parseInt(numeroTicket))) {
-						
-						queryForThis.modificaStatoTicket(user_id, Integer.parseInt(numeroTicket));
-						
-						response.setStatus(200);
-						jsonResponse.addProperty("stato", "confermato");
-						jsonResponse.addProperty("desc", "ticket accettato");
-						
-						Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
-						
-						jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
+					final JwtVal validator = new JwtVal();
+			
+					DecodedJWT jwtDecoded =  validator.validate(jwtToken);
+					String email = jwtDecoded.getClaim("sub-email").asString();
+					QueryHandler queryUser = new QueryHandler();
+					int user_id = queryUser.getUserId(email);
+					
+					boolean hasTicketId = queryForTicket.hasTicketId(Integer.parseInt(numeroTicket));
+					
+					if(hasTicketId) {
+		
+						if(queryForTicket.isNotPending(Integer.parseInt(numeroTicket))) {
+							
+							queryForTicket.modificaStatoTicket(user_id, Integer.parseInt(numeroTicket));
+							
+							response.setStatus(200);
+							jsonResponse.addProperty("stato", "confermato");
+							jsonResponse.addProperty("desc", "ticket accettato");
+							
+							Ticket ticket_info = queryForTicket.getTicketFromId(Integer.parseInt(numeroTicket));
+							
+							jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
+							
+						}else {
+							
+							response.setStatus(400);
+							jsonResponse.addProperty("stato", "errore client");
+							jsonResponse.addProperty("desc", "il ticket e' gia occupato");
+							
+						}		
 						
 					}else {
-						
 						response.setStatus(400);
 						jsonResponse.addProperty("stato", "errore client");
-						jsonResponse.addProperty("desc", "il ticket e' gia occupato");
-						
-					}		
-					
-				}else {
-					response.setStatus(400);
-					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("desc", "ticket inesistente");
-				}
-				
+						jsonResponse.addProperty("desc", "ticket inesistente");
+					}
+		        }	
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
 				jsonResponse.addProperty("desc", "sintassi errata nella richiesta");
 			}
+        
 		}catch(InvalidParameterException e) {
 		
 			response.setStatus(403);
@@ -147,7 +167,7 @@ public class Accettazione_ticket extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		}catch(SQLException e) {
+		}catch(SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");

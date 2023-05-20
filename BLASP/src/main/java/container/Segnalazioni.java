@@ -10,10 +10,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 import javax.security.auth.login.CredentialNotFoundException;
+
+import org.apache.tomcat.util.codec.binary.Base64;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -65,20 +69,36 @@ public class Segnalazioni extends HttpServlet {
 			String [] toCheck = {jwtToken};
 			if(Checks.isNotBlank(toCheck)) {
 				
-				final JwtVal validator = new JwtVal();
-			
-			
-				DecodedJWT jwt = validator.validate(jwtToken);
-				QueryHandler queryUser = new QueryHandler();
-				int utente_id = queryUser.getUserId(jwt.getClaim("sub-email").asString());
-
-				QueryHandler_flags queryFlags = new QueryHandler_flags();
-				ArrayList<String> flagsDesc = queryFlags.getFlags(utente_id);
-
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("descrizione", "ottenimento segnalazioni");
-				jsonResponse.add("avvisi", g.toJsonTree(flagsDesc));
+				QueryHandler queryForThis = new QueryHandler();
+				
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+		        	
+		        	final JwtVal validator = new JwtVal();
+				
+				
+					DecodedJWT jwt = validator.validate(jwtToken);
+					QueryHandler queryUser = new QueryHandler();
+					int utente_id = queryUser.getUserId(jwt.getClaim("sub-email").asString());
+	
+					QueryHandler_flags queryFlags = new QueryHandler_flags();
+					ArrayList<String> flagsDesc = queryFlags.getFlags(utente_id);
+	
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("descrizione", "ottenimento segnalazioni");
+					jsonResponse.add("avvisi", g.toJsonTree(flagsDesc));
+		        }
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -100,7 +120,7 @@ public class Segnalazioni extends HttpServlet {
 			jsonResponse.addProperty("descrizione", "nessn risultato");
 			e.printStackTrace();
 			
-		} catch (SQLException e) {
+		} catch (SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
@@ -158,35 +178,50 @@ public class Segnalazioni extends HttpServlet {
 			
 			if(Checks.isNotBlank(toCheck) && Checks.isValidEmail(email) ) {
 				
-				final JwtVal validator = new JwtVal();
-
-				DecodedJWT jwt = validator.validate(jwtToken);
-				String segnalatore_email = jwt.getClaim("sub-email").asString();
+				QueryHandler queryForThis = new QueryHandler();
 				
-				QueryHandler queryUser = new QueryHandler();
-				
-				int user_segnalatore_id = queryUser.getUserId(segnalatore_email);
-				int user_segnalato_id = queryUser.getUserId(email);
-				
-				if(Checks.isNotBlockedUser(user_segnalato_id) && Checks.hasNotThreFlags(user_segnalato_id)) {
-					
-					QueryHandler_flags queryFlags = new QueryHandler_flags();
-					
-					int segnalazioneID = queryFlags.inserisciSegnalazioneGetId(user_segnalato_id, user_segnalatore_id, descrizione);
-					
-					response.setStatus(201);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", "segnalazione:" + segnalazioneID + " creata");
-					
-				}else {
-					
-					response.setStatus(400);
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
 					jsonResponse.addProperty("stato", "errore client");
-					jsonResponse.addProperty("desc", "utente gia in stato di ban");
-			
-				}
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+		        	
+					final JwtVal validator = new JwtVal();
+	
+					DecodedJWT jwt = validator.validate(jwtToken);
+					String segnalatore_email = jwt.getClaim("sub-email").asString();
+					
+					QueryHandler queryUser = new QueryHandler();
+					
+					int user_segnalatore_id = queryUser.getUserId(segnalatore_email);
+					int user_segnalato_id = queryUser.getUserId(email);
+					
+					if(Checks.isNotBlockedUser(user_segnalato_id) && Checks.hasNotThreFlags(user_segnalato_id)) {
+						
+						QueryHandler_flags queryFlags = new QueryHandler_flags();
+						
+						int segnalazioneID = queryFlags.inserisciSegnalazioneGetId(user_segnalato_id, user_segnalatore_id, descrizione);
+						
+						response.setStatus(201);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("desc", "segnalazione:" + segnalazioneID + " creata");
+						
+					}else {
+						
+						response.setStatus(400);
+						jsonResponse.addProperty("stato", "errore client");
+						jsonResponse.addProperty("desc", "utente gia in stato di ban");
 				
+					}
 				
+		        }
 			}else {
 				
 				response.setStatus(400);
@@ -211,7 +246,7 @@ public class Segnalazioni extends HttpServlet {
 			System.out.println("no results");
 			e.printStackTrace();
 			
-		} catch (SQLException e) {
+		} catch (SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");

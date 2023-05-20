@@ -8,10 +8,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 import javax.security.auth.login.CredentialNotFoundException;
+
+import org.apache.tomcat.util.codec.binary.Base64;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
@@ -63,28 +67,42 @@ public class Users extends HttpServlet {
 			String[] toCheck = {jwtToken};
 			if(Checks.isNotBlank(toCheck)) {
 				
-				final JwtVal validator = new JwtVal();
-
-				//se non viene autorizzato lancia eccezzione gestita nel catch sotto
-				validator.validate(jwtToken);
-				
-				String email = request.getParameter("email");
 				QueryHandler queryForThis = new QueryHandler();
-				int user_id = queryForThis.getUserId(email);
-				Utente userData = queryForThis.getUserData(user_id);
 				
-				ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
-				ArrayList<Avviso> userAvvisi = queryForThis.getUserAvvisi(user_id);
-				ArrayList<Segnalazione> userSegnalazioni = queryForThis.getUserSegnalazioni(user_id);
-				
-				response.setStatus(200);
-				jsonResponse.addProperty("stato", "confermato");
-				jsonResponse.addProperty("desc", " ottenimento profilo dell'utente");
-				jsonResponse.add("user_info", g.toJsonTree(userData));
-				jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
-				jsonResponse.add("user_avvisi", g.toJsonTree(userAvvisi));	
-				jsonResponse.add("user_segnalazioni", g.toJsonTree(userSegnalazioni));	
-				
+				//logica di logout
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		        byte[] cipheredTokenDigest = digest.digest(jwtToken.getBytes());
+		        String jwtTokenDigestInB64 = Base64.encodeBase64String(cipheredTokenDigest);
+		        
+		        if(queryForThis.isTokenRevoked(jwtTokenDigestInB64)) {
+		        	
+		        	response.setStatus(401);
+					jsonResponse.addProperty("stato", "errore client");
+					jsonResponse.addProperty("desc", "utente non autorizzato");
+					
+		        }else {
+					final JwtVal validator = new JwtVal();
+	
+					//se non viene autorizzato lancia eccezzione gestita nel catch sotto
+					validator.validate(jwtToken);
+					
+					String email = request.getParameter("email");
+					
+					int user_id = queryForThis.getUserId(email);
+					Utente userData = queryForThis.getUserData(user_id);
+					
+					ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
+					ArrayList<Avviso> userAvvisi = queryForThis.getUserAvvisi(user_id);
+					ArrayList<Segnalazione> userSegnalazioni = queryForThis.getUserSegnalazioni(user_id);
+					
+					response.setStatus(200);
+					jsonResponse.addProperty("stato", "confermato");
+					jsonResponse.addProperty("desc", " ottenimento profilo dell'utente");
+					jsonResponse.add("user_info", g.toJsonTree(userData));
+					jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
+					jsonResponse.add("user_avvisi", g.toJsonTree(userAvvisi));	
+					jsonResponse.add("user_segnalazioni", g.toJsonTree(userSegnalazioni));	
+		        }
 			}else {
 				response.setStatus(400);
 				jsonResponse.addProperty("stato", "errore client");
@@ -106,7 +124,7 @@ public class Users extends HttpServlet {
 			jsonResponse.addProperty("descrizione", "nessun risultato");
 			e.printStackTrace();
 			
-		} catch (SQLException e) {
+		} catch (SQLException | NoSuchAlgorithmException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
@@ -115,7 +133,6 @@ public class Users extends HttpServlet {
 		}finally {
 			out.println(jsonResponse.toString());
 		}
-		
 		
 	}
 
