@@ -100,23 +100,28 @@ public class Accettazione_ticket extends HttpServlet {
 				
 				boolean hasTicketId = queryForThis.hasTicketId(Integer.parseInt(numeroTicket));
 				
-				//MI SERVE L'ID DELL'UTENTE CHE HA ACCETTATO IL TICKET
-				
 				if(hasTicketId) {
 	
-			
-					queryForThis.modificaStatoTicket(user_id, Integer.parseInt(numeroTicket));
+					if(queryForThis.isNotPending(Integer.parseInt(numeroTicket))) {
+						
+						queryForThis.modificaStatoTicket(user_id, Integer.parseInt(numeroTicket));
+						
+						response.setStatus(200);
+						jsonResponse.addProperty("stato", "confermato");
+						jsonResponse.addProperty("desc", "stato modificato");
+						
+						Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
+						
+						jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
+						
+					}else {
+						
+						response.setStatus(500);
+						jsonResponse.addProperty("stato", "errore server");
+						jsonResponse.addProperty("desc", "problema nell'elaborazione della richiesta");
+						
+					}		
 					
-					response.setStatus(200);
-					jsonResponse.addProperty("stato", "confermato");
-					jsonResponse.addProperty("desc", "stato modificato");
-					
-					Ticket ticket_info = queryForThis.getTicketFromId(Integer.parseInt(numeroTicket));
-					
-					jsonResponse.add("ticket_info", g.toJsonTree(ticket_info));
-					
-					
-				
 				}else {
 					response.setStatus(400);
 					jsonResponse.addProperty("stato", "errore client");

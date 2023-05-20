@@ -123,6 +123,28 @@ public class QueryHandler_ticket {
 		
 	}
 	
+	//***CONTROLLA SE UN TICKET È IN STATO PENDING***
+	public boolean isNotPending(int ticket_id) throws SQLException {
+		
+		establishConnection();
+		String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ? AND TIC_stato = 'pending'";
+		
+		
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		
+		
+		pr.setInt(1, ticket_id);
+		ResultSet res = pr.executeQuery();
+		//per controllare se il ticket esiste basta vedere il risultato di next(), sar  false se non esistono righe
+		boolean check = res.next();
+		conn.close();
+		
+		return check; 
+		
+	}
+	
+	
+	
 	//***MODIFICA TUTTE LE INFORMAZIONI DEL TICKET***
 	public void modificaDatiTicket(int numero_ticket, String materia, String descrizione, String tag) throws SQLException {
 			
