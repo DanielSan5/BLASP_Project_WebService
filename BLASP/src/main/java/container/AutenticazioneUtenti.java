@@ -221,7 +221,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 				jsonResponse.addProperty("descrizione", "errore nella sintassi");
 			}	
 				
-		}catch(SQLException | IllegalArgumentException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+		}catch(SQLException | JWTCreationException | NoSuchAlgorithmException | InvalidKeySpecException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
@@ -234,7 +234,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "nessun risultato");
 			e.printStackTrace();
-		}catch(JsonSyntaxException | NullPointerException e) {
+		}catch(JsonSyntaxException | NullPointerException  | NumberFormatException e) {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "formato non supportato");
@@ -361,7 +361,7 @@ public class AutenticazioneUtenti extends HttpServlet{
 			jsonResponse.addProperty("stato", "errore server");
 			jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
 			e.printStackTrace();
-		}catch(JsonSyntaxException | NullPointerException e) {
+		}catch(JsonSyntaxException | NullPointerException  | NumberFormatException e) {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "formato non supportato");

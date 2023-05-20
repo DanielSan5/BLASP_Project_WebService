@@ -187,7 +187,7 @@ public class Avvisi extends HttpServlet {
 			System.out.println("not authorized token");
 			e.printStackTrace();
 		
-		} catch (SQLException | NumberFormatException e) {
+		} catch (SQLException e) {
 			
 			response.setStatus(500);
 			jsonResponse.addProperty("stato", "errore server");
@@ -199,7 +199,7 @@ public class Avvisi extends HttpServlet {
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "nessun risultato");
 			e.printStackTrace();
-		}catch(JsonSyntaxException | NullPointerException e) {
+		}catch(JsonSyntaxException | NullPointerException | NumberFormatException e) {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "formato non supportato");

@@ -91,30 +91,30 @@ public class Users extends HttpServlet {
 				jsonResponse.addProperty("descrizione", "sintassi errata");
 			}
 				
-			}catch(InvalidParameterException | NullPointerException e) {
-				
-				response.setStatus(403);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "non autorizzato");
-				System.out.println("not authorized token");
-				e.printStackTrace();
-				
-			} catch (CredentialNotFoundException e) {
-				
-				response.setStatus(400);
-				jsonResponse.addProperty("stato", "errore client");
-				jsonResponse.addProperty("descrizione", "nessun risultato");
-				e.printStackTrace();
-				
-			} catch (SQLException e) {
-				
-				response.setStatus(500);
-				jsonResponse.addProperty("stato", "errore server");
-				jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
-				e.printStackTrace();
-			}finally {
-				out.println(jsonResponse.toString());
-			}
+		}catch(InvalidParameterException | NullPointerException e) {
+			
+			response.setStatus(403);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "non autorizzato");
+			System.out.println("not authorized token");
+			e.printStackTrace();
+			
+		} catch (CredentialNotFoundException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
+			e.printStackTrace();
+			
+		} catch (SQLException e) {
+			
+			response.setStatus(500);
+			jsonResponse.addProperty("stato", "errore server");
+			jsonResponse.addProperty("descrizione", "errore nell'elaborazione della richiesta");
+			e.printStackTrace();
+		}finally {
+			out.println(jsonResponse.toString());
+		}
 		
 		
 	}
