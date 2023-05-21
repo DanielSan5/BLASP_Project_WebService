@@ -423,12 +423,14 @@ public class Tickets extends HttpServlet {
 					
 					final JwtVal validator = new JwtVal();
 	
-					validator.validate(jwtToken);
+					DecodedJWT jwt = validator.validate(jwtToken);
+					String email = jwt.getClaim("sub-email").asString();
+					int user_id = queryForThis.getUserId(email);
 					
 					if(hasTicketId) {
 						
 						//esecuzione della query (void)
-						queryForTicket.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTags);
+						queryForTicket.modificaDatiTicket(Integer.parseInt(numeroTicket), valoreMateria, valoreDescrizione, valoreTags, user_id);
 	
 						response.setStatus(200);
 						jsonResponse.addProperty("desc", "ticket modificato");
@@ -538,13 +540,14 @@ public class Tickets extends HttpServlet {
 					final JwtVal validator = new JwtVal();
 					DecodedJWT jwt = validator.validate(jwtToken);
 					String email = jwt.getClaim("sub-email").asString();
+					int user_id = queryForThis.getUserId(email);
 					//da controllare che il ticket sia veramente dell'utente
 					QueryHandler_ticket queryForTicket = new QueryHandler_ticket();
 					boolean hasTicketId = queryForTicket.hasTicketId(Integer.parseInt(numeroTicket));
 					
 					if(hasTicketId) {
 						
-						queryForTicket.cancellaTicket(Integer.parseInt(numeroTicket));
+						queryForTicket.cancellaTicket(Integer.parseInt(numeroTicket), user_id);
 						response.setStatus(200);
 						jsonResponse.addProperty("stato", "confermato");
 						jsonResponse.addProperty("desc", "ticket cancellato");
@@ -586,6 +589,12 @@ public class Tickets extends HttpServlet {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "oggetto inesistente");
+			e.printStackTrace();
+		} catch (CredentialNotFoundException e) {
+			
+			response.setStatus(400);
+			jsonResponse.addProperty("stato", "errore client");
+			jsonResponse.addProperty("descrizione", "nessun risultato");
 			e.printStackTrace();
 		}finally {
 			out.println(jsonResponse.toString());

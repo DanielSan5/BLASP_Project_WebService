@@ -144,10 +144,10 @@ public class QueryHandler_ticket {
 	
 	
 	//***MODIFICA TUTTE LE INFORMAZIONI DEL TICKET***
-	public void modificaDatiTicket(int numero_ticket, String materia, String descrizione, String tag) throws SQLException, NoSuchFieldException {
+	public void modificaDatiTicket(int numero_ticket, String materia, String descrizione, String tag, int user_id) throws SQLException, NoSuchFieldException {
 			
 		establishConnection();
-		String prepared_query = "UPDATE tickets SET TIC_materia = ?, TIC_descrizione = ?, TIC_tags = ? WHERE TIC_id = ?";		
+		String prepared_query = "UPDATE tickets SET TIC_materia = ?, TIC_descrizione = ?, TIC_tags = ? WHERE TIC_id = ? AND UT_id_apertura = ?";		
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 	
@@ -156,6 +156,7 @@ public class QueryHandler_ticket {
 		pr.setString(2, descrizione);
 		pr.setString(3, tag);
 		pr.setInt(4, numero_ticket);
+		pr.setInt(5, user_id);
 		//executeUpdate returna o 1 se   andato a buonfine o 0 se non   andato a buonfine
 		if(pr.executeUpdate() != 1) {
 			conn.close();
@@ -241,15 +242,16 @@ public class QueryHandler_ticket {
 	}
 	
 	//***CANCELLA UN TICKET***
-	public void cancellaTicket(int numero_ticket) throws SQLException, NoSuchFieldException {
+	public void cancellaTicket(int numero_ticket, int user_id) throws SQLException, NoSuchFieldException {
 			
 		establishConnection();
-		String prepared_query = "DELETE FROM tickets WHERE TIC_id = ?";		
+		String prepared_query = "DELETE FROM tickets WHERE TIC_id = ? AND UT_id_apertura = ?";		
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 		
 			
 		pr.setInt(1, numero_ticket);
+		pr.setInt(2, user_id);
 		
 		//executeUpdate returna o 1 se   andato a buonfine o 0 se non   andato a buonfine
 		if(pr.executeUpdate() != 1) {

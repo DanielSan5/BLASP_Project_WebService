@@ -51,7 +51,7 @@ public class Accettazione_ticket extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setStatus(405);
 	}
-
+	
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -180,6 +180,7 @@ public class Accettazione_ticket extends HttpServlet {
 			jsonResponse.addProperty("stato", "errore client");
 			jsonResponse.addProperty("descrizione", "nessun risultato");
 			e.printStackTrace();
+			
 		}catch(JsonSyntaxException | NullPointerException | NumberFormatException e) {
 			response.setStatus(400);
 			jsonResponse.addProperty("stato", "errore client");
