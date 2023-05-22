@@ -78,15 +78,13 @@ public class Tickets extends HttpServlet {
 		
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		response.addHeader("Access-Control-Allow-Methods", "GET");
-		response.addHeader("Access-Control-Allow-Credentials", "true");
-		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
 		try{
 			//Estrazione del token dall'header
-			String[] hd = request.getHeader("Cookie").split("[=]");
+			String[] hd = request.getHeader("Authorization").split("[=]");
 			String jwtToken = hd[1];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			HashMap<String, String> filters = getParametersFromQS(request.getQueryString());
@@ -598,8 +596,7 @@ public class Tickets extends HttpServlet {
 			e.printStackTrace();
 		}finally {
 			out.println(jsonResponse.toString());
-		}
-			
+		}	
 		
 	}
 

@@ -290,6 +290,26 @@ public class QueryHandler_ticket {
 
 		
 	}
+
+	public void deleteFavourites(int ticket_id, int user_id) throws SQLException, NoSuchFieldException {
+		
+		establishConnection();
+		String prepared_query = "DELETE FROM preferiti WHERE TIC_id = ? AND UT_id = ?";		
+	
+		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
+		
+			
+		pr.setInt(1, ticket_id);
+		pr.setInt(2, user_id);
+		
+		//executeUpdate returna o 1 se   andato a buonfine o 0 se non   andato a buonfine
+		if(pr.executeUpdate() != 1) {
+			conn.close();
+			throw new NoSuchFieldException("could not delete row in tickets");
+		}
+		conn.close();
+		
+	}
 	
 	
 	
