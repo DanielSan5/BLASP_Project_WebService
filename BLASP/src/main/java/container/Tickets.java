@@ -76,7 +76,7 @@ public class Tickets extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
 		response.addHeader("Access-Control-Allow-Methods", "GET");
 		response.addHeader("Access-Control-Allow-Credentials", "true");
 		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
@@ -242,7 +242,7 @@ public class Tickets extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
 		response.addHeader("Access-Control-Allow-Methods", "POST");
 		response.addHeader("Access-Control-Allow-Credentials", "true");
 		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
@@ -362,7 +362,7 @@ public class Tickets extends HttpServlet {
 	 */
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
 		response.addHeader("Access-Control-Allow-Methods", "PUT");
 		response.addHeader("Access-Control-Allow-Credentials", "true");
 		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
@@ -491,7 +491,7 @@ public class Tickets extends HttpServlet {
 	
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	
-		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
 		response.addHeader("Access-Control-Allow-Methods", "DELETE");
 		response.addHeader("Access-Control-Allow-Credentials", "true");
 		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
