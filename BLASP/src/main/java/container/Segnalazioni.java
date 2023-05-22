@@ -63,7 +63,7 @@ public class Segnalazioni extends HttpServlet {
 			
 			//Estrazione del token dall'header
 			String[] hd = request.getHeader("Cookie").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			String [] toCheck = {jwtToken};
@@ -170,7 +170,7 @@ public class Segnalazioni extends HttpServlet {
 			String descrizione = user.get("descrizione").getAsString();
 			//Estrazione del token dall'header
 			String[] hd = request.getHeader("Cookie").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String[] toCheck = {jwtToken, email};
 			

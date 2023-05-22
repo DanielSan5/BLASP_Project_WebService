@@ -85,7 +85,7 @@ public class Tickets extends HttpServlet {
 		try{
 			//Estrazione del token dall'header
 			String[] hd = request.getHeader("Authorization").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			HashMap<String, String> filters = getParametersFromQS(request.getQueryString());
 			System.out.println(filters);
@@ -271,7 +271,7 @@ public class Tickets extends HttpServlet {
 			
 			//Estrazione del token dall'header
 			String[] hd = request.getHeader("Cookie").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			String[] toCheck = {jwtToken, materia, livello_materia, descrizione, dataStringa};
 			
@@ -387,7 +387,7 @@ public class Tickets extends HttpServlet {
 			
 			//Estrazione del token dall'header
 			String[] hd = request.getHeader("Cookie").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			//acquisizione delle chiavi
@@ -513,7 +513,7 @@ public class Tickets extends HttpServlet {
 			
 			//Estrazione del token dall'header
 			String[] hd = request.getHeader("Cookie").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			//acquisizione delle chiavi
 			String  numeroTicket = ticket.get("numero_ticket").getAsString();	

@@ -61,7 +61,7 @@ public class Users extends HttpServlet {
 		try{
 			
 			String[] hd = request.getHeader("Cookie").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			String[] toCheck = {jwtToken};

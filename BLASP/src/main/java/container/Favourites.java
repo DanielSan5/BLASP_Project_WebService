@@ -64,7 +64,7 @@ public class Favourites extends HttpServlet {
         try{
         	
         	String[] hd = request.getHeader("Cookie").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 	       // String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 	        String [] toCheck = {jwtToken};
 	
@@ -170,7 +170,7 @@ public class Favourites extends HttpServlet {
 			
 			//Estrazione del token dall'header
 			String[] hd = request.getHeader("Cookie").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			//acquisizione delle chiavi
@@ -285,7 +285,7 @@ protected void doDelete(HttpServletRequest request, HttpServletResponse response
 			
 			//Estrazione del token dall'header
 			String[] hd = request.getHeader("Cookie").split("[=]");
-			String jwtToken = hd[1];
+			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			
 			//acquisizione delle chiavi
