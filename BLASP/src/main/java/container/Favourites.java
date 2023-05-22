@@ -52,11 +52,12 @@ public class Favourites extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		//ottenimento ticket preferiti
+		response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+		response.setHeader("Access-Control-Allow-Headers", "Origin,content-type,set-cookie,Cookie");
+		response.setHeader("Access-Control-Allow-Methods", "GET");
+		response.setHeader("Access-Control-Allow-Credentials", "true");
+		response.setHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
-        response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
-        response.addHeader("Access-Control-Allow-Methods", "GET");
-        response.addHeader("Access-Control-Allow-Credentials", "true");
-		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 
         PrintWriter out = response.getWriter(); 
         JsonObject jsonResponse = new JsonObject();
@@ -145,10 +146,11 @@ public class Favourites extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
-		response.addHeader("Access-Control-Allow-Methods", "POST");
-		response.addHeader("Access-Control-Allow-Credentials", "true");
-		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
+		response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+		response.setHeader("Access-Control-Allow-Headers", "Origin,content-type,set-cookie,Cookie");
+		response.setHeader("Access-Control-Allow-Methods", "POST");
+		response.setHeader("Access-Control-Allow-Credentials", "true");
+		response.setHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
@@ -260,11 +262,12 @@ public class Favourites extends HttpServlet {
 	
 protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
-		response.addHeader("Access-Control-Allow-Methods", "POST");
-		response.addHeader("Access-Control-Allow-Credentials", "true");
-		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
-		response.setContentType("application/json");
+	response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+	response.setHeader("Access-Control-Allow-Headers", "Origin,content-type,set-cookie,Cookie");
+	response.setHeader("Access-Control-Allow-Methods", "DELETE");
+	response.setHeader("Access-Control-Allow-Credentials", "true");
+	response.setHeader("Access-Control-Expose-Headers", "Set-cookie");
+	response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
 		JsonObject jsonResponse = new JsonObject();

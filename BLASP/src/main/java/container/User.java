@@ -82,11 +82,12 @@ public class User extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		//ottenimento solo dei dati personali
+		response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+		response.setHeader("Access-Control-Allow-Headers", "Origin,content-type,set-cookie,Cookie");
+		response.setHeader("Access-Control-Allow-Methods", "GET");
+		response.setHeader("Access-Control-Allow-Credentials", "true");
+		response.setHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
-		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
-		response.addHeader("Access-Control-Allow-Methods", "GET");
-		response.addHeader("Access-Control-Allow-Credentials", "true");
-		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
 		
 		PrintWriter out = response.getWriter(); 
 		JsonObject jsonResponse = new JsonObject();
@@ -180,10 +181,11 @@ public class User extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
-		response.addHeader("Access-Control-Allow-Methods", "POST");
-		response.addHeader("Access-Control-Allow-Credentials", "true");
-		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
+		response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+		response.setHeader("Access-Control-Allow-Headers", "Origin,content-type,set-cookie,Cookie");
+		response.setHeader("Access-Control-Allow-Methods", "POST");
+		response.setHeader("Access-Control-Allow-Credentials", "true");
+		response.setHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		//output writer
 		PrintWriter out = response.getWriter(); 
@@ -301,10 +303,11 @@ public class User extends HttpServlet {
 	
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	
-		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
-		response.addHeader("Access-Control-Allow-Methods", "PUT");
-		response.addHeader("Access-Control-Allow-Credentials", "true");
-		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
+		response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+		response.setHeader("Access-Control-Allow-Headers", "Origin,content-type,set-cookie,Cookie");
+		response.setHeader("Access-Control-Allow-Methods", "PUT");
+		response.setHeader("Access-Control-Allow-Credentials", "true");
+		response.setHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
 		//output writer
 		PrintWriter out = response.getWriter(); 
