@@ -83,7 +83,7 @@ public class User extends HttpServlet {
 		
 		//ottenimento solo dei dati personali
 		response.setContentType("application/json");
-		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
 		response.addHeader("Access-Control-Allow-Methods", "GET");
 		response.addHeader("Access-Control-Allow-Credentials", "true");
 		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
@@ -180,7 +180,7 @@ public class User extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
 		response.addHeader("Access-Control-Allow-Methods", "POST");
 		response.addHeader("Access-Control-Allow-Credentials", "true");
 		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
@@ -261,7 +261,7 @@ public class User extends HttpServlet {
 					String domaniUTCFormatted = domaniUTC.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
 					
 					String token = generator.generateJwt(claims);
-					response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure; exp=" + domaniUTCFormatted);
+					response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure; SameSite=None; exp=" + domaniUTCFormatted);
 					response.setStatus(201);
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("desc", "utente creato");
@@ -301,7 +301,7 @@ public class User extends HttpServlet {
 	
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	
-		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
 		response.addHeader("Access-Control-Allow-Methods", "PUT");
 		response.addHeader("Access-Control-Allow-Credentials", "true");
 		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
