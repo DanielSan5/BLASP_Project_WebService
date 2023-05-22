@@ -273,7 +273,9 @@ public class Autenticazione_Logout extends HttpServlet{
 							String domaniUTCFormatted = domaniUTC.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
 							
 							String token = generator.generateJwt(claims);
-							response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; Secure; SameSite=None; exp=" + domaniUTCFormatted);
+
+							response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; SameSite=None; Secure; exp=" + domaniUTCFormatted);
+
 							
 							response.setStatus(200);
 							jsonResponse.addProperty("stato", "confermato");

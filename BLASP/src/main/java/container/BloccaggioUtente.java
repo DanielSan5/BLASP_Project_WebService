@@ -63,6 +63,7 @@ public class BloccaggioUtente extends HttpServlet {
 		response.addHeader("Access-Control-Allow-Methods", "PUT");
 		response.addHeader("Access-Control-Allow-Credentials", "true");
 		response.addHeader("Access-Control-Expose-Headers", "Set-cookie");
+		response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter(); 
 		BufferedReader in_body = request.getReader();
