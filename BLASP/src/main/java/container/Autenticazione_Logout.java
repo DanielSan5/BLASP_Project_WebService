@@ -271,14 +271,10 @@ public class Autenticazione_Logout extends HttpServlet{
 						      
 						    });
 							
-							LocalDate oggi = LocalDate.now();
-							LocalDate domani = oggi.plusDays(1);
-							ZonedDateTime domaniUTC = domani.atStartOfDay(ZoneId.of("UTC"));
-							String domaniUTCFormatted = domaniUTC.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
 							
 							String token = generator.generateJwt(claims);
 
-							response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; SameSite=None; Secure; exp=" + domaniUTCFormatted);
+							response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; SameSite=None; Secure; Max-age=86400" );
 
 							
 							response.setStatus(200);

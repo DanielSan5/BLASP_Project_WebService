@@ -200,5 +200,15 @@ public class Accettazione_ticket extends HttpServlet {
 	
 	}
 	
+	protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+		response.setHeader("Access-Control-Allow-Headers", "Origin,content-type,set-cookie,Cookie");
+		response.setHeader("Access-Control-Allow-Methods", "PUT, POST, GET");
+		response.setHeader("Access-Control-Allow-Credentials", "true");
+		response.setContentType("application/json");
+		
+	}
+	
 	
 }

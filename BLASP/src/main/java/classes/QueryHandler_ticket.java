@@ -11,39 +11,40 @@ import javax.security.auth.login.CredentialNotFoundException;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mysql.cj.jdbc.MysqlDataSource;
 import com.mysql.jdbc.exceptions.MySQLDataException;
 
 import container.Tickets;
 
 public class QueryHandler_ticket {
 
-	private static String db_url = "jdbc:mysql://localhost:3306/ticketing";
-    private static String db_driver = "com.mysql.jdbc.Driver";
-    private static String db_user = "root";
-    private static String db_password = "";
     private Connection conn;
-	
-	public QueryHandler_ticket() {
-		try {
+    MysqlDataSource d = new MysqlDataSource();
+	public QueryHandler_ticket() throws SQLException {
+		/*try {
 			Class.forName(db_driver);
 		} catch (ClassNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+		}*/
+		
+		this.d.setUser("root");
+	    this.d.setPassword("");
+	    this.d.setUrl("jdbc:mysql://localhost:3306/ticketing");
+	    try {
+			this.conn =  (Connection) d.getConnection();
+		} catch (SQLException e) {
+			this.conn.close();
+			e.printStackTrace();
 		}
 	}
 	
-	private void establishConnection() throws SQLException {
-		
-		
-		conn = DriverManager.getConnection(db_url, db_user, db_password); 
-		
-		
-	}
 	
 	//***INSERISCI TICKET***
 	public int inserisciTicketOttieniID(String materia, String livello_materia, String descrizione, String dataCreazione, int userID) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "INSERT INTO tickets (TIC_materia, TIC_tags, TIC_descrizione, TIC_data_creazione, UT_id_apertura) VALUES (?, ?, ?, ?, ?)";
 		
 
@@ -81,7 +82,8 @@ public class QueryHandler_ticket {
 	
 	public void saveFavourites(int ticket_id, int user_id) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "INSERT INTO preferiti (UT_id, TIC_id) VALUES (?, ?)";
 		
 		
@@ -101,7 +103,8 @@ public class QueryHandler_ticket {
 	//***CONTROLLA SE ESISTE L'ID DI UN TICKET***
 	public boolean hasTicketId(int ticket_id) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ?";
 		
 		
@@ -124,7 +127,8 @@ public class QueryHandler_ticket {
 	//***CONTROLLA SE UN TICKET È IN STATO PENDING***
 	public boolean isNotPending(int ticket_id) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ? AND TIC_stato = 'open'";
 		
 		
@@ -146,7 +150,8 @@ public class QueryHandler_ticket {
 	//***MODIFICA TUTTE LE INFORMAZIONI DEL TICKET***
 	public void modificaDatiTicket(int numero_ticket, String materia, String descrizione, String tag, int user_id) throws SQLException, NoSuchFieldException {
 			
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "UPDATE tickets SET TIC_materia = ?, TIC_descrizione = ?, TIC_tags = ? WHERE TIC_id = ? AND UT_id_apertura = ?";		
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -170,7 +175,8 @@ public class QueryHandler_ticket {
 	//***MODIFICA LO STATO DEL TICKET***
 	public void modificaStatoTicket(int id_user, int numero_ticket) throws SQLException, NoSuchFieldException {
 				
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "UPDATE tickets SET UT_id_accettazione = ?, TIC_stato = 'pending' WHERE TIC_id = ?";		
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -193,7 +199,8 @@ public class QueryHandler_ticket {
 	//***RESTITUISCE I CAMPI DI UN TICKET DAL SUO ID***
 	public Ticket getTicketFromId(int ticket_id) throws SQLException, CredentialNotFoundException{
 			
-			establishConnection();
+			//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 			String prepared_query = "SELECT * FROM tickets WHERE TIC_id = ?";
 
 			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -218,7 +225,8 @@ public class QueryHandler_ticket {
 	//***RESTITUISCE L'ID UTENTE DALL'ID TICKET***
 	public int getUserIdFromTicket(int ticket_id) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT UT_id_apertura FROM tickets WHERE TIC_id = ?";
 		//DA MODIFICARE IL NOME DEL CAMPO
 
@@ -244,7 +252,8 @@ public class QueryHandler_ticket {
 	//***CANCELLA UN TICKET***
 	public void cancellaTicket(int numero_ticket, int user_id) throws SQLException, NoSuchFieldException {
 			
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "DELETE FROM tickets WHERE TIC_id = ? AND UT_id_apertura = ?";		
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -266,8 +275,8 @@ public class QueryHandler_ticket {
 	
 	public ArrayList<Ticket> getFavTickets(int user_id) throws CredentialNotFoundException, SQLException {
 		
-		establishConnection();
-		
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String getUser = "SELECT * FROM preferiti INNER JOIN tickets ON preferiti.TIC_id = tickets.TIC_id WHERE preferiti.UT_id = ?";
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
@@ -293,7 +302,8 @@ public class QueryHandler_ticket {
 
 	public void deleteFavourites(int ticket_id, int user_id) throws SQLException, NoSuchFieldException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "DELETE FROM preferiti WHERE TIC_id = ? AND UT_id = ?";		
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);

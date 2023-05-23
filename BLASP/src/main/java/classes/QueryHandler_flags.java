@@ -12,37 +12,35 @@ import javax.security.auth.login.CredentialNotFoundException;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mysql.cj.jdbc.MysqlDataSource;
 import com.mysql.jdbc.exceptions.MySQLDataException;
 
 public class QueryHandler_flags {
 
-	private static String db_url = "jdbc:mysql://localhost:3306/ticketing";
-    private static String db_driver = "com.mysql.jdbc.Driver";
-    private static String db_user = "root";
-    private static String db_password = "";
-    private Connection conn;
 	
-	public QueryHandler_flags() {
-		try {
-			Class.forName(db_driver);
-		} catch (ClassNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+    private Connection conn;
+    MysqlDataSource d = new MysqlDataSource();
+    
+	public QueryHandler_flags() throws SQLException {
+		
+		this.d.setUser("root");
+	    this.d.setPassword("");
+	    this.d.setUrl("jdbc:mysql://localhost:3306/ticketing");
+	    try {
+			this.conn =  (Connection) d.getConnection();
+		} catch (SQLException e) {
+			this.conn.close();
+			e.printStackTrace();
 		}
 	}
 	
-	private void establishConnection() throws SQLException {
-		
-		
-		conn = DriverManager.getConnection(db_url, db_user, db_password); 
-		
-		
-	}
+	
 	
 //***INSERISCI AVVISO***
 	public int inserisciAvvisoGetId(String descrizione_avviso, int ticket_id, int utente_id) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "INSERT INTO avviso (AVV_descrizione, TIC_id_avvisato, UT_ID_avvisante) VALUES (?,?,?)";
 	
 		
@@ -78,8 +76,8 @@ public class QueryHandler_flags {
 	
 	public ArrayList<String> getFlags(int utente_id) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
-		
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String getUser = "SELECT COUNT(*) as num_segnalazioni , SEG_descrizione FROM segnalazione s WHERE UT_id_segnalato = ? GROUP BY UT_id _segnalato ";
 		ResultSet res;
 		ArrayList<String> flag_desc= new ArrayList<String>();
@@ -107,8 +105,8 @@ public class QueryHandler_flags {
 	
 	public ArrayList<Avviso> getAvvisi(int utente_id) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
-		
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String getUser = "SELECT * FROM avvisi a INNER JOIN ticket t ON t.TIC_id = a.TIC_id_avvisato WHERE t.UT_id_apertura = ?";
 		ResultSet res;
 		ArrayList<Avviso> avvisi = new ArrayList<Avviso>();
@@ -143,7 +141,8 @@ public class QueryHandler_flags {
 	
 	public String getUserEmail(int user_id) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT UT_email FROM utenti WHERE UT_id = ?";
 		
 		
@@ -169,7 +168,8 @@ public class QueryHandler_flags {
 	
 	public boolean hasNotThreeFlags(int user_id) throws SQLException{
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT COUNT(*) as numeroSegnalazioni FROM segnalazione WHERE UT_id_segnalato = ? GROUP BY UT_id_segnalato";
 		
 		
@@ -200,7 +200,8 @@ public class QueryHandler_flags {
 	//***INSERISCI SEGNALAZIONE***
 	public int inserisciSegnalazioneGetId(int user_segnalato_id, int user_segnalatore_id, String segnalazioni) throws SQLException, CredentialNotFoundException{
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "INSERT INTO segnalazione (UT_id_segnalato, UT_id_segnalatore, SEG_descrizione) VALUES (?, ?, ?)";
 		
 	

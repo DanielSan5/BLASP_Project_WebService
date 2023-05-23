@@ -9,40 +9,37 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.mysql.cj.jdbc.MysqlDataSource;
+
 public class QueryHandler_filters {
 
-	private static String db_url = "jdbc:mysql://localhost:3306/ticketing";
-    private static String db_driver = "com.mysql.jdbc.Driver";
-    private static String db_user = "root";
-    private static String db_password = "";
+	
     private Connection conn;
-   
+    MysqlDataSource d = new MysqlDataSource();
 
-	public QueryHandler_filters() {
+	public QueryHandler_filters() throws SQLException {
 		
-		try {
-			Class.forName(db_driver);
-			
-		} catch (ClassNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		this.d.setUser("root");
+	    this.d.setPassword("");
+	    this.d.setUrl("jdbc:mysql://localhost:3306/ticketing");
+	    
+	    try {
+			this.conn =  (Connection) d.getConnection();
+		} catch (SQLException e) {
+			this.conn.close();
+			e.printStackTrace();
 		}
-		
 	}
 	
-	private void establishConnection() throws SQLException {
-		
-		
-		conn = DriverManager.getConnection(db_url, db_user, db_password); 
-		
-		
-	}
 	
 	//filtraggio in base a classe, nome e materia
 	public ArrayList<Ticket> getCNM(String classe, String nome, String materia) throws SQLException {
 		// TODO Auto-generated method stub
-		establishConnection();
-		String ticketCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_nome = ? AND u.UT_classe = ? ";
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
+		//String ticketCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_nome = ? AND u.UT_classe = ? ";
+		String ticketCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_nome = ? AND t.TIC_tags = ? ";
+
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 		java.sql.PreparedStatement ticketCM_query = conn.prepareStatement(ticketCM);
@@ -73,7 +70,8 @@ public class QueryHandler_filters {
 	public ArrayList<Ticket> getLNM(String localita, String nome, String materia) throws SQLException {
 		// TODO Auto-generated method stub
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String ticketLNM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_localita = ? AND u.UT_nome = ?";
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
@@ -108,8 +106,11 @@ public class QueryHandler_filters {
 	//filtraggio in base a localita, classe e materia
 	public ArrayList<Ticket> getLCM(String localita, String classe, String materia) throws SQLException{
 		// TODO Auto-generated method stub
-		establishConnection();
-		String ticketLCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_localita = ? AND u.UT_classe = ?";
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
+		//String ticketLCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_localita = ? AND u.UT_classe = ?";
+		String ticketLCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_localita = ? AND t.TIC_tags = ?";
+
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 		
@@ -142,7 +143,8 @@ public class QueryHandler_filters {
 	//filtraggio in base a nome e materia
 	public ArrayList<Ticket> getNM(String nome, String materia) throws SQLException {
 		// TODO Auto-generated method stub
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String ticketNM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_nome = ? ";
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
@@ -177,8 +179,10 @@ public class QueryHandler_filters {
 	//filtraggio in base a classe e materia
 	public ArrayList<Ticket> getCM(String classe, String materia) throws SQLException {
 		// TODO Auto-generated method stub
-		establishConnection();
-		String ticketCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_classe = ?";
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
+		//String ticketCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_classe = ?";
+		String ticketCM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND t.TIC_tags = ?";
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 		
@@ -210,7 +214,8 @@ public class QueryHandler_filters {
 	//filtraggio in base a localita e materia
 	public ArrayList<Ticket> getLM(String localita, String materia) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String ticketLM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_localita = ?";
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();	
@@ -241,7 +246,8 @@ public class QueryHandler_filters {
 	//filtraggio in base alla materia
 	public ArrayList<Ticket> getM(String materia) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String ticketM = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ?";
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
@@ -272,8 +278,11 @@ public class QueryHandler_filters {
 	
 	public ArrayList<Ticket> getAll(String materia, String nome, String classe, String localita) throws SQLException {
 		
-		establishConnection();
-		String ticketALL = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_nome = ? AND u.UT_classe = ? AND u.UT_localita = ?";
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
+		//String ticketALL = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_nome = ? AND u.UT_classe = ? AND u.UT_localita = ?";
+		String ticketALL = "SELECT * FROM tickets t INNER JOIN utenti u ON t.UT_id_apertura = u.UT_id WHERE t.TIC_materia = ? AND u.UT_nome = ? AND t.TIC_tags = ? AND u.UT_localita = ?";
+
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 		java.sql.PreparedStatement ticketALL_query = conn.prepareStatement(ticketALL);

@@ -82,12 +82,13 @@ public class Tickets extends HttpServlet {
 		response.setHeader("Access-Control-Allow-Credentials", "true");
 		response.setHeader("Access-Control-Expose-Headers", "Set-cookie");
 		response.setContentType("application/json");
+		
 		PrintWriter out = response.getWriter();
 		JsonObject jsonResponse = new JsonObject();
 		Gson g = new Gson();
 		try{
 			//Estrazione del token dall'header
-			String[] hd = request.getHeader("Authorization").split("[=]");
+			String[] hd = request.getHeader("Cookie").split("[=]");
 			String jwtToken = hd[1].split("[;]")[0];
 			//String jwtToken = request.getHeader("Authorization").replace("Bearer ", "");
 			HashMap<String, String> filters = getParametersFromQS(request.getQueryString());
@@ -95,7 +96,7 @@ public class Tickets extends HttpServlet {
 			Set<String> types = filters.keySet();
 			
 			String[] toCheck = {jwtToken};
-			if(Checks.isValidFilter(types) && Checks.isNotBlank(toCheck) ) {
+			if(/*Checks.isValidFilter(types) &&*/ Checks.isNotBlank(toCheck) ) {
 				
 				QueryHandler queryForThis = new QueryHandler();
 				
@@ -141,17 +142,24 @@ public class Tickets extends HttpServlet {
 								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 						String filtroNome = filters.get("nome").toString()
 								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						String filtroClasse = filters.get("classe").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 						
 						System.out.println("get all " + filtroMateria + filtroLocalita + filtroNome);
-						tickets = queryForFilters.getAll(filtroMateria, filtroNome, filters.get("classe"), filtroLocalita );
+						
+						tickets = queryForFilters.getAll(filtroMateria, filtroNome, filtroClasse, filtroLocalita );
+						
 					}else if(filters.containsKey("localita") && filters.containsKey("classe")) {
 						
 						String filtroLocalita = filters.get("localita").toString()
 								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 						String filtroMateria = filters.get("materia").toString()
 								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						String filtroClasse = filters.get("classe").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 						System.out.println("get localita classe materia");
-						tickets = queryForFilters.getLCM(filtroLocalita, filters.get("classe").toString(), filtroMateria);
+						
+						tickets = queryForFilters.getLCM(filtroLocalita,filtroClasse, filtroMateria);
 						
 					}else if(filters.containsKey("localita") && filters.containsKey("nome")) {
 						
@@ -160,14 +168,18 @@ public class Tickets extends HttpServlet {
 						String filtroMateria = filters.get("materia").toString()
 								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");					
 						System.out.println("get localita nome materia");
+						
 						tickets = queryForFilters.getLNM(filtroLocalita, filters.get("nome").toString(), filtroMateria);
 						
 					}else if(filters.containsKey("classe") && filters.containsKey("nome")) {
 						
 						String filtroMateria = filters.get("materia").toString()
-								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");				
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");	
+						String filtroClasse = filters.get("classe").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 						System.out.println("get classe nome materia");
-						tickets = queryForFilters.getCNM(filters.get("classe").toString(), filters.get("nome").toString(), 
+						
+						tickets = queryForFilters.getCNM(filtroClasse, filters.get("nome").toString(), 
 								filtroMateria);
 						
 					}else if(filters.containsKey("localita")) {
@@ -177,14 +189,18 @@ public class Tickets extends HttpServlet {
 						String filtroLocalita = filters.get("localita").toString()
 								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 						System.out.println("get localita materia");
+						
 						tickets = queryForFilters.getLM(filtroLocalita, filtroMateria);
 						
 					}else if(filters.containsKey("classe")) {
 						
 						String filtroMateria = filters.get("materia").toString()
 								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
+						String filtroClasse = filters.get("classe").toString()
+								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 						System.out.println("get classe materia");
-						tickets = queryForFilters.getCM(filters.get("classe").toString(), filtroMateria);
+						
+						tickets = queryForFilters.getCM(filtroClasse, filtroMateria);
 						
 					}else if(filters.containsKey("nome")) {
 						
@@ -192,6 +208,7 @@ public class Tickets extends HttpServlet {
 								.replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 						
 						System.out.println("get nome materia");
+						
 						tickets = queryForFilters.getNM(filters.get("nome").toString(), filtroMateria);
 						
 					}
@@ -199,6 +216,7 @@ public class Tickets extends HttpServlet {
 						
 						String filtroMateria = filters.get("materia").toString().replaceAll("\\+", " ").replaceAll("%2C", ",").replaceAll("%27", "'");
 						System.out.println("get materia");
+						
 						tickets = queryForFilters.getM(filtroMateria);
 						
 					}
@@ -489,6 +507,16 @@ public class Tickets extends HttpServlet {
 		}finally {
 			out.println(jsonResponse.toString());
 		}
+		
+	}
+	
+	protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+		response.setHeader("Access-Control-Allow-Headers", "Origin,content-type,set-cookie,Cookie");
+		response.setHeader("Access-Control-Allow-Methods", "PUT, POST, GET");
+		response.setHeader("Access-Control-Allow-Credentials", "true");
+		response.setContentType("application/json");
 		
 	}
 	

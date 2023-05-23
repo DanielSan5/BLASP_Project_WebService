@@ -257,13 +257,9 @@ public class User extends HttpServlet {
 				        
 				    });
 					
-					LocalDate oggi = LocalDate.now();
-					LocalDate domani = oggi.plusDays(1);
-					ZonedDateTime domaniUTC = domani.atStartOfDay(ZoneId.of("UTC"));
-					String domaniUTCFormatted = domaniUTC.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
 					
 					String token = generator.generateJwt(claims);
-					response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; SameSite=None; Secure; exp=" + domaniUTCFormatted);
+					response.addHeader("Set-cookie","__refresh__token=" + token + "; HttpOnly; SameSite=None; Secure; Max-age=86400");
 					response.setStatus(201);
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("desc", "utente creato");
@@ -468,5 +464,14 @@ public class User extends HttpServlet {
 		response.setStatus(405);
 	}
 	
+	protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+		response.setHeader("Access-Control-Allow-Headers", "Origin,content-type,set-cookie,Cookie");
+		response.setHeader("Access-Control-Allow-Methods", "PUT, POST, GET");
+		response.setHeader("Access-Control-Allow-Credentials", "true");
+		response.setContentType("application/json");
+		
+	}
 }
 

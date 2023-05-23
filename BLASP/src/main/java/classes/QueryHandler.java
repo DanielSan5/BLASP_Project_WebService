@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import javax.security.auth.login.CredentialNotFoundException;
+
+import com.mysql.cj.jdbc.MysqlDataSource;
 import com.mysql.jdbc.exceptions.MySQLDataException;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
@@ -13,31 +15,44 @@ import de.mkammerer.argon2.Argon2Factory.Argon2Types;
 
 public class QueryHandler {
 	
-	private static String db_url = "jdbc:mysql://localhost:3306/ticketing";
+	/*private static String db_url = "jdbc:mysql://localhost:3306/ticketing";
     private static String db_driver = "com.mysql.jdbc.Driver";
     private static String db_user = "root";
-    private static String db_password = "";
-    private Connection conn;
-
-	public QueryHandler() {
-		try {
+    private static String db_password = "";*/
+    MysqlDataSource d = new MysqlDataSource();
+    Connection conn; 
+	public QueryHandler() throws SQLException {
+		/*try {
 			Class.forName(db_driver);
 		} catch (ClassNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		}
+		}*/
+		    this.d.setUser("root");
+		    this.d.setPassword("");
+		    this.d.setUrl("jdbc:mysql://localhost:3306/ticketing");
+		    
+		    try {
+				this.conn =  (Connection) d.getConnection();
+			} catch (SQLException e) {
+				this.conn.close();
+				e.printStackTrace();
+			}
+		    
 	}
 	
-	private void establishConnection() throws SQLException {
+	/*private void establishConnection() throws SQLException {
 		
-		this.conn = DriverManager.getConnection(db_url, db_user, db_password); 
+		//this.conn = DriverManager.getConnection(db_url, db_user, db_password); 
+		 Connection conn =  (Connection) d.getConnection();
 	
-	}
+	}*/
 	
 	public boolean hasEmail(String email) throws SQLException {
 
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT * FROM utenti WHERE UT_email = ?";
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -47,12 +62,12 @@ public class QueryHandler {
 		boolean check = res.next();
 		conn.close();
 		return check; 
-		
 	}
-	
+
 	public boolean checkPass(int user_id, String password) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT UT_password FROM utenti WHERE UT_id = ?";
 		Argon2 argon2 = Argon2Factory.create(Argon2Types.ARGON2id);
 
@@ -84,12 +99,11 @@ public class QueryHandler {
 	//RECUPERO USER ID DALLA MAIL
 	public int getUserId(String email) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT UT_id FROM utenti WHERE UT_email = ?";
 		
-		
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
-		
 		
 		pr.setString(1, email);
 		ResultSet res = pr.executeQuery();
@@ -111,7 +125,8 @@ public class QueryHandler {
 	//CONTROLLO SE L'UTENTE È BLOCCATO
 	public boolean isNotBlockedUser(int user_id) throws SQLException{
 			
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT UT_email FROM utenti WHERE UT_id = ? AND UT_stato = 'blocked'";
 			
 			
@@ -136,7 +151,8 @@ public class QueryHandler {
 	
 	public void inserisciUtente(String email, String password, String nome, String cognome, String data_nascita, int classe, String indirizzo_scolastico, String localita) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "INSERT INTO utenti (UT_email, UT_password, UT_nome, UT_cognome, UT_data_nascita, UT_classe, UT_indirizzo_scolastico, UT_localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 		
 	
@@ -169,7 +185,8 @@ public class QueryHandler {
 	//***UPDATE DATI UTENTE***
 	public void modificaDatiUtente(int user_id, String descrizione, String localita, int classe, String indirizzo) throws SQLException, NoSuchFieldException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "UPDATE utenti SET UT_descrizione = ?, UT_localita = ?, UT_classe = ?, UT_indirizzo_scolastico = ? WHERE UT_id = ?";		
 
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -195,7 +212,8 @@ public class QueryHandler {
 	//***UPDATE PASSWORD UTENTE***
 	public void changePass(int user_id, String password_encr) throws SQLException, NoSuchFieldException {
 			
-			establishConnection();
+			//establishConnection();
+			this.conn =  (Connection) d.getConnection();
 			String prepared_query = "UPDATE utenti SET UT_password = ? WHERE UT_id = ?";		
 			java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 
@@ -218,7 +236,8 @@ public class QueryHandler {
 	//***BLOCCAGGIO UTENTE***
 	public void blockUser(int user_id) throws  SQLException, NoSuchFieldException {
 				
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "UPDATE utenti SET UT_stato = 'blocked' WHERE UT_id = ?";		
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -242,7 +261,8 @@ public class QueryHandler {
 	//Controllo se la località inserita esiste
 	public boolean hasLocalita(String localita) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT * FROM localita WHERE LC_descrizione = ?";
 
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -263,7 +283,8 @@ public class QueryHandler {
 	//Controllo se l'indirizzo di studio inserito esiste
 	public boolean hasIndirizzo(String indirizzo) throws SQLException {
 			
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT * FROM indirizzo_scolastico WHERE INS_nome = ?";
 		
 	
@@ -286,7 +307,9 @@ public class QueryHandler {
 	//Controllo lo stato dell'utente --> DA CONFERMARE
 	public String getUserStatus(int user_id) throws CredentialNotFoundException, SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT UT_stato FROM utenti WHERE UT_id = ?";
 		
 		
@@ -316,7 +339,8 @@ public class QueryHandler {
 	//CONTROLLO SE UNA MATERIA ESISTE NEL DATABASE
 	public boolean checkExistMateria(String materia) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT MAT_nome FROM materia WHERE MAT_nome = ?";
 		
 
@@ -336,8 +360,8 @@ public class QueryHandler {
 
 	public Utente getUserData(int user_id) throws CredentialNotFoundException, SQLException {
 		
-		establishConnection();
-		
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String getUser = "SELECT * FROM utenti WHERE UT_id = ?";
 		ResultSet res;
 		
@@ -366,8 +390,8 @@ public class QueryHandler {
 	
 	public ArrayList<Ticket> getUserTickets(int user_id) throws SQLException {
 		
-		establishConnection();
-		
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String getUser = "SELECT * FROM tickets WHERE UT_id_apertura = ?";
 		ResultSet res;
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
@@ -395,7 +419,8 @@ public class QueryHandler {
 
 	public boolean isUserAdmin(int user_id) throws CredentialNotFoundException, SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT UT_admin FROM utenti WHERE UT_id = ?";
 		
 
@@ -426,7 +451,8 @@ public class QueryHandler {
 	public ArrayList<Utente> getToBlock() throws CredentialNotFoundException, SQLException{
 
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT COUNT(*) as num_flags, u.UT_email, u.UT_nome, u.UT_cognome, u.UT_classe, u.UT_indirizzo_scolastico, u.UT_descrizione, u.UT_data_nascita, u.UT_localita"
 				+ " FROM utenti u INNER JOIN segnalazione s ON u.UT_id = s.UT_id_segnalato GROUP BY u.UT_id";
 		ArrayList<Utente> toBlock = new ArrayList<Utente>();
@@ -457,7 +483,8 @@ public class QueryHandler {
 	
 	public void inserisciCodice(int user_id, String ver_code) throws SQLException, NoSuchFieldException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "UPDATE utenti SET UT_ver_code = ? WHERE UT_id = ?";
 			
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -476,7 +503,8 @@ public class QueryHandler {
 	
 	public boolean checkCode(int user_id, String ver_code) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT UT_ver_code FROM utenti WHERE UT_id = ?";
 		
 
@@ -507,8 +535,8 @@ public class QueryHandler {
 	
 	public ArrayList<Avviso> getUserAvvisi(int user_id) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
-		
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String getUser = "SELECT * FROM avviso WHERE TIC_id_avvisato IN (SELECT TIC_id FROM tickets t WHERE t.UT_id_apertura = ?)";
 		
 		ResultSet res;
@@ -536,7 +564,8 @@ public class QueryHandler {
 
 	private String getEmailFromId(int user_id) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "SELECT UT_email FROM utenti WHERE UT_id = ?";
 		
 		
@@ -559,8 +588,8 @@ public class QueryHandler {
 
 	public ArrayList<Segnalazione> getUserSegnalazioni(int user_id) throws SQLException, CredentialNotFoundException {
 		
-		establishConnection();
-		
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String getUser = "SELECT * FROM segnalazione WHERE UT_id_segnalato = ?";
 		
 		ResultSet res;
@@ -587,7 +616,8 @@ public class QueryHandler {
 
 	public void setCodeNull(int user_id) throws SQLException {
 		
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "UPDATE utenti SET UT_ver_code = NULL WHERE UT_id = ?";
 			
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -605,7 +635,8 @@ public class QueryHandler {
 
 	public void revokeToken(String jwtToken_digest_inBase64) throws SQLException {
 	
-		establishConnection();
+		//establishConnection();
+		this.conn =  (Connection) d.getConnection();
 		String prepared_query = "INSERT INTO revoken_token (base64_token_digest) VALUES (?)";
 	
 		java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
@@ -625,7 +656,8 @@ public class QueryHandler {
 	 public boolean isTokenRevoked(String jwtToken_digest_inBase64) throws SQLException {
 		 
 	  
-	     establishConnection();
+	    // establishConnection();
+		 this.conn =  (Connection) d.getConnection();
 		 String prepared_query = "SELECT base64_token_digest FROM revoken_token WHERE base64_token_digest = ?";
 		 java.sql.PreparedStatement pr = conn.prepareStatement(prepared_query);
 			
