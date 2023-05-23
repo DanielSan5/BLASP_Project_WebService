@@ -98,7 +98,7 @@ public class Segnalazioni extends HttpServlet {
 					response.setStatus(200);
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("descrizione", "ottenimento segnalazioni");
-					jsonResponse.add("avvisi", g.toJsonTree(flagsDesc));
+					jsonResponse.add("segnalazioni", g.toJsonTree(flagsDesc));
 		        }
 			}else {
 				response.setStatus(400);

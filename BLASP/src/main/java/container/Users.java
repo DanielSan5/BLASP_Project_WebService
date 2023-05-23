@@ -93,16 +93,16 @@ public class Users extends HttpServlet {
 					Utente userData = queryForThis.getUserData(user_id);
 					
 					ArrayList<Ticket> userTickets = queryForThis.getUserTickets(user_id);
-					ArrayList<Avviso> userAvvisi = queryForThis.getUserAvvisi(user_id);
-					ArrayList<Segnalazione> userSegnalazioni = queryForThis.getUserSegnalazioni(user_id);
+					//ArrayList<Avviso> userAvvisi = queryForThis.getUserAvvisi(user_id);
+					//ArrayList<Segnalazione> userSegnalazioni = queryForThis.getUserSegnalazioni(user_id);
 					
 					response.setStatus(200);
 					jsonResponse.addProperty("stato", "confermato");
 					jsonResponse.addProperty("desc", " ottenimento profilo dell'utente");
 					jsonResponse.add("user_info", g.toJsonTree(userData));
 					jsonResponse.add("user_tickets", g.toJsonTree(userTickets));
-					jsonResponse.add("user_avvisi", g.toJsonTree(userAvvisi));	
-					jsonResponse.add("user_segnalazioni", g.toJsonTree(userSegnalazioni));	
+					//jsonResponse.add("user_avvisi", g.toJsonTree(userAvvisi));	
+					//jsonResponse.add("user_segnalazioni", g.toJsonTree(userSegnalazioni));	
 		        }
 			}else {
 				response.setStatus(400);

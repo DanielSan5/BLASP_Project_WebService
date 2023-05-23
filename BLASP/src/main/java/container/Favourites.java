@@ -326,9 +326,9 @@ protected void doDelete(HttpServletRequest request, HttpServletResponse response
 						int user_id = queryForThis.getUserId(email);
 						queryForTicket.deleteFavourites(Integer.parseInt(ticket_id), user_id);
 						
-						response.setStatus(201);
+						response.setStatus(200);
 						jsonResponse.addProperty("stato", "confermato");
-						jsonResponse.addProperty("desc", "aggiunto ai preferiti");
+						jsonResponse.addProperty("desc", "tolto dai preferiti");
 	
 					}else {
 						response.setStatus(400);
